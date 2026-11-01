@@ -1,0 +1,59 @@
+import React, { useEffect, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { colors, font } from '@/theme';
+import { EmptyState, Header, Loader, Screen } from '@/components/ui';
+import { Avatar } from '@/components/Avatar';
+import { GiftIcon } from '@/components/GiftIcon';
+import { api } from '@/lib/api';
+import { timeAgo } from '@/lib/format';
+import { useStore } from '@/store';
+import type { PublicUser } from '@/lib/types';
+
+interface N { id: string; type: string; read: boolean; createdAt: string; data: Record<string, string> | null; actor: PublicUser | null }
+
+export default function Notifications() {
+  const { t } = useTranslation();
+  const setUnread = useStore((s) => s.setUnreadNotifications);
+  const [items, setItems] = useState<N[] | null>(null);
+  useEffect(() => {
+    void api<{ items: N[] }>('/notifications').then((r) => setItems(r.items)).catch(() => setItems([]));
+    void api('/notifications/read', { body: {} }).then(() => setUnread(0)).catch(() => {});
+  }, [setUnread]);
+
+  function open(n: N) {
+    if (n.type === 'match' && n.data?.conversationId) router.push({ pathname: '/chat/[id]', params: { id: n.data.conversationId } });
+    else if (n.type === 'live' && n.data?.roomId) router.push({ pathname: '/live/[id]', params: { id: n.data.roomId } });
+    else if (n.type === 'gift' && n.data?.conversationId) router.push({ pathname: '/chat/[id]', params: { id: n.data.conversationId } });
+    else if (n.actor) router.push({ pathname: '/user/[id]', params: { id: n.actor.id } });
+  }
+
+  return (
+    <Screen>
+      <Header title={t('notifications.title')} />
+      {!items ? <Loader full /> : (
+        <FlatList
+          data={items}
+          keyExtractor={(n) => n.id}
+          contentContainerStyle={{ flexGrow: 1 }}
+          ListEmptyComponent={<EmptyState icon="bell" title={t('notifications.empty')} />}
+          renderItem={({ item }) => (
+            <Pressable onPress={() => open(item)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, opacity: item.read ? 0.75 : 1 }}>
+              <Avatar uri={item.actor?.avatarUrl} name={item.actor?.name} size={48} online={item.actor?.online} />
+              <View style={{ flex: 1 }}>
+                <Text style={font.body}>
+                  <Text style={{ fontWeight: '800' }}>{item.actor?.name ?? 'Simo'} </Text>
+                  {t(`notifications.types.${item.type}`, { defaultValue: '' })}
+                </Text>
+                <Text style={font.tiny}>{timeAgo(item.createdAt)}</Text>
+              </View>
+              {item.type === 'gift' && item.data?.giftId ? <GiftIcon id={item.data.giftId} size={36} /> : null}
+              {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.rose }} /> : null}
+            </Pressable>
+          )}
+        />
+      )}
+    </Screen>
+  );
+}

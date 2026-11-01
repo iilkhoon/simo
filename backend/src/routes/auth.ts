@@ -24,6 +24,14 @@ const OTP_MESSAGES: Record<string, (c: string) => string> = {
   en: (c) => `Your Simo code: ${c}. Do not share it with anyone.`,
 };
 
+/** Dəvət kodu: istifadəçinin qısa ID-si (məs. 1234) və ya köhnə referralCode */
+async function findReferrer(code?: string) {
+  if (!code) return null;
+  const c = code.trim();
+  if (/^\d{1,9}$/.test(c)) return prisma.user.findUnique({ where: { shortId: Number(c) }, select: { id: true } });
+  return prisma.user.findUnique({ where: { referralCode: c }, select: { id: true } });
+}
+
 async function sessionFor(userId: string, role: 'USER' | 'ADMIN', isNew: boolean) {
   const tokens = await issueTokens({ id: userId, role });
   return { ...tokens, isNew };
@@ -61,9 +69,7 @@ export default async function authRoutes(app: FastifyInstance) {
     if (user?.banned) throw err.forbidden('BANNED');
     let isNew = false;
     if (!user) {
-      const ref = body.referralCode
-        ? await prisma.user.findUnique({ where: { referralCode: body.referralCode }, select: { id: true } })
-        : null;
+      const ref = await findReferrer(body.referralCode);
       user = await prisma.user.create({
         data: { phone, referredById: ref?.id, locale: body.locale ?? 'az' },
       });
@@ -79,9 +85,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const email = body.email.toLowerCase().trim();
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) throw err.badRequest('EMAIL_TAKEN');
-    const ref = body.referralCode
-      ? await prisma.user.findUnique({ where: { referralCode: body.referralCode }, select: { id: true } })
-      : null;
+    const ref = await findReferrer(body.referralCode);
     const user = await prisma.user.create({
       data: {
         email,

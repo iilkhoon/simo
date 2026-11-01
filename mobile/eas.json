@@ -1,0 +1,31 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { "EXPO_PUBLIC_API_URL": "http://192.168.1.10:4000" }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://api.simo.az" }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_API_URL": "https://api.simo.az", "EXPO_PUBLIC_STORE": "google" },
+      "android": { "buildType": "app-bundle" }
+    },
+    "huawei": {
+      "extends": "production",
+      "env": { "EXPO_PUBLIC_API_URL": "https://api.simo.az", "EXPO_PUBLIC_STORE": "huawei" },
+      "android": { "buildType": "apk" }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": { "ascAppId": "" },
+      "android": { "track": "internal" }
+    }
+  }
+}

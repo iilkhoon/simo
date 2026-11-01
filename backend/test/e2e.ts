@@ -328,6 +328,15 @@ async function main() {
       }
     });
 
+    await step('Dəvət: qısa ID ilə qeydiyyat, dəvət edənə ilk alışın 10%-i', async () => {
+      const manShort = (await api('GET', '/me', man)).data.shortId;
+      const before = (await api('GET', '/me', man)).data.coins;
+      const r = await api('POST', '/auth/email/register', undefined, { email: `ref${stamp}@test.az`, password: 'secret123', referralCode: String(manShort) });
+      await api('PUT', '/me/onboarding', r.data.accessToken, { name: 'Ref', gender: 'MALE', birthDate: '1990-01-01', avatarUrl: 'https://x.az/r.jpg' });
+      await api('POST', '/payments/dev/purchase', r.data.accessToken, { packageId: 'coins_1300' });
+      assert.equal((await api('GET', '/me', man)).data.coins, before + 150, '1300+200 bonus coinin 10%-i');
+    });
+
     await step('Hesabın silinməsi', async () => {
       const t = await registerPhone(`070${stamp}`);
       assert.equal((await api('DELETE', '/me', t)).status, 200);
