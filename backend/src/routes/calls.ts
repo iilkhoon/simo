@@ -1,0 +1,129 @@
+import { z } from 'zod';
+import type { FastifyInstance } from 'fastify';
+import { prisma } from '../db.js';
+import { err } from '../lib/errors.js';
+import { requireAuth, uid } from '../lib/auth.js';
+import { presentUser, publicUserSelect } from '../lib/present.js';
+import { activeVip } from '../economy.js';
+import { rtcToken } from '../services/agora.js';
+import { emitToUser } from '../realtime/hub.js';
+import { notify } from '../services/notify.js';
+import { chargeMinute, clearRingTimeout, finishCall, scheduleRingTimeout } from '../services/calls.js';
+
+async function callPrice(callerId: string, calleeId: string, type: 'VIDEO' | 'VOICE') {
+  const [caller, callee] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: callerId } }),
+    prisma.user.findUniqueOrThrow({ where: { id: calleeId } }),
+  ]);
+  if (callee.hostStatus === 'APPROVED' && caller.hostStatus !== 'APPROVED') {
+    const base = type === 'VIDEO' ? callee.videoCallPrice : callee.voiceCallPrice;
+    const vip = activeVip(caller);
+    return { price: Math.ceil(base * (1 - (vip?.callDiscount ?? 0))), caller, callee };
+  }
+  // Adi istifadəçilər arasında zəng pulsuzdur, lakin yalnız qarşılıqlı uyğunluq olduqda
+  const [a, b] = [callerId, calleeId].sort();
+  const match = await prisma.match.findUnique({ where: { userAId_userBId: { userAId: a, userBId: b } } });
+  if (!match && callee.hostStatus !== 'APPROVED') throw err.forbidden('MATCH_REQUIRED');
+  return { price: 0, caller, callee };
+}
+
+export default async function callRoutes(app: FastifyInstance) {
+  app.get('/calls/price/:userId', { preHandler: requireAuth }, async (req) => {
+    const { userId } = z.object({ userId: z.string() }).parse(req.params);
+    const me = uid(req);
+    const out: Record<string, number | null> = {};
+    for (const t of ['VIDEO', 'VOICE'] as const) {
+      try {
+        out[t] = (await callPrice(me, userId, t)).price;
+      } catch {
+        out[t] = null;
+      }
+    }
+    return out;
+  });
+
+  app.post('/calls', { preHandler: requireAuth, config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req) => {
+    const me = uid(req);
+    const b = z.object({ calleeId: z.string(), type: z.enum(['VIDEO', 'VOICE']) }).parse(req.body);
+    if (b.calleeId === me) throw err.badRequest();
+    const blocked = await prisma.block.findFirst({ where: { OR: [{ blockerId: me, blockedId: b.calleeId }, { blockerId: b.calleeId, blockedId: me }] } });
+    if (blocked) throw err.forbidden('BLOCKED');
+    const { price, caller, callee } = await callPrice(me, b.calleeId, b.type);
+    if (callee.deletedAt || callee.banned) throw err.notFound('USER_NOT_FOUND');
+    if (caller.coins < price) throw err.insufficient(price);
+    const busy = await prisma.call.findFirst({
+      where: {
+        status: { in: ['RINGING', 'ACTIVE'] },
+        OR: [{ callerId: { in: [me, b.calleeId] } }, { calleeId: { in: [me, b.calleeId] } }],
+      },
+    });
+    if (busy) throw err.badRequest('USER_BUSY');
+    const call = await prisma.call.create({
+      data: { callerId: me, calleeId: b.calleeId, type: b.type, pricePerMin: price, channel: `call_${Date.now()}_${caller.shortId}` },
+    });
+    scheduleRingTimeout(call.id);
+    const callerPublic = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { ...publicUserSelect, photos: true } });
+    const payload = { call, caller: presentUser(callerPublic) };
+    emitToUser(b.calleeId, 'call:incoming', payload);
+    void notify(b.calleeId, 'call', { actorId: me, store: false, pushIfOnline: false, body: `${caller.name} · ${b.type === 'VIDEO' ? '📹' : '📞'}`, data: { callId: call.id } }).catch(() => {});
+    const calleePublic = await prisma.user.findUniqueOrThrow({ where: { id: b.calleeId }, select: { ...publicUserSelect, photos: true } });
+    return { call, peer: presentUser(calleePublic), rtc: rtcToken(call.channel, caller.shortId, true) };
+  });
+
+  app.get('/calls/:id', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const call = await prisma.call.findUnique({ where: { id } });
+    if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
+    const peerId = call.callerId === me ? call.calleeId : call.callerId;
+    const [peer, mine] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: peerId }, select: { ...publicUserSelect, photos: true } }),
+      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } }),
+    ]);
+    return { call, peer: presentUser(peer), rtc: rtcToken(call.channel, mine.shortId, true), role: call.callerId === me ? 'caller' : 'callee' };
+  });
+
+  app.post('/calls/:id/accept', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const res = await prisma.call.updateMany({ where: { id, calleeId: me, status: 'RINGING' }, data: { status: 'ACTIVE', startedAt: new Date() } });
+    if (res.count === 0) throw err.badRequest('CALL_NOT_RINGING');
+    clearRingTimeout(id);
+    const ok = await chargeMinute(id);
+    if (!ok) {
+      await finishCall(id, 'ENDED', 'INSUFFICIENT_COINS');
+      throw err.badRequest('CALLER_INSUFFICIENT');
+    }
+    const call = await prisma.call.findUniqueOrThrow({ where: { id } });
+    const callee = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } });
+    emitToUser(call.callerId, 'call:accepted', { callId: id, startedAt: call.startedAt });
+    return { call, rtc: rtcToken(call.channel, callee.shortId, true) };
+  });
+
+  app.post('/calls/:id/reject', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const call = await prisma.call.findUnique({ where: { id } });
+    if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
+    await finishCall(id, call.callerId === me ? 'CANCELLED' : 'REJECTED', call.callerId === me ? 'CANCELLED' : 'REJECTED');
+    return { ok: true };
+  });
+
+  app.post('/calls/:id/end', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const call = await prisma.call.findUnique({ where: { id } });
+    if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
+    const ended = await finishCall(id, 'ENDED', 'HANGUP');
+    return { ok: true, call: ended ?? call };
+  });
+
+  app.get('/calls', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const items = await prisma.call.findMany({ where: { OR: [{ callerId: me }, { calleeId: me }] }, orderBy: { createdAt: 'desc' }, take: 50 });
+    const ids = [...new Set(items.map((c) => (c.callerId === me ? c.calleeId : c.callerId)))];
+    const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { ...publicUserSelect, photos: true } });
+    const byId = new Map(users.map((u) => [u.id, presentUser(u)]));
+    return { items: items.map((c) => ({ ...c, peer: byId.get(c.callerId === me ? c.calleeId : c.callerId) ?? null })) };
+  });
+}
