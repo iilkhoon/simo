@@ -58,6 +58,9 @@ export interface VipPlan {
   incognito: boolean;
   discoveryBoost: number;
   entryEffect: boolean;
+  /** Fərdi endirim (alqoritmin təklifi) */
+  discountPct?: number;
+  finalPrice?: number;
 }
 
 export interface Me extends PublicUser {
@@ -111,6 +114,8 @@ export interface Gift {
   price: number;
   tier: 'SMALL' | 'BIG' | 'LUXURY';
   category: string;
+  /** DIAMOND — yalnız Almaz ilə (qiymət daxili vahiddə: 10 = 1 Almaz) */
+  currency?: 'COIN' | 'DIAMOND';
 }
 
 export interface GiftEvent {

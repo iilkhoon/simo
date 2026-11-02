@@ -10,13 +10,14 @@ import { api, ApiError } from '../lib/api';
 import { errorText, giftName } from '../lib/format';
 import type { GiftEvent } from '../lib/types';
 import { GiftIcon } from './GiftIcon';
-import { CoinAmount } from './Badges';
+import { CoinAmount, DiamondAmount } from './Badges';
+import { fmtAlmaz } from '../lib/economy';
 import { Btn, Tabs, Tag, tap } from './ui';
 import { sheetStyles } from './ActionSheet';
 import { Icon } from './Icon';
 
 const COUNTS = [1, 5, 10, 33, 99, 520];
-const CATS = ['popular', 'romantic', 'azerbaijan', 'luxury'] as const;
+const CATS = ['popular', 'romantic', 'azerbaijan', 'luxury', 'almaz'] as const;
 
 export function GiftSheet({ visible, onClose, receiverId, receiverName, context, contextId, onSent }: {
   visible: boolean; onClose: () => void; receiverId: string; receiverName?: string; context: 'CHAT' | 'LIVE' | 'VIDEO' | 'CALL' | 'PROFILE'; contextId?: string;
@@ -36,25 +37,27 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
 
   const list = useMemo(() => gifts.filter((g) => g.category === cat), [gifts, cat]);
   const gift = gifts.find((g) => g.id === selected);
+  const almaz = cat === 'almaz' || gift?.currency === 'DIAMOND';
   const total = (gift?.price ?? 0) * count;
-  const short = gift ? (me?.coins ?? 0) < total : false;
+  const short = gift ? (gift.currency === 'DIAMOND' ? (me?.diamonds ?? 0) : (me?.coins ?? 0)) < total : false;
 
   function topUp() {
     onClose();
-    router.push('/wallet');
+    router.push({ pathname: '/wallet', params: almaz ? { tab: 'almaz' } : {} });
   }
 
   async function send() {
     if (!gift) return;
     if (short) {
-      toast(t('errors.INSUFFICIENT_COINS'), 'error');
+      toast(gift.currency === 'DIAMOND' ? t('almaz.need') : t('errors.INSUFFICIENT_COINS'), 'error');
       topUp();
       return;
     }
     setSending(true);
     try {
-      const r = await api<{ coins: number; event: GiftEvent }>('/gifts/send', { body: { giftId: gift.id, receiverId, count, context, contextId } });
-      patchMe({ coins: r.coins });
+      const r = await api<{ coins: number | null; event: GiftEvent }>('/gifts/send', { body: { giftId: gift.id, receiverId, count, context, contextId } });
+      if (gift.currency === 'DIAMOND') patchMe({ diamonds: Math.max(0, (me?.diamonds ?? 0) - total) });
+      else if (r.coins != null) patchMe({ coins: r.coins });
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       onSent?.(r.event);
       if (context !== 'LIVE') onClose();
@@ -77,11 +80,12 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
             {receiverName ? <Text style={styles.to}>→ {receiverName}</Text> : null}
           </View>
           <Pressable onPress={topUp} style={styles.balance}>
-            <CoinAmount n={me?.coins ?? 0} />
+            {almaz ? <DiamondAmount n={me?.diamonds ?? 0} /> : <CoinAmount n={me?.coins ?? 0} />}
             <View style={styles.plus}><Icon name="add" size={14} color={colors.ink} /></View>
           </Pressable>
         </View>
-        <Tabs options={CATS.map((c) => ({ key: c, label: t(`gifts.${c}`) }))} value={cat} onChange={setCat} />
+        <Tabs options={CATS.map((c) => ({ key: c, label: c === 'almaz' ? `💎 ${t('almaz.giftsTab')}` : t(`gifts.${c}`) }))} value={cat} onChange={(c) => { setCat(c); setSelected(null); setCount(1); }} />
+        {cat === 'almaz' ? <Text style={styles.almazInfo}>{t('almaz.what')}</Text> : null}
         <FlatList
           data={list}
           numColumns={4}
@@ -96,13 +100,13 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
                 {item.tier !== 'SMALL' ? <Tag label={item.tier === 'LUXURY' ? 'FX+' : 'FX'} bg={item.tier === 'LUXURY' ? colors.diamond : colors.highlight} fg={item.tier === 'LUXURY' ? colors.white : colors.ink} style={styles.fx} /> : null}
                 <GiftIcon id={item.id} size={44} />
                 <Text style={styles.name} numberOfLines={1}>{giftName(item)}</Text>
-                <CoinAmount n={item.price} size={12} />
+                {item.currency === 'DIAMOND' ? <DiamondAmount n={item.price} size={12} /> : <CoinAmount n={item.price} size={12} />}
               </Pressable>
             );
           }}
         />
         <View style={styles.counts}>
-          {COUNTS.map((c) => (
+          {(almaz ? [1, 3, 5] : COUNTS).map((c) => (
             <Pressable key={c} onPress={() => { tap(); setCount(c); }} style={[styles.count, count === c && { backgroundColor: colors.ink }]}>
               <Text style={[styles.countText, count === c && { color: colors.bg }]}>×{c}</Text>
             </Pressable>
@@ -112,7 +116,7 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
           style={{ marginTop: 12 }}
           kind={short ? 'coin' : 'primary'}
           icon={short ? 'add' : 'gift'}
-          title={!gift ? t('gifts.pick') : short ? t('gifts.recharge') : `${t('gifts.send')} · ${total}`}
+          title={!gift ? t('gifts.pick') : short ? (almaz ? t('almaz.buy') : t('gifts.recharge')) : `${t('gifts.send')} · ${almaz ? `${fmtAlmaz(total)} 💎` : total}`}
           disabled={!gift}
           loading={sending}
           onPress={send}
@@ -136,5 +140,6 @@ const styles = StyleSheet.create({
   name: { color: colors.ink, fontSize: 11, fontFamily: fonts.semibold, maxWidth: '92%' },
   counts: { flexDirection: 'row', gap: 6, marginTop: 12 },
   count: { flex: 1, height: 34, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
+  almazInfo: { fontFamily: fonts.semibold, fontSize: 12, color: colors.textMuted, marginTop: 8 },
   countText: { color: colors.ink, fontFamily: fonts.black, fontSize: 12 },
 });

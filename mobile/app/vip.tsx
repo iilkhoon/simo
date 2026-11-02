@@ -27,7 +27,7 @@ export default function Vip() {
 
   async function buy() {
     if (!plan) return;
-    if ((me?.coins ?? 0) < plan.priceCoins) {
+    if ((me?.coins ?? 0) < (plan.finalPrice ?? plan.priceCoins)) {
       toast(t('errors.INSUFFICIENT_COINS'), 'error');
       router.push('/wallet');
       return;
@@ -46,6 +46,7 @@ export default function Vip() {
   }
 
   const perks = (p: VipPlan) => [
+    `✔︎ ${t('trust.vipVerified')} — ${t('trust.vipInfo')}`,
     t('vip.perks.unlimitedLikes'),
     t('vip.perks.freeMessages', { n: p.freeMessagesPerDay }),
     t('vip.perks.callDiscount', { n: Math.round(p.callDiscount * 100) }),
@@ -79,7 +80,8 @@ export default function Vip() {
                   <PressBox key={p.tier} style={{ flex: 1 }} r={20} sh={on ? 5 : 2} bg={on ? c.bg : colors.card} onPress={() => setSel(p.tier)} inner={styles.tier}>
                     {p.tier === 'GOLD' ? <Tag label={t('vip.best').toUpperCase()} bg={colors.brand} fg={colors.white} style={styles.best} /> : null}
                     <Text style={[styles.tierName, { color: on ? c.fg : colors.ink }]}>{t(`vip.tiers.${p.tier}`)}</Text>
-                    <CoinAmount n={p.priceCoins} size={15} color={on ? c.fg : colors.ink} />
+                    <CoinAmount n={p.finalPrice ?? p.priceCoins} size={15} color={on ? c.fg : colors.ink} />
+                    {p.discountPct ? <Text style={{ fontSize: 11, textDecorationLine: 'line-through', color: on ? c.fg : colors.textMuted }}>{p.priceCoins}</Text> : null}
                     <Text style={[styles.days, { color: on ? c.fg : colors.textMuted }]}>{t('vip.days', { n: p.days })}</Text>
                   </PressBox>
                 );
@@ -102,7 +104,7 @@ export default function Vip() {
           </ScrollView>
           {plan ? (
             <Btn
-              title={t('vip.buy', { price: plan.priceCoins })}
+              title={`${t('vip.buy', { price: plan.finalPrice ?? plan.priceCoins })}${plan.discountPct ? ` (−${plan.discountPct}%)` : ''}`}
               kind={plan.tier === 'DIAMOND' ? 'diamond' : plan.tier === 'GOLD' ? 'coin' : 'light'}
               icon="crown"
               loading={buying}
