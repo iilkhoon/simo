@@ -113,7 +113,7 @@ export default async function userRoutes(app: FastifyInstance) {
         await tx.photo.deleteMany({ where: { userId: id } });
         await tx.photo.createMany({ data: b.photos.map((url, order) => ({ userId: id, url, order })) });
       }
-      if (!before.onboarded) await creditCoins(tx, id, ECONOMY.signupBonus, 'SIGNUP_BONUS');
+      if (!before.onboarded) await creditCoins(tx, id, ECONOMY.signupBonus, 'SIGNUP_BONUS', undefined, '', true);
     });
     return presentMe(id);
   });

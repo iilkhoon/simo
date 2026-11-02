@@ -27,14 +27,15 @@ const GIFTS: [string, string, string, string, number, GiftTier, string][] = [
   ['love_planet', 'Sevgi planeti', 'Планета любви', 'Love planet', 29999, 'LUXURY', 'luxury'],
 ];
 
+// [id, coins, bonusCoins, qiymət (qəpik), populyar] — bonus böyük paketlərdə artır, amma 1 coin ≥ 1.08 qəpik qalır (bax: docs/ECONOMY.md)
 const PACKAGES: [string, number, number, number, boolean][] = [
   ['coins_100', 100, 0, 199, false],
-  ['coins_300', 300, 15, 499, false],
-  ['coins_600', 600, 60, 999, true],
-  ['coins_1300', 1300, 200, 1999, false],
-  ['coins_3500', 3500, 700, 4999, false],
-  ['coins_7500', 7500, 2000, 9999, false],
-  ['coins_16000', 16000, 5000, 19999, false],
+  ['coins_300', 300, 10, 499, false],
+  ['coins_600', 600, 30, 999, true],
+  ['coins_1300', 1300, 100, 1999, false],
+  ['coins_3500', 3500, 350, 4999, false],
+  ['coins_7500', 7500, 1000, 9999, false],
+  ['coins_16000', 16000, 2400, 19999, false],
 ];
 
 async function main() {

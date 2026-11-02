@@ -6,8 +6,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, tintFor } from '@/theme';
-import { Box, Loader, PressBox, T, Tag, tap } from '@/components/ui';
+import { colors, fonts, glow, tintFor } from '@/theme';
+import { Box, GlassPill, Loader, PressBox, T, Tag, tap } from '@/components/ui';
 import { Icon, type IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/Badges';
@@ -23,8 +23,8 @@ import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
 function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
     <Pressable onPress={() => { tap(); onPress(); }} style={({ pressed }) => [{ alignItems: 'center', gap: 5 }, pressed && { transform: [{ translateY: 2 }] }]}>
-      <View style={[styles.ctrl, { backgroundColor: tint ?? (active ? colors.bg : colors.ink) }]}>
-        <Icon name={icon} size={22} color={active || tint ? colors.ink : colors.bg} />
+      <View style={[styles.ctrl, { backgroundColor: tint ?? (active ? colors.glassLight : colors.white) }]}>
+        <Icon name={icon} size={22} color={tint || !active ? colors.ink : colors.white} />
       </View>
       {label ? <Text style={styles.ctrlLabel} numberOfLines={1}>{label}</Text> : null}
     </Pressable>
@@ -147,7 +147,7 @@ export default function CallScreen() {
     close();
   }
 
-  if (!call || !peer) return <View style={{ flex: 1, backgroundColor: colors.bg }}><Loader full /></View>;
+  if (!call || !peer) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
   const connected = !!startedAt;
   const Surface = rtc.RtcSurfaceView;
   const remoteVideo = isVideo && connected && remoteUid != null && !!Surface;
@@ -155,14 +155,17 @@ export default function CallScreen() {
   const soft = isVideo ? colors.brandSoft : colors.diamondSoft;
 
   return (
-    <View style={{ flex: 1, backgroundColor: remoteVideo ? colors.night : soft }}>
-      <StatusBar style={remoteVideo ? 'light' : 'dark'} />
+    <View style={{ flex: 1, backgroundColor: colors.night }}>
+      <StatusBar style="light" />
+      {!remoteVideo && peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={[StyleSheet.absoluteFill, { opacity: 0.45 }]} contentFit="cover" blurRadius={40} /> : null}
+      {!remoteVideo ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,14,13,0.55)' }]} /> : null}
       {remoteVideo ? (
         <Surface style={StyleSheet.absoluteFill} canvas={{ uid: remoteUid! }} />
       ) : (
         <SafeAreaView edges={['top']} style={styles.center}>
-          <Tag label={(isVideo ? t('chat.callVideo') : t('chat.callVoice')).toUpperCase()} icon={isVideo ? 'videocam' : 'call'} bg={colors.ink} fg={colors.bg} style={{ alignSelf: 'center', height: 26, paddingHorizontal: 10, marginBottom: 26 }} />
-          <Box r={30} sh={6} bg={tintFor(peer.name)} style={{ transform: [{ rotate: '-2deg' }] }} inner={{ width: 210, height: 260 }}>
+          <GlassPill label={isVideo ? t('chat.callVideo') : t('chat.callVoice')} icon={isVideo ? 'videocam' : 'call'} bg={colors.glassLight} style={{ alignSelf: 'center', height: 30, paddingHorizontal: 12, marginBottom: 30 }} />
+          <View style={[styles.halo, { borderColor: isVideo ? colors.brand : colors.sky }]} />
+          <Box r={110} sh={0} bg={tintFor(peer.name)} inner={{ width: 200, height: 200 }}>
             {peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{peer.name.slice(0, 1)}</T></View>
             )}
@@ -181,7 +184,6 @@ export default function CallScreen() {
 
       {isVideo && camOn && Surface && !rtcError ? (
         <View style={styles.pipWrap}>
-          <View style={styles.pipShadow} />
           <View style={styles.pip}>
             <Surface style={{ flex: 1 }} canvas={{ uid: 0 }} zOrderMediaOverlay />
           </View>
@@ -213,7 +215,6 @@ export default function CallScreen() {
       ) : null}
 
       <SafeAreaView edges={['bottom']} style={styles.controls}>
-        <View style={styles.dockShadow} />
         <View style={styles.dock}>
           <Ctrl icon={muted ? 'micOff' : 'mic'} active={!muted} label={t('call.mic')} onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} />
           {isVideo ? (
@@ -228,9 +229,9 @@ export default function CallScreen() {
           {isCaller ? <Ctrl icon="gift" label={t('gifts.title')} tint={colors.coin} onPress={() => setGiftOpen(true)} /> : null}
         </View>
         <View style={{ marginTop: 18 }}>
-          <PressBox onPress={hangup} bg={colors.brand} r={40} sh={5} inner={styles.hang}>
+          <Pressable onPress={() => { tap(); void hangup(); }} style={({ pressed }) => [styles.hang, glow(colors.brand), pressed && { transform: [{ scale: 0.94 }] }]}>
             <View style={{ transform: [{ rotate: '135deg' }] }}><Icon name="call" size={32} color={colors.white} /></View>
-          </PressBox>
+          </Pressable>
         </View>
       </SafeAreaView>
       <GiftOverlay ref={overlay} />
@@ -275,17 +276,18 @@ function Dots() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', paddingTop: 30 },
-  name: { color: colors.ink, fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.8 },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 16, paddingHorizontal: 12, height: 32 },
-  status: { color: colors.ink, fontSize: 14, fontFamily: fonts.bold },
-  warn: { color: colors.textMuted, textAlign: 'center', paddingHorizontal: 30, marginTop: 12, fontFamily: fonts.medium },
+  halo: { position: 'absolute', top: 30 + 30 + 30 - 14, width: 228, height: 228, borderRadius: 114, borderWidth: 3, opacity: 0.6 },
+  name: { color: colors.white, fontSize: 30, fontFamily: fonts.display, letterSpacing: -0.8 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: colors.glassLight, borderRadius: 16, paddingHorizontal: 12, height: 32 },
+  status: { color: colors.white, fontSize: 14, fontFamily: fonts.bold },
+  warn: { color: colors.nightMuted, textAlign: 'center', paddingHorizontal: 30, marginTop: 12, fontFamily: fonts.medium },
   pipWrap: { position: 'absolute', top: 110, right: 18, width: 108, height: 152 },
   pipShadow: { position: 'absolute', left: 4, top: 4, right: -4, bottom: -4, borderRadius: 18, backgroundColor: colors.ink },
-  pip: { flex: 1, borderRadius: 18, overflow: 'hidden', borderWidth: 2.5, borderColor: colors.ink, backgroundColor: colors.night2 },
+  pip: { flex: 1, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.night2 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 8 },
-  peerPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 22, paddingLeft: 4, paddingRight: 12, height: 44 },
-  peerName: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13, maxWidth: 140 },
-  peerTime: { color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 11 },
+  peerPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.glass, borderRadius: 22, paddingLeft: 4, paddingRight: 12, height: 44 },
+  peerName: { color: colors.white, fontFamily: fonts.bold, fontSize: 13, maxWidth: 140 },
+  peerTime: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 11 },
   rec: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.brand },
   low: { position: 'absolute', left: 16, right: 16, top: 112 },
   lowInner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
@@ -293,8 +295,8 @@ const styles = StyleSheet.create({
   lowCta: { color: colors.bg, backgroundColor: colors.ink, fontFamily: fonts.bold, fontSize: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, overflow: 'hidden' },
   controls: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 18 },
   dockShadow: { position: 'absolute', top: 4, left: 20, right: 12, height: 86, borderRadius: 28, backgroundColor: colors.ink },
-  dock: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginHorizontal: 16, marginRight: 20, height: 86, borderRadius: 28, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center' },
-  ctrl: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  ctrlLabel: { color: colors.ink, fontSize: 10.5, fontFamily: fonts.bold },
-  hang: { width: 76, height: 76, alignItems: 'center', justifyContent: 'center' },
+  dock: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginHorizontal: 16, height: 90, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
+  ctrl: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  ctrlLabel: { color: colors.nightMuted, fontSize: 10.5, fontFamily: fonts.bold },
+  hang: { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
 });

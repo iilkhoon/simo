@@ -42,7 +42,7 @@ export default function MeTab() {
 
   return (
     <Screen scroll>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 12, minHeight: 54 }}>
         <T v="h1" style={{ flex: 1 }}>{t('tabs.me')}</T>
         <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />
         <IconBtn name="settings" size={40} onPress={() => router.push('/settings')} />
@@ -79,7 +79,7 @@ export default function MeTab() {
           <T v="label">Simo Coin</T>
           <CoinAmount n={me.coins.toLocaleString('en-US')} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
-          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={52} color={colors.brand} points={10} /><Text style={styles.x2Text}>×2</Text></View> : null}
+          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={52} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
         </PressBox>
         <PressBox style={{ flex: 1 }} r={22} sh={4} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
           <T v="label">Simo Almaz</T>
@@ -135,15 +135,15 @@ export default function MeTab() {
 
 const styles = StyleSheet.create({
   head: { padding: 16 },
-  track: { height: 12, borderRadius: 6, backgroundColor: colors.bgSunken, borderWidth: 1.5, borderColor: colors.ink, overflow: 'hidden' },
-  fill: { height: '100%', borderRightWidth: 1.5, borderColor: colors.ink },
+  track: { height: 12, borderRadius: 6, backgroundColor: colors.bgSunken, overflow: 'hidden' },
+  fill: { height: '100%', borderRightWidth: 1, borderColor: colors.hairline },
   balance: { padding: 14, gap: 8, minHeight: 116 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: colors.ink, borderRadius: 10, paddingHorizontal: 9, height: 24 },
   ctaText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11.5 },
   x2: { position: 'absolute', top: -6, right: -6, width: 52, height: 52, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '12deg' }] },
   x2Text: { position: 'absolute', color: colors.white, fontFamily: fonts.display, fontSize: 13 },
   vip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  vipIcon: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  vipIcon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   vipTitle: { fontFamily: fonts.displayBold, fontSize: 15 },
   vipSub: { fontFamily: fonts.medium, fontSize: 12, marginTop: 2 },
 });

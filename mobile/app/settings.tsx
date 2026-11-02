@@ -67,7 +67,7 @@ export default function Settings() {
     <Screen scroll>
       <Header title={t('settings.title')} />
       <Text style={styles.section}>{t('settings.language')}</Text>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {LANGUAGES.map((l) => <Chip key={l.code} label={`${l.flag} ${l.label}`} active={i18n.language === l.code} onPress={() => void changeLanguage(l.code)} />)}
       </View>
 
@@ -119,7 +119,7 @@ export default function Settings() {
 const styles = StyleSheet.create({
   section: { color: colors.brand, fontFamily: fonts.bold, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1.1 },
   line: { flexDirection: 'row', alignItems: 'center' },
-  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   stepText: { color: colors.ink, fontSize: 20, fontFamily: fonts.bold, marginTop: -2 },
   danger: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1.5, borderColor: colors.hairline, borderRadius: radius.md },
 });

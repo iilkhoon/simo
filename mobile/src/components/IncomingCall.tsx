@@ -98,7 +98,7 @@ export function IncomingCall() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, padding: 24 },
-  ringSticker: { position: 'absolute', right: '22%', top: -14, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.brand, borderWidth: 2.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  ringSticker: { position: 'absolute', right: '22%', top: -14, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
   name: { color: colors.ink, fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.8 },
   actions: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
   col: { alignItems: 'center', gap: 10 },

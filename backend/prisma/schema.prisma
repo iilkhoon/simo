@@ -68,14 +68,16 @@ model User {
   verified           Boolean    @default(false)
   verificationUrl    String?
   coins              Int        @default(0)
+  /// coins-in promo (pulsuz) hissəsi: bonuslardan gəlir, xərclənəndə qəbul edənə nağdlaşan almaz vermir
+  promoCoins         Int        @default(0)
   diamonds           Int        @default(0)
   totalSpent         Int        @default(0)
   totalEarned        Int        @default(0)
   vipTier            VipTier    @default(NONE)
   vipUntil           DateTime?
   firstRechargeDone  Boolean    @default(false)
-  videoCallPrice     Int        @default(60)
-  voiceCallPrice     Int        @default(30)
+  videoCallPrice     Int        @default(80)
+  voiceCallPrice     Int        @default(40)
   online             Boolean    @default(false)
   lastSeenAt         DateTime   @default(now())
   incognito          Boolean    @default(false)

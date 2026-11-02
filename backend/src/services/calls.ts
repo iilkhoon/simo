@@ -3,7 +3,7 @@
  * balans bitəndə avtomatik bitirmə, cavabsız zəngin 40 saniyədən sonra "buraxılmış" olması.
  */
 import { prisma } from '../db.js';
-import { rewardReceiver, spendCoins } from './wallet.js';
+import { rewardReceiver, spend } from './wallet.js';
 import { emitToUser } from '../realtime/hub.js';
 import { AppError } from '../lib/errors.js';
 import { getOrCreateConversation } from '../routes/chat.js';
@@ -33,8 +33,9 @@ export async function chargeMinute(callId: string): Promise<boolean> {
       if (call.status !== 'ACTIVE') return null;
       let balance: number | null = null;
       if (call.pricePerMin > 0) {
-        balance = await spendCoins(tx, call.callerId, call.pricePerMin, 'CALL_SPENT', call.id);
-        await rewardReceiver(tx, call.calleeId, call.pricePerMin, 'CALL_EARNED', call.id);
+        const r = await spend(tx, call.callerId, call.pricePerMin, 'CALL_SPENT', call.id);
+        balance = r.balance;
+        await rewardReceiver(tx, call.calleeId, r.paid, 'CALL_EARNED', call.id);
       }
       await tx.call.update({
         where: { id: callId },

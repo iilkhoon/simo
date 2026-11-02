@@ -2,6 +2,7 @@ import type { Dict } from './az';
 
 const en: Dict = {
   common: {
+    city: 'City',
     yesterday: 'Yesterday',
     ok: 'OK', cancel: 'Cancel', save: 'Save', next: 'Continue', back: 'Back', done: 'Done', close: 'Close',
     retry: 'Try again', loading: 'Loading…', send: 'Send', search: 'Search', seeAll: 'See all',
@@ -12,6 +13,7 @@ const en: Dict = {
     error: 'Something went wrong', permissionDenied: 'Permission denied. Please allow it in Settings.',
   },
   auth: {
+    bubble1: 'Hi there! 👋', bubble2: 'Video call? 📹', bubble3: 'A rose for you 🌹',
     tagline: 'Meet. Talk. Love.',
     welcomeSub: "Azerbaijan's most romantic dating & live streaming platform",
     continuePhone: 'Continue with phone number',
@@ -55,6 +57,7 @@ const en: Dict = {
   },
   tabs: { discover: 'Discover', live: 'Live', videos: 'Videos', chats: 'Chats', me: 'Me' },
   discover: {
+    shared: '{{n}} shared interests', activeNow: 'Active now',
     title: 'Simo', daily: "Today's 10 picks", dailySub: 'Hand-picked for you', nearby: 'Nearby',
     emptyTitle: "That's everyone for now", emptySub: 'New people are joining soon. Try widening your filters.',
     matchTitle: "It's a match! 💞", matchSub: 'You and {{name}} liked each other', sayHi: 'Say hi', keepSwiping: 'Keep swiping',
@@ -62,6 +65,7 @@ const en: Dict = {
     filters: 'Filters', onlineNow: 'Online now', checkinTitle: 'Daily bonus', checkinCta: 'Claim',
   },
   live: {
+    goLiveShort: 'Go live',
     quickVideo: 'Video match', quickVideoSub: 'Face to face with someone new', quickVoice: 'Voice match', quickVoiceSub: 'Just voices, totally relaxed', listeners: '{{n}} listening', videoHint: 'Go live on camera', voiceHint: 'Voice room with 8 seats', titleLabel: 'Title', rules: 'Nudity, insults and spam are not allowed. Streams that break the rules are closed.',
     title: 'Live', popular: 'Popular', new: 'New', nearby: 'Nearby', voice: 'Voice rooms', following: 'Following',
     goLive: 'Go live', startVideo: 'Video live', startVoice: 'Voice room', titlePlaceholder: 'Stream title…', start: 'Start',
@@ -96,7 +100,7 @@ const en: Dict = {
   gifts: { title: 'Gifts', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury', pick: 'Pick a gift' },
   wallet: {
     usage1: 'Messages', usage2: 'Calls', usage3: 'Gifts', secure: 'Payments are processed securely via App Store / Google Play or Epoint', noHistory: 'No transactions yet',
-    title: 'Wallet', balance: 'Simo Coin balance', recharge: 'Buy coins', firstBonus: 'FIRST TOP-UP: ×2 COINS',
+    title: 'Wallet', balance: 'Simo Coin balance', recharge: 'Buy coins', firstBonus: 'FIRST TOP-UP: UP TO 300 BONUS COINS', firstGift: '+{{n}} bonus', promoNote: 'Bonus coins come from rewards and are spent first.',
     history: 'Transactions', bonus: '+{{n}} bonus', popular: 'Popular', success: '+{{n}} coins added! 🎉',
     pending: 'Verifying payment…', failed: 'Payment failed', storeUnavailable: 'Store payments unavailable',
     webTopup: 'Top up on the website (simo.az/topup)',
@@ -119,7 +123,7 @@ const en: Dict = {
     tiers: { SILVER: 'Silver', GOLD: 'Gold', DIAMOND: 'Diamond' },
   },
   earnings: {
-    title: 'My earnings', diamonds: 'Diamond balance', cashValue: '≈ {{azn}} ₼', exchange: 'Exchange to coins', exchangeSub: '{{rate}} diamonds = 1 coin',
+    title: 'My earnings', diamonds: 'Diamond balance', cashValue: '≈ {{azn}} ₼', exchange: 'Exchange to coins', exchangeSub: '{{rate}} diamonds = 1 coin', fee: '{{n}}% service fee',
     withdraw: 'Withdraw', min: 'Minimum {{n}} diamonds', method: 'Method', account: 'Card number / account', amount: 'Diamonds',
     methods: { CARD: 'Bank card', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Via agency' },
     requests: 'Requests', status: { PENDING: 'Pending', APPROVED: 'Approved', PAID: 'Paid', REJECTED: 'Rejected' },

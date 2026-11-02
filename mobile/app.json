@@ -7,8 +7,8 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#F6F0E8",
-    "primaryColor": "#FF4D8D",
+    "backgroundColor": "#F7F2EC",
+    "primaryColor": "#F2344F",
     "description": "Simo — tanış ol, danış, sev. Görüntülü və səsli söhbət, canlı yayınlar, videolar.",
     "ios": {
       "bundleIdentifier": "az.simo.app",
@@ -20,12 +20,21 @@
         "NSMicrophoneUsageDescription": "Simo səsli və görüntülü zənglər, canlı yayınlar üçün mikrofondan istifadə edir.",
         "NSPhotoLibraryUsageDescription": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.",
         "NSLocationWhenInUseUsageDescription": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik.",
-        "UIBackgroundModes": ["audio", "voip", "remote-notification"],
+        "UIBackgroundModes": [
+          "audio",
+          "voip",
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
-          { "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults", "NSPrivacyAccessedAPITypeReasons": ["CA92.1"] }
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
         ]
       }
     },
@@ -34,7 +43,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F6F0E8"
+        "backgroundColor": "#F2344F"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -47,13 +56,17 @@
         "android.permission.VIBRATE",
         "com.android.vending.BILLING"
       ],
-      "blockedPermissions": ["android.permission.READ_PHONE_STATE"]
+      "blockedPermissions": [
+        "android.permission.READ_PHONE_STATE"
+      ]
     },
-    "web": { "favicon": "./assets/favicon.png" },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F6F0E8"
+      "backgroundColor": "#F7F2EC"
     },
     "plugins": [
       "expo-router",
@@ -62,18 +75,62 @@
       "expo-web-browser",
       "expo-font",
       "expo-iap",
-      ["expo-splash-screen", { "image": "./assets/splash.png", "imageWidth": 200, "backgroundColor": "#F6F0E8" }],
-      ["expo-image-picker", { "photosPermission": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.", "cameraPermission": "Selfi və profil şəkli üçün kamera lazımdır." }],
-      ["expo-location", { "locationWhenInUsePermission": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik." }],
-      ["expo-notifications", { "color": "#F2344F", "icon": "./assets/notification-icon.png" }],
-      ["expo-video", { "supportsBackgroundPlayback": false, "supportsPictureInPicture": false }],
-      ["expo-build-properties", { "android": { "minSdkVersion": 24 }, "ios": { "deploymentTarget": "16.4" } }]
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "backgroundColor": "#F7F2EC"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.",
+          "cameraPermission": "Selfi və profil şəkli üçün kamera lazımdır."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F2344F",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          },
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
       "apiUrl": "https://api.simo.az",
       "webUrl": "https://simo.az",
-      "eas": { "projectId": "" }
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }

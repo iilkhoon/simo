@@ -35,8 +35,8 @@ export function ActionSheet({ visible, title, options, onClose }: { visible: boo
 }
 
 export const sheetStyles = StyleSheet.create({
-  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 2, borderBottomWidth: 0, borderColor: colors.ink },
-  grip: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: colors.ink, marginBottom: 6 },
+  sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  grip: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(26,21,18,0.18)', marginBottom: 6 },
 });
 
 const styles = StyleSheet.create({

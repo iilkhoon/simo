@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
-import { rewardReceiver, spendCoins } from '../services/wallet.js';
+import { rewardReceiver, spend } from '../services/wallet.js';
 import { emitToRoom, emitToUser } from '../realtime/hub.js';
 import { getOrCreateConversation } from './chat.js';
 import { notify } from '../services/notify.js';
@@ -37,11 +37,11 @@ export default async function giftRoutes(app: FastifyInstance) {
     const coins = gift.price * b.count;
     let conversationId: string | undefined;
     const result = await prisma.$transaction(async (tx) => {
-      const balance = await spendCoins(tx, me, coins, 'GIFT_SENT', gift.id, `${gift.id}x${b.count}`);
+      const { balance, paid } = await spend(tx, me, coins, 'GIFT_SENT', gift.id, `${gift.id}x${b.count}`);
       const gt = await tx.giftTransaction.create({
         data: { giftId: gift.id, senderId: me, receiverId: b.receiverId, count: b.count, coins, diamonds: 0, context: b.context, contextId: b.contextId },
       });
-      const diamonds = await rewardReceiver(tx, b.receiverId, coins, 'GIFT_RECEIVED', gt.id);
+      const diamonds = await rewardReceiver(tx, b.receiverId, paid, 'GIFT_RECEIVED', gt.id);
       await tx.giftTransaction.update({ where: { id: gt.id }, data: { diamonds } });
       if (b.context === 'LIVE' && b.contextId) {
         await tx.liveRoom.updateMany({ where: { id: b.contextId, status: 'LIVE' }, data: { giftsCoins: { increment: coins } } });

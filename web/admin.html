@@ -10,26 +10,26 @@
   <style>
     .shell { display: grid; grid-template-columns: 230px 1fr; gap: 24px; padding: 24px 0 60px; }
     .side { display: grid; gap: 8px; align-content: start; position: sticky; top: 98px; }
-    .side button { text-align: left; height: 46px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 14px; background: var(--card); font: 700 15px var(--body); color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .side button { text-align: left; height: 46px; padding: 0 16px; border: 0; border-radius: 14px; background: var(--card); font: 700 15px var(--body); color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .side button.on { background: var(--ink); color: var(--paper); }
-    .side .n { min-width: 24px; height: 22px; border-radius: 11px; background: var(--nar); color: #fff; font-size: 12px; display: grid; place-items: center; padding: 0 6px; border: 1.5px solid var(--ink); }
+    .side .n { min-width: 24px; height: 22px; border-radius: 11px; background: var(--nar); color: #fff; font-size: 12px; display: grid; place-items: center; padding: 0 6px; border: 0; }
     .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .kpi { padding: 18px; }
     .kpi b { display: block; font: 800 30px var(--display); letter-spacing: -0.04em; }
     .kpi span { color: var(--ink2); font-size: 13px; font-weight: 600; }
     table { width: 100%; border-collapse: collapse; background: var(--card); }
-    .tbl { border: 2px solid var(--ink); border-radius: 18px; overflow: auto; box-shadow: var(--sh); }
+    .tbl { border: 0; border-radius: 18px; overflow: auto; box-shadow: var(--sh); }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1.5px solid rgba(23,18,15,.12); font-size: 14px; vertical-align: middle; }
     th { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); background: var(--paper2); }
     tr:last-child td { border-bottom: 0; }
     .acts { display: flex; gap: 6px; flex-wrap: wrap; }
-    .mini { height: 32px; padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; font: 700 12px var(--body); cursor: pointer; background: var(--card); color: var(--ink); }
+    .mini { height: 32px; padding: 0 12px; border: 0; border-radius: 999px; font: 700 12px var(--body); cursor: pointer; background: var(--card); color: var(--ink); }
     .mini.ok { background: var(--mint); color: #fff; }
     .mini.no { background: var(--nar); color: #fff; }
     .mini.dk { background: var(--ink); color: var(--paper); }
-    .ph { width: 64px; height: 80px; border-radius: 10px; border: 2px solid var(--ink); object-fit: cover; background: var(--lime); }
-    .av { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; background: var(--lime); }
-    .st { display: inline-block; padding: 2px 8px; border: 1.5px solid var(--ink); border-radius: 6px; font: 800 11px var(--body); }
+    .ph { width: 64px; height: 80px; border-radius: 10px; border: 0; object-fit: cover; background: var(--lime); }
+    .av { width: 36px; height: 36px; border-radius: 50%; border: 0; object-fit: cover; background: var(--lime); }
+    .st { display: inline-block; padding: 2px 8px; border: 0; border-radius: 6px; font: 800 11px var(--body); }
     .login { max-width: 420px; margin: 70px auto; padding: 28px; }
     .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
     .toolbar .input { max-width: 340px; height: 46px; font-size: 15px; }

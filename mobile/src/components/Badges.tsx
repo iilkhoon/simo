@@ -60,7 +60,7 @@ export function CoinPill({ n, onPress, night }: { n: number; onPress?: () => voi
 }
 
 const pillStyles = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingLeft: 10, paddingRight: 5, borderRadius: 20, backgroundColor: colors.coinSoft, borderWidth: 2, borderColor: colors.ink },
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingLeft: 10, paddingRight: 5, borderRadius: 20, backgroundColor: colors.coinSoft },
   text: { fontFamily: fonts.black, fontSize: 14, color: colors.ink },
-  plus: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.coin, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  plus: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
 });

@@ -3,9 +3,9 @@ import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius, tintFor } from '@/theme';
-import { Box, Btn, EmptyState, IconBtn, Loader, PressBox, Screen, T, Tag } from '@/components/ui';
-import { Burst } from '@/components/Burst';
+import { colors, fonts, palette, radius, tintFor } from '@/theme';
+import { Box, Btn, EmptyState, IconBtn, Loader, PressBox, Screen, SpeechBlock, T, Tag } from '@/components/ui';
+import { Mascot } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { CoinPill } from '@/components/Badges';
@@ -89,7 +89,7 @@ export default function Discover() {
       </View>
 
       {me && !me.checkin.doneToday ? (
-        <PressBox onPress={claim} disabled={claiming} bg={colors.coin} r={radius.md} sh={3} style={{ marginBottom: 12 }} inner={styles.checkin}>
+        <PressBox onPress={claim} disabled={claiming} bg={colors.highlight} r={radius.pill} sh={0} style={{ marginBottom: 12 }} inner={styles.checkin}>
           <View style={styles.giftDisc}><Icon name="gift" size={18} color={colors.ink} /></View>
           <Text style={styles.checkinText} numberOfLines={1}>{t('discover.checkinTitle')}</Text>
           <Tag label={`+${nextReward}`} bg={colors.card} />
@@ -99,8 +99,9 @@ export default function Discover() {
 
       {daily.length ? (
         <View style={{ marginBottom: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Tag label={t('discover.daily').toUpperCase()} icon="sparkles" bg={colors.highlight} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <Icon name="sparkles" size={15} color={colors.brand} />
+            <T v="h3" style={{ fontSize: 15 }}>{t('discover.daily')}</T>
           </View>
           <FlatList
             horizontal
@@ -135,21 +136,21 @@ export default function Discover() {
 
       <Modal visible={!!match} transparent animationType="fade" onRequestClose={() => setMatch(null)}>
         <View style={styles.match}>
-          <View style={{ position: 'absolute', top: '12%', zIndex: 0 }}><Burst size={340} points={16} color={colors.coin} /></View>
           <View style={{ zIndex: 1, alignItems: 'center', width: '100%' }}>
-          <Text style={styles.matchTitle}>{t('discover.matchTitle')}</Text>
+          <SpeechBlock color="lime" size="lg" rotate={-4} style={{ alignSelf: 'center' }}>{t('discover.matchTitle')}</SpeechBlock>
           <Text style={styles.matchSub}>{t('discover.matchSub', { name: match?.user.name })}</Text>
-          <View style={{ flexDirection: 'row', marginVertical: 40 }}>
-            <Box r={24} sh={5} bg={tintFor(me?.name)} style={{ transform: [{ rotate: '-8deg' }] }} inner={{ width: 130, height: 160 }}>
+          <View style={{ flexDirection: 'row', marginVertical: 36 }}>
+            <Box r={28} sh={3} bg={tintFor(me?.name)} style={{ transform: [{ rotate: '-8deg' }] }} inner={{ width: 136, height: 172, borderWidth: 4, borderColor: colors.white }}>
               {me?.avatarUrl ? <Image source={{ uri: me.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
             </Box>
-            <Box r={24} sh={5} bg={tintFor(match?.user.name)} style={{ transform: [{ rotate: '8deg' }], marginLeft: -26, marginTop: 20 }} inner={{ width: 130, height: 160 }}>
+            <Box r={28} sh={3} bg={tintFor(match?.user.name)} style={{ transform: [{ rotate: '8deg' }], marginLeft: -26, marginTop: 20 }} inner={{ width: 136, height: 172, borderWidth: 4, borderColor: colors.white }}>
               {match?.user.avatarUrl ? <Image source={{ uri: match.user.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
             </Box>
+            <View style={{ position: 'absolute', alignSelf: 'center', left: 96, top: 62 }}><Mascot size={84} mood="love" color={palette.orange} /></View>
           </View>
           <View style={{ width: '100%', gap: 10 }}>
             <Btn
-              kind="dark"
+              kind="light"
               title={t('discover.sayHi')}
               icon="chat"
               onPress={() => {
@@ -158,7 +159,7 @@ export default function Discover() {
                 if (id) router.push({ pathname: '/chat/[id]', params: { id } });
               }}
             />
-            <Btn kind="light" title={t('discover.keepSwiping')} onPress={() => setMatch(null)} />
+            <Btn kind="ghost" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} title={t('discover.keepSwiping')} onPress={() => setMatch(null)} />
           </View>
           </View>
         </View>
@@ -168,13 +169,13 @@ export default function Discover() {
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 12 },
-  checkin: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 10 },
-  giftDisc: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 12, minHeight: 54 },
+  checkin: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, paddingHorizontal: 7 },
+  giftDisc: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   checkinText: { flex: 1, color: colors.ink, fontFamily: fonts.bold, fontSize: 14 },
-  checkinCta: { color: colors.bg, backgroundColor: colors.ink, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
+  checkinCta: { color: colors.bg, backgroundColor: colors.ink, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
   dailyName: { color: colors.ink, fontSize: 11, marginTop: 5, fontFamily: fonts.semibold },
   match: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: colors.brand },
   matchTitle: { color: colors.white, fontSize: 40, fontFamily: fonts.display, letterSpacing: -1.5, textAlign: 'center', textShadowColor: colors.ink, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0.1 },
-  matchSub: { color: colors.white, fontSize: 16, marginTop: 8, fontFamily: fonts.semibold, textAlign: 'center' },
+  matchSub: { color: colors.white, fontSize: 16, marginTop: 22, fontFamily: fonts.semibold, textAlign: 'center' },
 });

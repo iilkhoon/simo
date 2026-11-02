@@ -1,5 +1,6 @@
 const az = {
   common: {
+    city: 'Şəhər',
     yesterday: 'Dünən',
     ok: 'Oldu', cancel: 'Ləğv et', save: 'Yadda saxla', next: 'Davam', back: 'Geri', done: 'Hazır', close: 'Bağla',
     retry: 'Yenidən cəhd et', loading: 'Yüklənir…', send: 'Göndər', search: 'Axtar', seeAll: 'Hamısı',
@@ -10,6 +11,7 @@ const az = {
     error: 'Xəta baş verdi', permissionDenied: 'İcazə verilmədi. Parametrlərdən icazə verin.',
   },
   auth: {
+    bubble1: 'Salam! 👋', bubble2: 'Video zəng? 📹', bubble3: 'Sənə gül 🌹',
     tagline: 'Tanış ol. Danış. Sev.',
     welcomeSub: 'Azərbaycanın ən romantik tanışlıq və canlı yayım platforması',
     continuePhone: 'Telefon nömrəsi ilə davam et',
@@ -53,6 +55,7 @@ const az = {
   },
   tabs: { discover: 'Kəşf et', live: 'Canlı', videos: 'Videolar', chats: 'Mesajlar', me: 'Mən' },
   discover: {
+    shared: '{{n}} ortaq maraq', activeNow: 'İndi aktiv',
     title: 'Simo', daily: 'Günün 10 seçimi', dailySub: 'Sənin üçün xüsusi seçildi', nearby: 'Yaxınlıqda',
     emptyTitle: 'Hələlik bu qədər', emptySub: 'Yeni insanlar tezliklə gələcək. Axtarış parametrlərini genişləndir.',
     matchTitle: 'Uyğunluq! 💞', matchSub: 'Sən və {{name}} bir-birinizi bəyəndiniz', sayHi: 'Salam yaz', keepSwiping: 'Davam et',
@@ -60,6 +63,7 @@ const az = {
     filters: 'Filtrlər', onlineNow: 'İndi onlayn', checkinTitle: 'Gündəlik bonus', checkinCta: 'Götür',
   },
   live: {
+    goLiveShort: 'Yayına çıx',
     quickVideo: 'Video tanışlıq', quickVideoSub: 'Təsadüfi biri ilə üz-üzə', quickVoice: 'Səsli tanışlıq', quickVoiceSub: 'Yalnız səs, tam rahat', listeners: '{{n}} dinləyici', videoHint: 'Kamera ilə canlı yayın', voiceHint: '8 nəfərlik səsli otaq', titleLabel: 'Başlıq', rules: 'Yayında çılpaqlıq, təhqir və spam qadağandır. Qaydaları pozan yayınlar bağlanır.',
     title: 'Canlı', popular: 'Populyar', new: 'Yeni', nearby: 'Yaxında', voice: 'Səsli otaqlar', following: 'İzlədiklərim',
     goLive: 'Yayına çıx', startVideo: 'Video yayın', startVoice: 'Səsli otaq', titlePlaceholder: 'Yayın başlığı…', start: 'Başla',
@@ -94,7 +98,7 @@ const az = {
   gifts: { title: 'Hədiyyələr', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks', pick: 'Hədiyyə seç' },
   wallet: {
     usage1: 'Mesajlar', usage2: 'Zənglər', usage3: 'Hədiyyələr', secure: 'Ödənişlər App Store / Google Play və ya Epoint vasitəsilə təhlükəsiz həyata keçirilir', noHistory: 'Hələ əməliyyat yoxdur',
-    title: 'Pul kisəsi', balance: 'Simo Coin balansı', recharge: 'Coin yüklə', firstBonus: 'İLK YÜKLƏMƏDƏ ×2 COIN',
+    title: 'Pul kisəsi', balance: 'Simo Coin balansı', recharge: 'Coin yüklə', firstBonus: 'İLK YÜKLƏMƏDƏ 300-dək HƏDİYYƏ COIN', firstGift: '+{{n}} hədiyyə', promoNote: 'Hədiyyə coinlər bonuslardan gəlir və birinci xərclənir.',
     history: 'Əməliyyatlar', bonus: '+{{n}} bonus', popular: 'Populyar', success: '+{{n}} coin yükləndi! 🎉',
     pending: 'Ödəniş yoxlanılır…', failed: 'Ödəniş alınmadı', storeUnavailable: 'Mağaza ödənişi əlçatan deyil',
     webTopup: 'Veb saytdan yüklə (simo.az/topup)',
@@ -117,7 +121,7 @@ const az = {
     tiers: { SILVER: 'Gümüş', GOLD: 'Qızıl', DIAMOND: 'Almaz' } as Record<string, string>,
   },
   earnings: {
-    title: 'Qazancım', diamonds: 'Almaz balansı', cashValue: '≈ {{azn}} ₼', exchange: 'Coinə dəyiş', exchangeSub: '{{rate}} almaz = 1 coin',
+    title: 'Qazancım', diamonds: 'Almaz balansı', cashValue: '≈ {{azn}} ₼', exchange: 'Coinə dəyiş', exchangeSub: '{{rate}} almaz = 1 coin', fee: 'xidmət haqqı {{n}}%',
     withdraw: 'Pul çıxar', min: 'Minimum {{n}} almaz', method: 'Üsul', account: 'Kart nömrəsi / hesab', amount: 'Almaz miqdarı',
     methods: { CARD: 'Bank kartı', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Agentlik vasitəsilə' } as Record<string, string>,
     requests: 'Sorğular', status: { PENDING: 'Gözləmədə', APPROVED: 'Təsdiqləndi', PAID: 'Ödənildi', REJECTED: 'Rədd edildi' } as Record<string, string>,

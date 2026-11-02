@@ -1,3 +1,4 @@
+import { ECON, firstBonus } from '@/lib/economy';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -13,13 +14,13 @@ import { useStore } from '@/store';
 import { STORE } from '@/config';
 import type { CoinPackage } from '@/lib/types';
 
-const CW = (Dimensions.get('window').width - 32 - 6 - 8) / 2;
+const CW = (Dimensions.get('window').width - 32 - 12) / 2;
 
 interface WalletData {
   coins: number; diamonds: number; firstRechargeDone: boolean;
   packages: CoinPackage[];
   history: { id: string; currency: 'COIN' | 'DIAMOND'; amount: number; type: string; createdAt: string }[];
-  rates: { firstRechargeMultiplier: number };
+  rates: { firstRechargeBonus?: { rate: number; max: number } };
 }
 
 export default function Wallet() {
@@ -68,7 +69,7 @@ export default function Wallet() {
   }
 
   if (!data) return <Screen><Header title={t('wallet.title')} /><Loader full /></Screen>;
-  const mult = data.firstRechargeDone ? 1 : data.rates.firstRechargeMultiplier;
+  const first = !data.firstRechargeDone;
 
   return (
     <Screen scroll>
@@ -89,26 +90,28 @@ export default function Wallet() {
 
       {!data.firstRechargeDone ? (
         <Box r={18} sh={3} bg={colors.brand} style={{ marginTop: 10 }} inner={styles.promo}>
-          <View style={styles.x2}><Text style={styles.x2Text}>×2</Text></View>
+          <View style={styles.x2}><Text style={styles.x2Text}>+{ECON.firstRechargeBonusMax}</Text></View>
           <Text style={styles.promoText}>{t('wallet.firstBonus')}</Text>
         </Box>
       ) : null}
 
       <SectionTitle title={t('wallet.recharge')} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         {data.packages.map((p) => {
           const pid = STORE === 'apple' ? p.appleProductId : p.googleProductId;
-          const total = p.coins * mult + p.bonusCoins;
+          const total = p.coins + p.bonusCoins;
+          const gift = first ? firstBonus(total) : 0;
           const pop = !!p.popular;
           return (
-            <PressBox key={p.id} disabled={!!buying} onPress={() => void buy(p)} style={{ width: CW }} r={20} sh={pop ? 5 : 3} bg={pop ? colors.coinSoft : colors.card} inner={styles.pkg}>
+            <PressBox key={p.id} disabled={!!buying} onPress={() => void buy(p)} style={{ width: CW }} r={20} sh={pop ? 3 : 2} bg={pop ? colors.coinSoft : colors.card} inner={styles.pkg}>
               {pop ? <Tag label={t('wallet.popular').toUpperCase()} bg={colors.brand} fg={colors.white} style={styles.popTag} /> : null}
               <CoinIcon size={38} />
               <Text style={styles.coins}>{total.toLocaleString('en-US')}</Text>
               <Text style={styles.bonus} numberOfLines={1}>
-                {mult > 1 ? `${p.coins} ×2` : p.bonusCoins ? `${p.coins}` : ' '}
+                {p.bonusCoins ? `${p.coins}` : ' '}
                 {p.bonusCoins ? ` ${t('wallet.bonus', { n: p.bonusCoins })}` : ''}
               </Text>
+              {gift ? <Tag label={t('wallet.firstGift', { n: gift })} icon="gift" bg={colors.highlight} /> : null}
               <View style={[styles.price, pop && { backgroundColor: colors.brand }]}>
                 {buying === p.id ? <ActivityIndicator color={pop ? colors.white : colors.bg} /> : <Text style={styles.priceText}>{prices[pid] ?? azn(p.priceQepik)}</Text>}
               </View>
@@ -119,7 +122,7 @@ export default function Wallet() {
       {STORE === 'huawei' ? <T v="small" color={colors.textMuted} center style={{ marginTop: 12 }}>{t('wallet.webTopup')}</T> : null}
       <View style={styles.secure}>
         <Icon name="shield" size={16} color={colors.textMuted} />
-        <T v="tiny" color={colors.textMuted} style={{ flex: 1 }}>{t('wallet.secure')}</T>
+        <T v="tiny" color={colors.textMuted} style={{ flex: 1 }}>{t('wallet.secure')} {t('wallet.promoNote')}</T>
       </View>
 
       <SectionTitle title={t('wallet.history')} />
@@ -148,17 +151,17 @@ const styles = StyleSheet.create({
   hero: { padding: 20 },
   heroNum: { color: colors.ink, fontSize: 44, fontFamily: fonts.display, letterSpacing: -1.5 },
   promo: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
-  x2: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.highlight, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-10deg' }] },
+  x2: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.highlight, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-10deg' }] },
   x2Text: { fontFamily: fonts.display, fontSize: 15, color: colors.ink },
   promoText: { color: colors.white, fontFamily: fonts.black, flex: 1, fontSize: 14 },
-  pkg: { padding: 14, alignItems: 'center', gap: 4 },
-  popTag: { position: 'absolute', top: 8, left: 8 },
+  pkg: { padding: 14, paddingTop: 36, alignItems: 'center', gap: 4 },
+  popTag: { position: 'absolute', top: 10, alignSelf: 'center' },
   coins: { color: colors.ink, fontSize: 24, fontFamily: fonts.display, letterSpacing: -0.8, marginTop: 4 },
   bonus: { color: colors.brand, fontSize: 11, fontFamily: fonts.bold, minHeight: 15 },
   price: { marginTop: 8, backgroundColor: colors.ink, borderRadius: radius.pill, height: 38, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   priceText: { color: colors.white, fontFamily: fonts.black, fontSize: 15 },
   secure: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, paddingHorizontal: 4 },
   hist: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1.5, borderColor: colors.hairline },
-  histIcon: { width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  histIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   histAmt: { fontFamily: fonts.black, fontSize: 14 },
 });

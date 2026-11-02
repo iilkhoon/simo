@@ -78,6 +78,6 @@ export default function Upload() {
 }
 
 const styles = StyleSheet.create({
-  box: { height: 360, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 2, borderColor: colors.ink, borderStyle: 'dashed' },
-  input: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, padding: 14, minHeight: 90, textAlignVertical: 'top', borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 15 },
+  box: { height: 360, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderStyle: 'dashed' },
+  input: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, padding: 14, minHeight: 90, textAlignVertical: 'top', fontFamily: fonts.medium, fontSize: 15 },
 });

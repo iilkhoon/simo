@@ -67,10 +67,10 @@ export default function Rewards() {
 
 const styles = StyleSheet.create({
   days: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  day: { width: '22.8%', borderRadius: radius.md, alignItems: 'center', paddingVertical: 10, gap: 4, borderWidth: 2, borderColor: colors.ink },
+  day: { width: '22.8%', borderRadius: radius.md, alignItems: 'center', paddingVertical: 10, gap: 4 },
   dayLabel: { color: colors.ink, fontSize: 11, fontFamily: fonts.bold },
   dayAmount: { color: colors.ink, fontFamily: fonts.black },
-  tick: { position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.online, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  code: { alignSelf: 'flex-start', backgroundColor: colors.coinSoft, borderWidth: 2, borderColor: colors.ink, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, borderStyle: 'dashed' },
+  tick: { position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.online, alignItems: 'center', justifyContent: 'center' },
+  code: { alignSelf: 'flex-start', backgroundColor: colors.coinSoft, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, borderStyle: 'dashed' },
   codeText: { color: colors.ink, fontFamily: fonts.display, fontSize: 20, letterSpacing: 2 },
 });

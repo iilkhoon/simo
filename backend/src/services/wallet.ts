@@ -6,25 +6,40 @@ import type { Tx } from '../db.js';
 import { err } from '../lib/errors.js';
 import { ECONOMY, hostDiamonds } from '../economy.js';
 
-export async function spendCoins(tx: Tx, userId: string, amount: number, type: string, refId?: string, note = '') {
-  if (amount <= 0) return null;
+/**
+ * Coin xərcləyir. Promo (pulsuz) coinlər birinci xərclənir.
+ * Qaytarır: yeni balans və ödənişli hissə (`paid`) — qəbul edənə almaz yalnız ödənişli hissədən yazılır.
+ */
+export async function spend(tx: Tx, userId: string, amount: number, type: string, refId?: string, note = '') {
+  if (amount <= 0) return { balance: null as number | null, paid: 0 };
+  const before = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { promoCoins: true } });
+  const fromPromo = Math.min(Math.max(0, before.promoCoins), amount);
   const res = await tx.user.updateMany({
-    where: { id: userId, coins: { gte: amount } },
-    data: { coins: { decrement: amount }, totalSpent: { increment: amount } },
+    where: { id: userId, coins: { gte: amount }, promoCoins: { gte: fromPromo } },
+    data: { coins: { decrement: amount }, promoCoins: { decrement: fromPromo }, totalSpent: { increment: amount } },
   });
   if (res.count === 0) throw err.insufficient(amount);
   const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { coins: true } });
   await tx.walletTransaction.create({
-    data: { userId, currency: 'COIN', amount: -amount, balanceAfter: u.coins, type, refId, note },
+    data: { userId, currency: 'COIN', amount: -amount, balanceAfter: u.coins, type, refId, note: fromPromo ? `${note}${note ? ' ' : ''}promo:${fromPromo}` : note },
   });
-  return u.coins;
+  return { balance: u.coins as number | null, paid: amount - fromPromo };
 }
 
-export async function creditCoins(tx: Tx, userId: string, amount: number, type: string, refId?: string, note = '') {
+export async function spendCoins(tx: Tx, userId: string, amount: number, type: string, refId?: string, note = '') {
+  return (await spend(tx, userId, amount, type, refId, note)).balance;
+}
+
+/** Coin yazır. `promo: true` — pulsuz bonus coin (nağdlaşan almaz yaratmır). */
+export async function creditCoins(tx: Tx, userId: string, amount: number, type: string, refId?: string, note = '', promo = false) {
   if (amount <= 0) return null;
-  const u = await tx.user.update({ where: { id: userId }, data: { coins: { increment: amount } }, select: { coins: true } });
+  const u = await tx.user.update({
+    where: { id: userId },
+    data: { coins: { increment: amount }, ...(promo ? { promoCoins: { increment: amount } } : {}) },
+    select: { coins: true },
+  });
   await tx.walletTransaction.create({
-    data: { userId, currency: 'COIN', amount, balanceAfter: u.coins, type, refId, note },
+    data: { userId, currency: 'COIN', amount, balanceAfter: u.coins, type, refId, note: promo ? `${note}${note ? ' ' : ''}promo` : note },
   });
   return u.coins;
 }
@@ -42,7 +57,7 @@ export async function spendDiamonds(tx: Tx, userId: string, amount: number, type
 }
 
 /**
- * Coin xərcləndikdə qəbul edənə almaz yazılır. Əgər qəbul edən agentliyə üzvdürsə,
+ * Ödənişli coin xərcləndikdə qəbul edənə almaz yazılır (promo coin hissəsi üçün yazılmır). Əgər qəbul edən agentliyə üzvdürsə,
  * agentlik sahibi platformanın payından komissiya alır.
  */
 export async function rewardReceiver(tx: Tx, receiverId: string, coinsSpent: number, type: string, refId?: string) {

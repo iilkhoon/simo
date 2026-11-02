@@ -84,6 +84,6 @@ export default function Otp() {
 
 const styles = StyleSheet.create({
   boxes: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 32 },
-  box: { width: 48, height: 62, borderRadius: radius.sm, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  box: { width: 48, height: 62, borderRadius: radius.sm, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   digit: { color: colors.ink, fontSize: 26, fontFamily: fonts.display },
 });

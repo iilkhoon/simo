@@ -65,7 +65,7 @@ export default function Phone() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', height: 66 },
-  prefix: { height: '100%', paddingHorizontal: 14, justifyContent: 'center', borderRightWidth: 2, borderColor: colors.ink, backgroundColor: colors.bgSunken },
+  prefix: { height: '100%', paddingHorizontal: 14, justifyContent: 'center', borderRightWidth: 1, borderColor: colors.hairline, backgroundColor: colors.bgSunken },
   prefixText: { color: colors.ink, fontSize: 17, fontFamily: fonts.black },
   input: { flex: 1, color: colors.ink, fontSize: 24, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: '100%', letterSpacing: 0.5 },
 });

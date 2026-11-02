@@ -65,13 +65,13 @@ export default function Vip() {
         <>
           <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
             <Box r={26} sh={6} bg={colors.ink} inner={styles.hero}>
-              <View style={{ position: 'absolute', right: -30, top: -30 }}><Burst size={170} color={colors.coin} points={14} /></View>
-              <View style={{ position: 'absolute', right: 34, top: 30 }}><Icon name="crown" size={56} color={colors.ink} /></View>
+              <View style={{ position: 'absolute', right: -30, top: -30 }}><Burst size={150} color={colors.coin} points={14} /></View>
+              <View style={{ position: 'absolute', right: 22, top: 22 }}><Icon name="crown" size={46} color={colors.ink} /></View>
               <T v="label" color={colors.coin}>SIMO VIP</T>
-              <Text style={styles.title}>{t('vip.heroTitle')}</Text>
+              <Text style={[styles.title, { maxWidth: '68%' }]}>{t('vip.heroTitle')}</Text>
               <T v="small" color={colors.nightMuted} style={{ maxWidth: '62%' }}>{t('vip.subtitle')}</T>
             </Box>
-            <View style={{ flexDirection: 'row', gap: 4, marginTop: 14 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               {plans.map((p) => {
                 const on = sel === p.tier;
                 const c = vipColor(p.tier);
@@ -117,12 +117,12 @@ export default function Vip() {
 }
 
 const styles = StyleSheet.create({
-  hero: { padding: 20, minHeight: 170, justifyContent: 'flex-end' },
+  hero: { padding: 20, paddingTop: 96, minHeight: 170, justifyContent: 'flex-end' },
   title: { color: colors.white, fontSize: 26, fontFamily: fonts.display, letterSpacing: -1, marginVertical: 6, maxWidth: '70%' },
   tier: { padding: 12, paddingTop: 34, alignItems: 'center', gap: 6 },
   tierName: { fontFamily: fonts.displayBold, fontSize: 14 },
   days: { fontFamily: fonts.semibold, fontSize: 11 },
   best: { position: 'absolute', top: 8, alignSelf: 'center' },
   perks: { padding: 18, gap: 14 },
-  check: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  check: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
 });

@@ -254,11 +254,11 @@ export default function Videos() {
 
 const styles = StyleSheet.create({
   pause: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  playDisc: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.card, borderWidth: 2.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', paddingLeft: 6 },
+  playDisc: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', paddingLeft: 6 },
   side: { position: 'absolute', right: 10, bottom: 26, alignItems: 'center', gap: 14 },
-  plus: { marginTop: -11, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  plus: { marginTop: -11, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   sideBtn: { alignItems: 'center', gap: 3 },
-  disc: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  disc: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   sideText: { color: colors.white, fontSize: 12, fontFamily: fonts.black, textShadowColor: colors.ink, textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 1 },
   caption: { position: 'absolute', left: 12, right: 78, bottom: 22, backgroundColor: 'rgba(15,13,12,0.55)', borderRadius: 16, padding: 12 },
   author: { color: colors.white, fontFamily: fonts.black, fontSize: 15 },
@@ -269,6 +269,6 @@ const styles = StyleSheet.create({
   sheet: { paddingTop: 10, paddingHorizontal: 16 },
   sheetTitle: { color: colors.ink, fontFamily: fonts.displayBold, fontSize: 16, textAlign: 'center', marginVertical: 8 },
   inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  input: { flex: 1, backgroundColor: colors.card, color: colors.ink, borderRadius: 22, paddingHorizontal: 16, height: 46, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium },
-  send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, backgroundColor: colors.card, color: colors.ink, borderRadius: 22, paddingHorizontal: 16, height: 46, fontFamily: fonts.medium },
+  send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
 });

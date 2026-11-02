@@ -72,7 +72,7 @@ async function main() {
         name: 'Elvin', gender: 'MALE', birthDate: '1995-05-05', avatarUrl: 'https://x.az/a.jpg', interests: ['music', 'tea'], languages: ['az', 'ru'],
       });
       assert.equal(ok.status, 200, JSON.stringify(ok.data));
-      assert.equal(ok.data.coins, 50, 'qeydiyyat bonusu');
+      assert.equal(ok.data.coins, 30, 'qeydiyyat bonusu (promo)');
       assert.equal(ok.data.interestedIn, 'FEMALE');
       manId = ok.data.id;
       await api('PUT', '/me/location', man, { lat: 40.40, lng: 49.86 });
@@ -142,7 +142,7 @@ async function main() {
     sockets.push(sMan, sGirl);
     await Promise.all([waitFor(sMan, 'connect'), waitFor(sGirl, 'connect')]);
 
-    await step('Mesaj: ilk pulsuz, sonra 10 coin; qız 6 almaz qazanır; real-time çatdırılma', async () => {
+    await step('Mesaj: ilk pulsuz, sonra 10 coin (promo coindən — qıza nağdlaşan almaz yazılmır); real-time çatdırılma', async () => {
       const incoming = waitFor(sGirl, 'message:new');
       const m1 = await api('POST', `/conversations/${convId}/messages`, man, { text: 'Salam! Nömrəm +994 50 123 45 67' });
       assert.equal(m1.status, 200, JSON.stringify(m1.data));
@@ -152,46 +152,47 @@ async function main() {
       assert.equal(got.id, m1.data.message.id);
       const m2 = await api('POST', `/conversations/${convId}/messages`, man, { text: 'Necəsən?' });
       assert.equal(m2.data.message.coinsCost, 10);
-      assert.equal(m2.data.coins, 40);
+      assert.equal(m2.data.coins, 20);
       const g = await api('GET', '/me', girl);
-      assert.equal(g.data.diamonds, 6);
+      assert.equal(g.data.diamonds, 0, 'promo coin almaz yaratmır');
       const reply = await api('POST', `/conversations/${convId}/messages`, girl, { text: 'Yaxşıyam 😊' });
       assert.equal(reply.data.message.coinsCost, 0, 'hostun cavabı pulsuzdur');
       const convs = await api('GET', '/conversations', man);
       assert.equal(convs.data.items[0].unread, 1);
     });
 
-    await step('Coin alışı (dev): ilk yükləmə ×2', async () => {
+    await step('Coin alışı (dev): ilk yükləmə hədiyyəsi ≤300 promo coin', async () => {
       const r = await api('POST', '/payments/dev/purchase', man, { packageId: 'coins_600' });
-      assert.equal(r.data.credited, 1320);
-      const r2 = await api('POST', '/payments/dev/purchase', man, { packageId: 'coins_100' });
-      assert.equal(r2.data.credited, 100);
-      const me = await api('GET', '/me', man);
-      assert.equal(me.data.coins, 40 + 1320 + 100);
+      assert.equal(r.data.credited, 630 + 300);
+      const r2 = await api('POST', '/payments/dev/purchase', man, { packageId: 'coins_1300' });
+      assert.equal(r2.data.credited, 1400, 'ikinci alışda hədiyyə yoxdur');
+      const u = await prisma.user.findUniqueOrThrow({ where: { id: manId } });
+      assert.equal(u.coins, 20 + 930 + 1400);
+      assert.equal(u.promoCoins, 20 + 300);
     });
 
     await step('Hədiyyə göndərmə (söhbətdə) + balans yoxlaması', async () => {
       const gifts = await api('GET', '/gifts');
       assert.ok(gifts.data.items.length >= 18);
       const recv = waitFor(sGirl, 'gift:received');
-      const r = await api('POST', '/gifts/send', man, { giftId: 'teddy', receiverId: girlId, count: 5, context: 'CHAT' });
+      const r = await api('POST', '/gifts/send', man, { giftId: 'teddy', receiverId: girlId, count: 10, context: 'CHAT' });
       assert.equal(r.status, 200, JSON.stringify(r.data));
-      assert.equal(r.data.coins, 1460 - 250);
+      assert.equal(r.data.coins, 2350 - 500);
       const ev = await recv;
       assert.equal(ev.gift.id, 'teddy');
       const tooMuch = await api('POST', '/gifts/send', man, { giftId: 'love_planet', receiverId: girlId, count: 1, context: 'CHAT' });
       assert.equal(tooMuch.status, 402);
       assert.equal(tooMuch.data.error, 'INSUFFICIENT_COINS');
       const g = await api('GET', '/me', girl);
-      assert.equal(g.data.diamonds, 6 + 150);
+      assert.equal(g.data.diamonds, (500 - 320) * 0.5, 'yalnız ödənişli hissədən (180 coin) 50%');
     });
 
     await step('VIP Silver alışı və gündəlik bonus', async () => {
       const v = await api('POST', '/vip/buy', man, { tier: 'SILVER' });
       assert.equal(v.data.vipTier, 'SILVER');
-      assert.equal(v.data.coins, 1210 - 500);
+      assert.equal(v.data.coins, 1850 - 500);
       const c = await api('POST', '/rewards/checkin', man);
-      assert.equal(c.data.amount, 5);
+      assert.equal(c.data.amount, 3);
       const c2 = await api('POST', '/rewards/checkin', man);
       assert.equal(c2.data.error, 'ALREADY_CHECKED_IN');
       const m = await api('POST', `/conversations/${convId}/messages`, man, { text: 'VIP pulsuz mesaj' });
@@ -200,7 +201,7 @@ async function main() {
 
     await step('Görüntülü zəng: zəng, qəbul, ilk dəqiqə ödənişi, bitirmə', async () => {
       const price = await api('GET', `/calls/price/${girlId}`, man);
-      assert.equal(price.data.VIDEO, 57, 'Silver 5% endirim: 60 → 57');
+      assert.equal(price.data.VIDEO, 76, 'Silver 5% endirim: 80 → 76');
       const incoming = waitFor(sGirl, 'call:incoming');
       const c = await api('POST', '/calls', man, { calleeId: girlId, type: 'VIDEO' });
       assert.equal(c.status, 200, JSON.stringify(c.data));
@@ -211,12 +212,12 @@ async function main() {
       assert.equal(a.status, 200, JSON.stringify(a.data));
       await accepted;
       const me = await api('GET', '/me', man);
-      assert.equal(me.data.coins, 715 - 57);
+      assert.equal(me.data.coins, 1353 - 76);
       const ended = waitFor(sGirl, 'call:ended');
       await api('POST', `/calls/${c.data.call.id}/end`, man);
       const e = await ended;
       assert.equal(e.status, 'ENDED');
-      assert.equal(e.coinsSpent, 57);
+      assert.equal(e.coinsSpent, 76);
       const busy = await api('POST', '/calls', man, { calleeId: girlId, type: 'VOICE' });
       assert.equal(busy.status, 200);
       await api('POST', `/calls/${busy.data.call.id}/reject`, girl);
@@ -290,24 +291,24 @@ async function main() {
       await api('POST', `/agencies/requests/${dash.data.requests[0].id}/approve`, agent);
       await api('POST', '/gifts/send', man, { giftId: 'bouquet', receiverId: girlId, count: 1, context: 'PROFILE' });
       const ag = await api('GET', '/me', agent);
-      assert.equal(ag.data.diamonds, Math.floor(Math.floor(99 * 0.6) * 0.1), 'agentlik komissiyası');
+      assert.equal(ag.data.diamonds, Math.floor(Math.floor(99 * 0.5) * 0.1), 'agentlik komissiyası');
       const dash2 = await api('GET', '/agencies/me', agent);
       assert.equal(dash2.data.stats.members, 1);
       assert.ok(dash2.data.members[0].weekDiamonds > 0);
     });
 
     await step('Almaz mübadiləsi və nağdlaşdırma sorğusu', async () => {
-      await prisma.user.update({ where: { id: girlId }, data: { diamonds: { increment: 6000 } } });
+      await prisma.user.update({ where: { id: girlId }, data: { diamonds: { increment: 12000 } } });
       const ex = await api('POST', '/wallet/exchange', girl, { diamonds: 101 });
       assert.equal(ex.status, 200);
-      const w = await api('POST', '/wallet/withdraw', girl, { diamonds: 5000, method: 'CARD', account: '4169 7388 0000 0000' });
+      const w = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169 7388 0000 0000' });
       assert.equal(w.status, 200, JSON.stringify(w.data));
-      assert.equal(w.data.withdrawal.amountQepik, 5000);
-      const w2 = await api('POST', '/wallet/withdraw', girl, { diamonds: 5000, method: 'CARD', account: '4169' });
+      assert.equal(w.data.withdrawal.amountQepik, 5000 - 150, '200 almaz = 1 ₼, 3% xidmət haqqı');
+      const w2 = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169' });
       assert.equal(w2.data.error, 'WITHDRAW_PENDING');
       const before = (await api('GET', '/me', girl)).data.diamonds;
       await api('POST', `/admin/withdrawals/${w.data.withdrawal.id}`, admin, { status: 'REJECTED' });
-      assert.equal((await api('GET', '/me', girl)).data.diamonds, before + 5000, 'rədd edildikdə qaytarılır');
+      assert.equal((await api('GET', '/me', girl)).data.diamonds, before + 10000, 'rədd edildikdə qaytarılır');
     });
 
     await step('Şikayət, blok, profil baxışı', async () => {
@@ -339,13 +340,13 @@ async function main() {
       }
     });
 
-    await step('Dəvət: qısa ID ilə qeydiyyat, dəvət edənə ilk alışın 10%-i', async () => {
+    await step('Dəvət: qısa ID ilə qeydiyyat, dəvət edənə ilk alışın 10%-i (promo)', async () => {
       const manShort = (await api('GET', '/me', man)).data.shortId;
       const before = (await api('GET', '/me', man)).data.coins;
       const r = await api('POST', '/auth/email/register', undefined, { email: `ref${stamp}@test.az`, password: 'secret123', referralCode: String(manShort) });
       await api('PUT', '/me/onboarding', r.data.accessToken, { name: 'Ref', gender: 'MALE', birthDate: '1990-01-01', avatarUrl: 'https://x.az/r.jpg' });
       await api('POST', '/payments/dev/purchase', r.data.accessToken, { packageId: 'coins_1300' });
-      assert.equal((await api('GET', '/me', man)).data.coins, before + 150, '1300+200 bonus coinin 10%-i');
+      assert.equal((await api('GET', '/me', man)).data.coins, before + 140, '1300+100 coinin 10%-i (promo, ≤200)');
     });
 
     await step('Hesabın silinməsi', async () => {

@@ -49,7 +49,7 @@ export default function Notifications() {
                 <Text style={font.tiny}>{timeAgo(item.createdAt)}</Text>
               </View>
               {item.type === 'gift' && item.data?.giftId ? <GiftIcon id={item.data.giftId} size={36} /> : null}
-              {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand, borderWidth: 1.5, borderColor: colors.ink }} /> : null}
+              {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand }} /> : null}
             </Pressable>
           )}
         />

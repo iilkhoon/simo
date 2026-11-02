@@ -102,7 +102,6 @@ function Bubble({ m, mine, read, first, last }: { m: Message; mine: boolean; rea
   return (
     <View style={[styles.row, mine && { justifyContent: 'flex-end' }, { marginTop: first ? 8 : 2 }]}>
       <View style={[styles.bubbleWrap, last && { marginBottom: 3, marginRight: mine ? 3 : 0 }]}>
-        {last ? <View style={[styles.bubbleShadow, shape, { borderRadius: r, ...shape }]} /> : null}
         <View style={[styles.bubble, mine ? styles.mine : styles.theirs, { borderRadius: r }, shape, m.mediaUrl ? { padding: 4 } : null]}>
           {m.mediaUrl ? <Image source={{ uri: m.mediaUrl }} style={styles.img} contentFit="cover" /> : null}
           {m.text ? <Text style={[styles.text, mine && { color: colors.white }, m.mediaUrl ? { paddingHorizontal: 8, paddingTop: 4 } : null]}>{m.text}</Text> : null}
@@ -356,14 +355,14 @@ export default function Chat() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 10, borderBottomWidth: 2, borderColor: colors.ink, backgroundColor: colors.card },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, borderBottomWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card },
   who: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   name: { color: colors.ink, fontSize: 16, fontFamily: fonts.bold, flexShrink: 1 },
   status: { color: colors.textDim, fontSize: 12, fontFamily: fonts.semibold },
   row: { flexDirection: 'row' },
   bubbleWrap: { maxWidth: '80%' },
   bubbleShadow: { position: 'absolute', left: 3, top: 3, right: -3, bottom: -3, backgroundColor: colors.ink },
-  bubble: { paddingHorizontal: 13, paddingTop: 8, paddingBottom: 6, borderWidth: 2, borderColor: colors.ink, overflow: 'hidden' },
+  bubble: { paddingHorizontal: 13, paddingTop: 8, paddingBottom: 6, overflow: 'hidden' },
   mine: { backgroundColor: colors.brand },
   theirs: { backgroundColor: colors.card },
   text: { color: colors.ink, fontSize: 15.5, lineHeight: 21, fontFamily: fonts.regular },
@@ -375,23 +374,23 @@ const styles = StyleSheet.create({
   giftTitle: { color: colors.ink, fontFamily: fonts.black, fontSize: 14 },
   day: { alignSelf: 'center', marginVertical: 12, paddingHorizontal: 12, height: 24, borderRadius: 12, backgroundColor: colors.ink, justifyContent: 'center' },
   dayText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.5 },
-  callRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 6, padding: 8, paddingRight: 8, borderRadius: 16, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.card },
-  callIcon: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  callRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 6, padding: 8, paddingRight: 8, borderRadius: 16, backgroundColor: colors.card },
+  callIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   callLabel: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13.5 },
   callTime: { color: colors.textDim, fontFamily: fonts.semibold, fontSize: 11 },
   callBack: { marginLeft: 6, backgroundColor: colors.ink, borderRadius: 12, paddingHorizontal: 10, height: 28, justifyContent: 'center' },
   callBackText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 12 },
   safety: { color: colors.textDim, fontSize: 11, textAlign: 'center', marginVertical: 8, fontFamily: fonts.medium, maxWidth: 280, alignSelf: 'center' },
-  composerWrap: { borderTopWidth: 2, borderColor: colors.ink, backgroundColor: colors.card },
+  composerWrap: { borderTopWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card },
   ice: { gap: 8, paddingHorizontal: 12, paddingTop: 10 },
-  iceChip: { borderWidth: 2, borderColor: colors.ink, borderRadius: radius.pill, paddingHorizontal: 12, height: 34, justifyContent: 'center', backgroundColor: colors.highlight },
+  iceChip: { borderRadius: radius.pill, paddingHorizontal: 12, height: 34, justifyContent: 'center', backgroundColor: colors.highlight },
   iceText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13 },
   strip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 10 },
-  qg: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: colors.ink, backgroundColor: colors.coinSoft, alignItems: 'center', justifyContent: 'center' },
+  qg: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coinSoft, alignItems: 'center', justifyContent: 'center' },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10 },
-  plus: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  inputBox: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.bg, paddingLeft: 14, paddingRight: 4 },
+  plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  inputBox: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 44, borderRadius: 22, backgroundColor: colors.bg, paddingLeft: 14, paddingRight: 4 },
   input: { flex: 1, color: colors.ink, paddingTop: 11, paddingBottom: 11, maxHeight: 120, fontSize: 15.5, fontFamily: fonts.medium },
-  giftBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coin, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', marginBottom: 3 },
-  send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  giftBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center', marginBottom: 3 },
+  send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
 });

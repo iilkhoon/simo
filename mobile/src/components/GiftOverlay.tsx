@@ -84,7 +84,6 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {banner ? (
         <Animated.View style={[styles.banner, { transform: [{ translateX: bannerX }] }]}>
-          <View style={styles.bannerShadow} />
           <View style={styles.bannerInner}>
             <Avatar uri={banner.sender.avatarUrl} name={banner.sender.name} size={32} />
             <View style={{ maxWidth: 120 }}>
@@ -117,12 +116,12 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
 const styles = StyleSheet.create({
   banner: { position: 'absolute', left: 10, top: '36%', flexDirection: 'row', alignItems: 'center' },
   bannerShadow: { position: 'absolute', left: 3, top: 3, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.ink },
-  bannerInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, paddingRight: 8, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink },
+  bannerInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, paddingRight: 8, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.card },
   bannerName: { color: colors.ink, fontFamily: fonts.black, fontSize: 13 },
   bannerSub: { color: colors.brand, fontFamily: fonts.bold, fontSize: 11 },
-  combo: { color: colors.coin, fontSize: 34, fontFamily: fonts.display, marginLeft: 10, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0.1 },
+  combo: { color: colors.coin, fontSize: 34, fontFamily: fonts.display, marginLeft: 10, textShadowColor: 'rgba(0,0,0,0.18)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
   center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  bigLabel: { marginTop: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, alignItems: 'center', maxWidth: 260 },
+  bigLabel: { marginTop: 10, backgroundColor: colors.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, alignItems: 'center', maxWidth: 260 },
   bigText: { color: colors.ink, fontSize: 16, fontFamily: fonts.displayBold },
   bigSub: { color: colors.brand, fontSize: 13, fontFamily: fonts.black },
 });

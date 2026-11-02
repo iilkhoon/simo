@@ -5,7 +5,7 @@ import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
 import { ECONOMY, activeVip, todayKey } from '../economy.js';
-import { rewardReceiver, spendCoins } from '../services/wallet.js';
+import { rewardReceiver, spend } from '../services/wallet.js';
 import { emitToUser } from '../realtime/hub.js';
 import { notify } from '../services/notify.js';
 
@@ -152,8 +152,8 @@ export default async function chatRoutes(app: FastifyInstance) {
         await tx.user.update({ where: { id: me }, data: { freeMsgDate: todayKey(), freeMsgUsed: (pricing.vipUsed ?? 0) + 1 } });
       }
       if (pricing.price > 0) {
-        await spendCoins(tx, me, pricing.price, 'MESSAGE_SENT', m.id);
-        await rewardReceiver(tx, otherId, pricing.price, 'MESSAGE_EARNED', m.id);
+        const { paid } = await spend(tx, me, pricing.price, 'MESSAGE_SENT', m.id);
+        await rewardReceiver(tx, otherId, paid, 'MESSAGE_EARNED', m.id);
       }
       const now = new Date();
       await tx.conversation.update({

@@ -172,5 +172,5 @@ const styles = StyleSheet.create({
   name: { color: colors.ink, fontSize: 16, fontFamily: fonts.bold, flexShrink: 1 },
   last: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.regular },
   time: { color: colors.textDim, fontSize: 12, fontFamily: fonts.semibold },
-  hostDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.coin, borderWidth: 1.5, borderColor: colors.ink },
+  hostDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.coin },
 });

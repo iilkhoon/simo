@@ -14,7 +14,7 @@ import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { Toasts } from '@/components/Toasts';
 import { useFonts } from 'expo-font';
-import { Unbounded_600SemiBold, Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
+import { Geologica_600SemiBold, Geologica_700Bold, Geologica_800ExtraBold, Geologica_900Black } from '@expo-google-fonts/geologica';
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { IncomingCall } from '@/components/IncomingCall';
 import type { Call, Message, PublicUser } from '@/lib/types';
@@ -103,7 +103,7 @@ function useAuthGate() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Unbounded_600SemiBold, Unbounded_700Bold, Unbounded_800ExtraBold,
+    Geologica_600SemiBold, Geologica_700Bold, Geologica_800ExtraBold, Geologica_900Black,
     Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold,
   });
   // Şrift yüklənməsə belə tətbiq sistem şrifti ilə açılır

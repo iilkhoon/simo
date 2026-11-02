@@ -171,12 +171,12 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   progress: { flexDirection: 'row', gap: 5, marginTop: 8 },
-  progressBar: { flex: 1, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: colors.ink },
-  bigInput: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, fontSize: 22, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: 64, borderWidth: 2, borderColor: colors.ink },
+  progressBar: { flex: 1, height: 8, borderRadius: 4 },
+  bigInput: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, fontSize: 22, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: 64 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
-  optIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  optIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  remove: { position: 'absolute', top: 6, right: 6, backgroundColor: colors.card, borderRadius: 11, width: 22, height: 22, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderStyle: 'dashed', borderWidth: 2, borderColor: 'rgba(26,21,18,0.18)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  remove: { position: 'absolute', top: 6, right: 6, backgroundColor: colors.card, borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   bonus: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
 });

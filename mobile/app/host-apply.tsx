@@ -72,6 +72,6 @@ export default function HostApply() {
 
 const styles = StyleSheet.create({
   hero: { padding: 22, alignItems: 'center', gap: 12 },
-  heroIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  selfie: { width: 160, height: 210, borderRadius: radius.lg, alignSelf: 'center', marginBottom: 14, borderWidth: 2.5, borderColor: colors.ink },
+  heroIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  selfie: { width: 160, height: 210, borderRadius: radius.lg, alignSelf: 'center', marginBottom: 14 },
 });

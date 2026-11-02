@@ -8,7 +8,7 @@ import type { PublicUser } from '../lib/types';
 import { Box, Btn, EmptyState, Header, Loader, Screen, T, Tag } from './ui';
 import { UserTile } from './UserTile';
 
-const TW = (Dimensions.get('window').width - 32 - 24) / 3;
+const TW = (Dimensions.get('window').width - 32 - 16) / 3;
 
 /** "Məni bəyənənlər" və "Profilimə baxanlar" — VIP olmayanlara bulanıq göstərilir (maraq oyadır) */
 export function LockedGrid({ endpoint, title, lockedText, emptyTitle }: { endpoint: string; title: string; lockedText: (n: number) => string; emptyTitle: string }) {

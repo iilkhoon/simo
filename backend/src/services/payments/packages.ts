@@ -8,7 +8,7 @@ import type { PaymentProvider } from '../../generated/prisma/client.js';
 
 /**
  * Ödənişi idempotent şəkildə tamamlayır: eyni xarici ID ilə ikinci dəfə coin yazılmır.
- * İlk yükləmədə coin ×2, dəvət edənə bonus.
+ * İlk yükləmədə promo hədiyyə (≤300 coin), dəvət edənə promo bonus.
  */
 export async function fulfillPayment(paymentId: string, raw?: unknown) {
   const result = await prisma.$transaction(async (tx: Tx) => {
@@ -22,16 +22,19 @@ export async function fulfillPayment(paymentId: string, raw?: unknown) {
       where: { id: p.userId },
       select: { firstRechargeDone: true, referredById: true },
     });
-    let coins = p.coins;
+    let balance = await creditCoins(tx, p.userId, p.coins, 'PURCHASE', p.id, `${p.provider}:${p.packageId}`);
+    let bonus = 0;
     if (!user.firstRechargeDone) {
-      coins = p.coins * ECONOMY.firstRechargeMultiplier;
+      // İlk yükləmə hədiyyəsi — promo coin (məhdud), nağdlaşan almaz yaratmır
+      bonus = Math.min(ECONOMY.firstRechargeBonusMax, Math.floor(p.coins * ECONOMY.firstRechargeBonusRate));
       await tx.user.update({ where: { id: p.userId }, data: { firstRechargeDone: true } });
+      balance = (await creditCoins(tx, p.userId, bonus, 'FIRST_RECHARGE_BONUS', p.id, '', true)) ?? balance;
       if (user.referredById) {
-        await creditCoins(tx, user.referredById, Math.floor(p.coins * ECONOMY.referralShare), 'REFERRAL', p.userId);
+        const ref = Math.min(ECONOMY.referralMax, Math.floor(p.coins * ECONOMY.referralShare));
+        await creditCoins(tx, user.referredById, ref, 'REFERRAL', p.userId, '', true);
       }
     }
-    const balance = await creditCoins(tx, p.userId, coins, 'PURCHASE', p.id, `${p.provider}:${p.packageId}`);
-    return { payment: p, credited: coins, balance, already: false };
+    return { payment: p, credited: p.coins + bonus, balance, already: false };
   });
   if (!result.already) {
     emitToUser(result.payment.userId, 'wallet:update', { coins: result.balance, credited: result.credited });

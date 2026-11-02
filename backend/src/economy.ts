@@ -1,40 +1,57 @@
 /**
- * Simo iqtisadiyyatı — bütün qiymətlər və nisbətlər bir yerdə.
+ * Simo iqtisadiyyatı — bütün qiymətlər və nisbətlər bir yerdə. Ətraflı hesablama: /docs/ECONOMY.md
  *
  *  Simo Coin  — istifadəçinin pulla aldığı valyuta (mesaj, zəng, hədiyyə, VIP).
- *  Simo Almaz — qəbul edənin qazandığı valyuta (nağd pula çevrilir və ya coinə dəyişilir).
+ *               1 coin ≈ 1.09–1.99 qəpik (paketdən asılı).
+ *  Promo coin — bonuslardan gələn pulsuz coin (qeydiyyat, gündəlik bonus, dəvət, ilk yükləmə hədiyyəsi).
+ *               Xərclənə bilər, amma qəbul edənə NAĞDLAŞAN ALMAZ VERMİR (fırıldağa qarşı) və həmişə birinci xərclənir.
+ *  Simo Almaz — qəbul edənin qazandığı valyuta. 200 almaz = 1 ₼ (1 almaz = 0.5 qəpik).
  *
- *  1 coin ≈ 0.02 ₼ (paketdən asılı), 100 almaz = 1 ₼ nağdlaşdırma.
+ *  Pul axını (1 ödənişli coin xərcləndikdə):
+ *    host:      0.5 almaz = 0.25 qəpik
+ *    agentlik:  hostun almazının 10%-i (platforma payından) = 0.025 qəpik
+ *    platforma: qalan hissə — mağaza komissiyasından (15–30%) sonra belə ödənişin ~60–85%-i
  */
 import type { VipTier } from './generated/prisma/client.js';
 
 export const ECONOMY = {
-  /** Qəbul edənin coin dəyərindən aldığı pay (almaz şəklində) */
-  hostShare: 0.6,
+  /** Qəbul edənin ödənişli coin dəyərindən aldığı pay (almaz şəklində) */
+  hostShare: 0.5,
   /** Agentliyə platformanın payından ödənilən komissiya (hostun qazandığı almazın %-i) */
   defaultAgencyCommission: 0.1,
   /** Təsdiqlənmiş hosta (qıza) göndərilən hər mesajın qiyməti */
   messagePrice: 10,
   /** Yeni söhbətdə ilk mesaj pulsuzdur (buz qırıcı) */
   firstMessageFree: true,
-  videoCallPrice: { min: 30, max: 300, default: 60 },
-  voiceCallPrice: { min: 15, max: 150, default: 30 },
-  /** Qeydiyyat bonusu */
-  signupBonus: 50,
-  /** 7 günlük giriş bonusu dövrü */
-  checkinRewards: [5, 5, 10, 10, 15, 20, 50],
-  /** İlk yükləmədə coin ×2 */
-  firstRechargeMultiplier: 2,
-  /** Dəvət edən şəxs, dəvət olunanın ilk alışından bu payı alır */
+  videoCallPrice: { min: 40, max: 400, default: 80 },
+  voiceCallPrice: { min: 20, max: 200, default: 40 },
+  /** Qeydiyyat bonusu (promo) */
+  signupBonus: 30,
+  /** 7 günlük giriş bonusu dövrü (promo) */
+  checkinRewards: [3, 3, 5, 5, 8, 10, 20],
+  /** İlk yükləmə hədiyyəsi: alınan coinlərin 100%-i qədər, ən çox 300 promo coin */
+  firstRechargeBonusRate: 1,
+  firstRechargeBonusMax: 300,
+  /** Dəvət edən şəxs dəvət olunanın ilk alışından bu payı promo coin kimi alır (ən çox 200) */
   referralShare: 0.1,
-  /** Almaz → coin mübadiləsi: 2 almaz = 1 coin */
-  diamondsPerCoin: 2,
-  /** Nağdlaşdırma: 100 almaz = 1 ₼ (100 qəpik) → 1 almaz = 1 qəpik */
-  qepikPerDiamond: 1,
-  minWithdrawDiamonds: 5000,
+  referralMax: 200,
+  /** Almaz → coin mübadiləsi: 3 almaz = 1 coin (nağdlaşdırmadan bir az sərfəli deyil — pul platformada qalır) */
+  diamondsPerCoin: 3,
+  /** Nağdlaşdırma: 200 almaz = 1 ₼ → 1 almaz = 0.5 qəpik */
+  diamondsPerAzn: 200,
+  minWithdrawDiamonds: 10000,
+  /** Çıxarış xidmət haqqı (bank/köçürmə xərcini örtür) */
+  withdrawFeeRate: 0.03,
   freeDailyLikes: 50,
   freeDailySuperLikes: 1,
 } as const;
+
+/** Almazın nağd dəyəri (qəpik), çıxarış haqqı çıxılmaqla */
+export function withdrawQepik(diamonds: number): { gross: number; fee: number; net: number } {
+  const gross = Math.floor((diamonds * 100) / ECONOMY.diamondsPerAzn);
+  const fee = Math.ceil(gross * ECONOMY.withdrawFeeRate);
+  return { gross, fee, net: gross - fee };
+}
 
 export interface VipPlan {
   tier: Exclude<VipTier, 'NONE'>;

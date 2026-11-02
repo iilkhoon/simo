@@ -157,9 +157,9 @@ export default function Agency() {
 
 const styles = StyleSheet.create({
   hero: { padding: 20, gap: 12 },
-  heroIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  statsRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 2, borderColor: colors.ink, paddingVertical: 12 },
+  heroIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  statsRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, paddingVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1.5, borderColor: colors.hairline },
-  small: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.ink },
+  small: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   smallText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12 },
 });

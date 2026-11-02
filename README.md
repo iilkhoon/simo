@@ -39,13 +39,15 @@ Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
   - Buz-qıran cavablar, bir toxunuşla hədiyyələr.
   - Zəng tarixçəsi və geri zəng.
 - **İqtisadiyyat:**
-  - İstifadəçi Simo Coin xərcləyir, host isə almaz qazanır (60%).
+  - İstifadəçi Simo Coin xərcləyir, host isə ödənişli coin dəyərinin 50%-i qədər almaz qazanır.
   - Agentlik hostların qazancından 10% komissiya alır. Komissiya platformanın payından ödənir.
-  - Almaz pula çevrilir: 100 almaz = 1 ₼, minimum 5000 almaz.
+  - Almaz pula çevrilir: 200 almaz = 1 ₼, minimum 10 000 almaz, 3% xidmət haqqı.
+  - Bonus (promo) coinlər birinci xərclənir və nağdlaşan almaz yaratmır — bonus fırıldağının qarşısını alır.
+  - Platformanın payı mağaza komissiyasından sonra belə gəlirin ~60–85%-idir. Hesablama: [docs/ECONOMY.md](docs/ECONOMY.md).
 - **Bonuslar:**
-  - Qeydiyyatda 50 coin hədiyyə və ilk yükləmədə ×2.
-  - 7 günlük gündəlik bonus.
-  - Dəvət edən şəxs dəvət etdiyi istifadəçinin ilk alışından 10% alır.
+  - Qeydiyyatda 30 coin hədiyyə və ilk yükləmədə 300 coinədək hədiyyə (promo).
+  - 7 günlük gündəlik bonus (promo coin).
+  - Dəvət edən şəxs dəvət etdiyi istifadəçinin ilk alışından 10% alır (promo, ən çox 200 coin).
 - **VIP:** Gümüş, Qızıl və Almaz səviyyələri. Hər səviyyə pulsuz mesaj, zəng endirimi, "məni kim bəyənib", görünməz rejim və boost verir.
 - **Qısa videolar:** TikTok tipli lent. İstifadəçilər bəyənə, şərh yaza və hədiyyə göndərə bilər.
 - **Təhlükəsizlik:**
@@ -161,5 +163,5 @@ npx eas-cli@latest build --profile huawei --platform android
 
 ## Dizayn
 
-"Nar" dizayn sistemi yumşaq neobrutalizm üslubundadır: kağız fon, qara konturlar, sərt kölgələr, Unbounded və Onest şriftləri.
+"Nar 2" dizayn sistemi: foto-birinci, yumşaq kartlar (iri radius, yumşaq kölgə) + oynaq brend qatı (düz rəng blokları, çat-qabarcığı başlıqlar, "Nari" nar maskotu). Yayın, zəng və video ekranları tünd premium rejimdədir. Şriftlər: Geologica və Onest.
 Brend rəngi nar qırmızısıdır (`#F2344F`). Ətraflı məlumat [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) faylındadır.

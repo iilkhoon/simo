@@ -20,11 +20,11 @@ const MAP = {
   chatsOutline: 'chatbubbles-outline', playOutline: 'play-circle-outline', liveOutline: 'radio-outline', headset: 'headset',
   micOutline: 'mic-outline', videocamOutline: 'videocam-outline', callOutline: 'call-outline', end: 'call', hand: 'hand-left',
   sofa: 'cafe', globe: 'earth', male: 'male', female: 'female', heartDislike: 'close', sparklesOutline: 'sparkles-outline',
-  attach: 'add', pin: 'location-outline', dots: 'ellipsis-vertical', check2: 'checkmark-done', tv: 'tv-outline',
+  attach: 'add', pin: 'location-outline', dots: 'ellipsis-vertical', check2: 'checkmark-done', tv: 'tv-outline', dot: 'ellipse', home: 'home', homeOutline: 'home-outline', nazar: 'eye-outline', bolt: 'flash-outline', users: 'people-outline',
 } as const;
 
 export type IconName = keyof typeof MAP;
 
-export function Icon({ name, size = 22, color = '#17120F' }: { name: IconName; size?: number; color?: string }) {
+export function Icon({ name, size = 22, color = '#1A1512' }: { name: IconName; size?: number; color?: string }) {
   return <Ionicons name={MAP[name]} size={size} color={color} />;
 }

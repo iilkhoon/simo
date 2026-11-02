@@ -4,11 +4,14 @@ import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
-import { activeVip } from '../economy.js';
+import { ECONOMY, activeVip } from '../economy.js';
 import { rtcToken } from '../services/agora.js';
 import { emitToUser } from '../realtime/hub.js';
 import { notify } from '../services/notify.js';
 import { chargeMinute, clearRingTimeout, finishCall, scheduleRingTimeout } from '../services/calls.js';
+
+/** Hostun qiyməti köhnə (aşağı) dəyərdə qalıbsa, cari minimuma qaldırılır */
+const minPrice = (type: 'VIDEO' | 'VOICE', p: number) => Math.max(type === 'VIDEO' ? ECONOMY.videoCallPrice.min : ECONOMY.voiceCallPrice.min, p);
 
 async function callPrice(callerId: string, calleeId: string, type: 'VIDEO' | 'VOICE') {
   const [caller, callee] = await Promise.all([
@@ -16,7 +19,7 @@ async function callPrice(callerId: string, calleeId: string, type: 'VIDEO' | 'VO
     prisma.user.findUniqueOrThrow({ where: { id: calleeId } }),
   ]);
   if (callee.hostStatus === 'APPROVED' && caller.hostStatus !== 'APPROVED') {
-    const base = type === 'VIDEO' ? callee.videoCallPrice : callee.voiceCallPrice;
+    const base = minPrice(type, type === 'VIDEO' ? callee.videoCallPrice : callee.voiceCallPrice);
     const vip = activeVip(caller);
     return { price: Math.ceil(base * (1 - (vip?.callDiscount ?? 0))), caller, callee };
   }
@@ -98,7 +101,7 @@ export default async function callRoutes(app: FastifyInstance) {
     weighted.sort((a, b) => b.w - a.w);
     const pick = weighted[Math.floor(Math.random() * Math.min(5, weighted.length))].u;
     const vipDiscount = activeVip(viewer)?.callDiscount ?? 0;
-    const base = q.type === 'VIDEO' ? pick.videoCallPrice : pick.voiceCallPrice;
+    const base = minPrice(q.type, q.type === 'VIDEO' ? pick.videoCallPrice : pick.voiceCallPrice);
     return { user: presentUser(pick), price: Math.ceil(base * (1 - vipDiscount)) };
   });
 

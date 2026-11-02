@@ -2,6 +2,7 @@ import type { Dict } from './az';
 
 const ru: Dict = {
   common: {
+    city: 'Город',
     yesterday: 'Вчера',
     ok: 'Ок', cancel: 'Отмена', save: 'Сохранить', next: 'Далее', back: 'Назад', done: 'Готово', close: 'Закрыть',
     retry: 'Повторить', loading: 'Загрузка…', send: 'Отправить', search: 'Поиск', seeAll: 'Все',
@@ -12,6 +13,7 @@ const ru: Dict = {
     error: 'Произошла ошибка', permissionDenied: 'Нет разрешения. Разрешите доступ в настройках.',
   },
   auth: {
+    bubble1: 'Привет! 👋', bubble2: 'Видеозвонок? 📹', bubble3: 'Тебе цветок 🌹',
     tagline: 'Знакомься. Общайся. Люби.',
     welcomeSub: 'Самая романтичная платформа знакомств и стримов в Азербайджане',
     continuePhone: 'Продолжить по номеру телефона',
@@ -55,6 +57,7 @@ const ru: Dict = {
   },
   tabs: { discover: 'Знакомства', live: 'Эфир', videos: 'Видео', chats: 'Чаты', me: 'Я' },
   discover: {
+    shared: 'Общих интересов: {{n}}', activeNow: 'Сейчас онлайн',
     title: 'Simo', daily: '10 выборов дня', dailySub: 'Подобрано специально для тебя', nearby: 'Рядом',
     emptyTitle: 'Пока всё', emptySub: 'Скоро появятся новые люди. Расширь параметры поиска.',
     matchTitle: 'Совпадение! 💞', matchSub: 'Ты и {{name}} понравились друг другу', sayHi: 'Написать', keepSwiping: 'Продолжить',
@@ -62,6 +65,7 @@ const ru: Dict = {
     filters: 'Фильтры', onlineNow: 'Сейчас онлайн', checkinTitle: 'Ежедневный бонус', checkinCta: 'Забрать',
   },
   live: {
+    goLiveShort: 'В эфир',
     quickVideo: 'Видеознакомство', quickVideoSub: 'Лицом к лицу со случайным человеком', quickVoice: 'Голосовое знакомство', quickVoiceSub: 'Только голос, полный комфорт', listeners: '{{n}} слушателей', videoHint: 'Прямой эфир с камерой', voiceHint: 'Голосовая комната на 8 мест', titleLabel: 'Название', rules: 'В эфире запрещены обнажённость, оскорбления и спам. Нарушающие эфиры закрываются.',
     title: 'Эфир', popular: 'Популярное', new: 'Новые', nearby: 'Рядом', voice: 'Голосовые комнаты', following: 'Подписки',
     goLive: 'Начать эфир', startVideo: 'Видеоэфир', startVoice: 'Голосовая комната', titlePlaceholder: 'Название эфира…', start: 'Начать',
@@ -96,7 +100,7 @@ const ru: Dict = {
   gifts: { title: 'Подарки', send: 'Отправить', balance: 'Баланс', recharge: 'Пополнить', sent: 'Подарок отправлен! 🎁', azerbaijan: 'Азербайджан', popular: 'Популярные', luxury: 'Люкс', pick: 'Выбери подарок' },
   wallet: {
     usage1: 'Сообщения', usage2: 'Звонки', usage3: 'Подарки', secure: 'Платежи безопасно проходят через App Store / Google Play или Epoint', noHistory: 'Операций пока нет',
-    title: 'Кошелёк', balance: 'Баланс Simo Coin', recharge: 'Пополнить монеты', firstBonus: 'ПЕРВОЕ ПОПОЛНЕНИЕ ×2 МОНЕТ',
+    title: 'Кошелёк', balance: 'Баланс Simo Coin', recharge: 'Пополнить монеты', firstBonus: 'ПЕРВОЕ ПОПОЛНЕНИЕ: ДО 300 МОНЕТ В ПОДАРОК', firstGift: '+{{n}} в подарок', promoNote: 'Подарочные монеты приходят из бонусов и тратятся первыми.',
     history: 'Операции', bonus: '+{{n}} бонус', popular: 'Популярно', success: '+{{n}} монет зачислено! 🎉',
     pending: 'Проверяем оплату…', failed: 'Оплата не прошла', storeUnavailable: 'Оплата через магазин недоступна',
     webTopup: 'Пополнить на сайте (simo.az/topup)',
@@ -119,7 +123,7 @@ const ru: Dict = {
     tiers: { SILVER: 'Серебро', GOLD: 'Золото', DIAMOND: 'Бриллиант' },
   },
   earnings: {
-    title: 'Мой доход', diamonds: 'Баланс алмазов', cashValue: '≈ {{azn}} ₼', exchange: 'Обменять на монеты', exchangeSub: '{{rate}} алмаза = 1 монета',
+    title: 'Мой доход', diamonds: 'Баланс алмазов', cashValue: '≈ {{azn}} ₼', exchange: 'Обменять на монеты', exchangeSub: '{{rate}} алмаза = 1 монета', fee: 'комиссия {{n}}%',
     withdraw: 'Вывести', min: 'Минимум {{n}} алмазов', method: 'Способ', account: 'Номер карты / счёт', amount: 'Количество алмазов',
     methods: { CARD: 'Банковская карта', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Через агентство' },
     requests: 'Заявки', status: { PENDING: 'Ожидает', APPROVED: 'Одобрено', PAID: 'Выплачено', REJECTED: 'Отклонено' },

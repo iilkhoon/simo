@@ -70,7 +70,7 @@ export default function EditProfile() {
       <View style={{ gap: 12, marginTop: 16 }}>
         <Input label={t('onboarding.namePlaceholder')} value={name} onChangeText={setName} maxLength={30} />
         <Input label={t('profile.about')} value={bio} onChangeText={setBio} multiline maxLength={300} style={{ height: 100, paddingTop: 14, textAlignVertical: 'top' }} />
-        <Input label="📍" value={city} onChangeText={setCity} maxLength={40} />
+        <Input label={t('common.city')} value={city} onChangeText={setCity} maxLength={40} />
         <Text style={font.small}>{t('onboarding.lookingTitle')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {LOOKING.map((l) => <Chip key={l} label={t(`lookingFor.${l}`)} active={looking === l} onPress={() => setLooking(l)} />)}
@@ -89,6 +89,6 @@ export default function EditProfile() {
 
 const styles = StyleSheet.create({
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderStyle: 'dashed', borderWidth: 2, borderColor: 'rgba(26,21,18,0.18)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   remove: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
 });

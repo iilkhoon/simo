@@ -65,8 +65,8 @@ export default function StartLive() {
 
 const styles = StyleSheet.create({
   type: { alignItems: 'center', gap: 6, paddingVertical: 18, paddingHorizontal: 10 },
-  typeIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  typeIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
   cover: { width: 140, height: 186, alignItems: 'center', justifyContent: 'center' },
-  coverEdit: { position: 'absolute', right: 8, bottom: 8, backgroundColor: colors.card, borderRadius: 16, borderWidth: 1.5, borderColor: colors.ink, padding: 6 },
+  coverEdit: { position: 'absolute', right: 8, bottom: 8, backgroundColor: colors.card, borderRadius: 16, padding: 6 },
   tips: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 14, backgroundColor: colors.bgSunken },
 });

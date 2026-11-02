@@ -6,7 +6,7 @@ import {
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { colors, fonts, radius, shadow as SH, stroke, type, type TypeName } from '../theme';
+import { blocks, colors, elev, fonts, glow, radius, shadow as SH, type, type BlockName, type TypeName } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 export const tap = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -21,7 +21,7 @@ export function Screen({ children, edges = ['top'], scroll, style, padded = true
   children: React.ReactNode; edges?: Edge[]; scroll?: boolean; style?: StyleProp<ViewStyle>; padded?: boolean; night?: boolean; bg?: string;
 }) {
   const inner = scroll ? (
-    <ScrollView contentContainerStyle={[padded && { padding: 16, paddingBottom: 48 }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[padded && { paddingHorizontal: 16, paddingBottom: 48 }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   ) : (
@@ -36,24 +36,35 @@ export function Screen({ children, edges = ['top'], scroll, style, padded = true
   );
 }
 
-/* ───────────── Neobrutal qutu: kontur + sərt kölgə ─────────────
- * Kölgə ayrıca arxa təbəqədir — iOS və Android-də eyni görünür. */
-export function Box({ children, style, inner, bg = colors.card, r = radius.md, sh = SH.md, borderColor = colors.line, shadowColor = colors.ink, pressed }: {
+/* ───────────── Kart qutusu ─────────────
+ * Yumşaq üslub: ağ kart + iri radius + yumşaq kölgə (sh = 0–3).
+ * `hard` — oynaq "stiker" görünüşü: nazik kontur + sərt ofset kölgə (promo, hədiyyə, bonus). */
+export function Box({ children, style, inner, bg = colors.card, r = radius.md, sh = SH.md, borderColor, shadowColor = colors.ink, pressed, hard }: {
   children?: React.ReactNode; style?: StyleProp<ViewStyle>; inner?: StyleProp<ViewStyle>; bg?: string; r?: number; sh?: number;
-  borderColor?: string; shadowColor?: string; pressed?: boolean;
+  borderColor?: string; shadowColor?: string; pressed?: boolean; hard?: boolean;
 }) {
-  const d = pressed ? sh : 0;
+  if (hard) {
+    const o = 4;
+    const d = pressed ? o : 0;
+    return (
+      <View style={[{ marginRight: o, marginBottom: o }, style]}>
+        <View style={{ position: 'absolute', left: o, top: o, right: -o, bottom: -o, borderRadius: r, backgroundColor: shadowColor }} />
+        <View style={[{ flexGrow: 1, backgroundColor: bg, borderRadius: r, borderWidth: 2, borderColor: borderColor ?? colors.ink, overflow: 'hidden', transform: [{ translateX: d }, { translateY: d }] }, inner]}>
+          {children}
+        </View>
+      </View>
+    );
+  }
   return (
-    <View style={[{ marginRight: sh, marginBottom: sh }, style]}>
-      {sh > 0 ? <View style={{ position: 'absolute', left: sh, top: sh, right: -sh, bottom: -sh, borderRadius: r, backgroundColor: shadowColor }} /> : null}
-      <View style={[{ flexGrow: 1, backgroundColor: bg, borderRadius: r, borderWidth: stroke, borderColor, overflow: 'hidden', transform: [{ translateX: d }, { translateY: d }] }, inner]}>
+    <View style={[{ borderRadius: r, backgroundColor: bg }, elev(sh), pressed && { transform: [{ scale: 0.97 }] }, style]}>
+      <View style={[{ flexGrow: 1, borderRadius: r, overflow: 'hidden', backgroundColor: bg }, borderColor ? { borderWidth: 1.5, borderColor } : null, inner]}>
         {children}
       </View>
     </View>
   );
 }
 
-/** Basılanda kölgəyə "oturan" toxunma qutusu */
+/** Toxunma qutusu — basılanda yüngülcə kiçilir */
 export function PressBox({ onPress, disabled, children, haptic = true, ...box }: React.ComponentProps<typeof Box> & { onPress?: () => void; disabled?: boolean; haptic?: boolean }) {
   const [p, setP] = useState(false);
   return (
@@ -75,7 +86,7 @@ export function PressBox({ onPress, disabled, children, haptic = true, ...box }:
 }
 
 /* ───────────── Düymələr ───────────── */
-type BtnKind = 'primary' | 'dark' | 'light' | 'coin' | 'mint' | 'diamond';
+type BtnKind = 'primary' | 'dark' | 'light' | 'coin' | 'mint' | 'diamond' | 'ghost';
 const BTN: Record<BtnKind, { bg: string; fg: string }> = {
   primary: { bg: colors.brand, fg: colors.white },
   dark: { bg: colors.ink, fg: colors.bg },
@@ -83,6 +94,7 @@ const BTN: Record<BtnKind, { bg: string; fg: string }> = {
   coin: { bg: colors.coin, fg: colors.ink },
   mint: { bg: colors.online, fg: colors.white },
   diamond: { bg: colors.diamond, fg: colors.white },
+  ghost: { bg: 'rgba(26,21,18,0.06)', fg: colors.ink },
 };
 
 export function Btn({ title, onPress, loading, disabled, kind = 'primary', size = 'lg', icon, iconRight, style, full = true }: {
@@ -91,16 +103,19 @@ export function Btn({ title, onPress, loading, disabled, kind = 'primary', size 
 }) {
   const c = BTN[kind];
   const h = size === 'lg' ? 56 : size === 'md' ? 46 : 36;
-  const sh = size === 'sm' ? SH.sm : SH.md;
+  const off = disabled || loading;
   return (
-    <PressBox
-      onPress={onPress}
-      disabled={disabled || loading}
-      bg={disabled ? colors.bgSunken : c.bg}
-      r={radius.pill}
-      sh={disabled ? 0 : sh}
-      style={[!full && { alignSelf: 'flex-start' }, style]}
-      inner={{ height: h, alignItems: 'center', justifyContent: 'center', paddingHorizontal: size === 'sm' ? 14 : 22, flexDirection: 'row', gap: 8 }}
+    <Pressable
+      onPress={() => { tap(); onPress?.(); }}
+      disabled={off}
+      style={({ pressed }) => [
+        { height: h, borderRadius: radius.pill, backgroundColor: disabled ? colors.bgSunken : c.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: size === 'sm' ? 14 : 22, flexDirection: 'row', gap: 8 },
+        !disabled && kind === 'primary' && size !== 'sm' ? glow(colors.brand) : null,
+        !disabled && kind === 'light' ? elev(1) : null,
+        !full && { alignSelf: 'center' },
+        pressed && { transform: [{ scale: 0.97 }], opacity: 0.94 },
+        style,
+      ]}
     >
       {loading ? (
         <ActivityIndicator color={c.fg} />
@@ -113,7 +128,7 @@ export function Btn({ title, onPress, loading, disabled, kind = 'primary', size 
           {iconRight}
         </>
       )}
-    </PressBox>
+    </Pressable>
   );
 }
 
@@ -123,9 +138,12 @@ export function IconBtn({ name, onPress, bg = colors.card, color = colors.ink, s
 }) {
   return (
     <View style={style}>
-      <PressBox onPress={onPress} bg={bg} r={size / 2} sh={sh} inner={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Pressable
+        onPress={() => { tap(); onPress?.(); }}
+        style={({ pressed }) => [{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }, bg !== 'transparent' && elev(sh), pressed && { transform: [{ scale: 0.92 }] }]}
+      >
         <Icon name={name} size={iconSize ?? size * 0.46} color={color} />
-      </PressBox>
+      </Pressable>
       {badge ? <Badge n={badge} style={{ position: 'absolute', top: -4, right: -2 }} /> : null}
     </View>
   );
@@ -136,7 +154,7 @@ export function Header({ title, right, back = true, night, sub }: { title?: stri
   return (
     <View style={styles.header}>
       {back ? (
-        <IconBtn name="back" size={40} sh={SH.sm} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+        <IconBtn name="back" size={42} sh={night ? 0 : SH.sm} bg={night ? colors.glassLight : colors.card} color={night ? colors.white : colors.ink} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       ) : (
         <View style={{ width: 42 }} />
       )}
@@ -152,12 +170,12 @@ export function Header({ title, right, back = true, night, sub }: { title?: stri
 /** Böyük ekran başlığı (tab ekranları üçün) */
 export function TitleBar({ title, kicker, right }: { title: string; kicker?: string; right?: React.ReactNode }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingTop: 8, paddingBottom: 14, gap: 12 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 6, paddingBottom: 12, gap: 8, minHeight: 54 }}>
       <View style={{ flex: 1 }}>
         {kicker ? <T v="label" color={colors.brand}>{kicker}</T> : null}
         <T v="h1">{title}</T>
       </View>
-      {right ? <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 2 }}>{right}</View> : null}
+      {right ? <View style={{ flexDirection: 'row', gap: 8 }}>{right}</View> : null}
     </View>
   );
 }
@@ -174,6 +192,16 @@ export function Chip({ label, active, onPress, style, icon, color = colors.ink }
   );
 }
 
+/** Foto üzərində şüşə-həb (məlumat etiketləri) */
+export function GlassPill({ label, icon, color = colors.white, bg = colors.glass, style }: { label: string; icon?: IconName; color?: string; bg?: string; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[styles.glass, { backgroundColor: bg }, style]}>
+      {icon ? <Icon name={icon} size={12} color={color} /> : null}
+      <Text style={[styles.glassText, { color }]} numberOfLines={1}>{label}</Text>
+    </View>
+  );
+}
+
 export function Segmented<T extends string>({ options, value, onChange, style }: { options: { key: T; label: string; icon?: IconName }[]; value: T; onChange: (k: T) => void; style?: StyleProp<ViewStyle> }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, style]} contentContainerStyle={{ gap: 8, paddingVertical: 4, paddingRight: 8 }}>
@@ -187,15 +215,36 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
 /** Tam enli tab-seçici (2–3 seçim) */
 export function Tabs<K extends string>({ options, value, onChange, night }: { options: { key: K; label: string }[]; value: K; onChange: (k: K) => void; night?: boolean }) {
   return (
-    <View style={[styles.tabs, night && { backgroundColor: colors.night2, borderColor: 'rgba(246,240,232,0.25)' }]}>
+    <View style={[styles.tabs, night && { backgroundColor: colors.night3 }]}>
       {options.map((o) => {
         const on = o.key === value;
         return (
-          <Pressable key={o.key} onPress={() => { tap(); onChange(o.key); }} style={[styles.tab, on && { backgroundColor: night ? colors.bg : colors.ink }]}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: on ? (night ? colors.ink : colors.bg) : night ? colors.nightMuted : colors.textMuted }}>{o.label}</Text>
+          <Pressable key={o.key} onPress={() => { tap(); onChange(o.key); }} style={[styles.tab, on && [{ backgroundColor: night ? colors.bg : colors.card }, elev(1)]]}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: on ? colors.ink : night ? colors.nightMuted : colors.textMuted }}>{o.label}</Text>
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/* ───────────── Brend blokları (çat-qabarcığı başlıq) ───────────── */
+/** Düz rəngli "danışıq qabarcığı" blok — promo başlıqlar, boş vəziyyətlər, marketinq */
+export function SpeechBlock({ children, color = 'nar', tail = 'left', style, rotate = 0, size = 'md' }: {
+  children: React.ReactNode; color?: BlockName; tail?: 'left' | 'right' | 'none'; style?: StyleProp<ViewStyle>; rotate?: number; size?: 'sm' | 'md' | 'lg';
+}) {
+  const b = blocks[color];
+  const pad = size === 'lg' ? 18 : size === 'md' ? 14 : 10;
+  return (
+    <View style={[{ alignSelf: 'flex-start', transform: [{ rotate: `${rotate}deg` }] }, style]}>
+      <View style={{ backgroundColor: b.bg, borderRadius: size === 'sm' ? 14 : 22, paddingHorizontal: pad + 4, paddingVertical: pad }}>
+        {typeof children === 'string' ? (
+          <Text style={{ fontFamily: fonts.displayBlack, fontSize: size === 'lg' ? 30 : size === 'md' ? 22 : 15, lineHeight: size === 'lg' ? 32 : size === 'md' ? 25 : 18, letterSpacing: -0.8, color: b.fg }}>{children}</Text>
+        ) : children}
+      </View>
+      {tail !== 'none' ? (
+        <View style={{ position: 'absolute', bottom: -9, [tail === 'left' ? 'left' : 'right']: 22, width: 22, height: 22, backgroundColor: b.bg, borderRadius: 3, transform: [{ rotate: '45deg' }, { skewX: '12deg' }], zIndex: -1 }} />
+      ) : null}
     </View>
   );
 }
@@ -234,9 +283,9 @@ export function Loader({ full, night }: { full?: boolean; night?: boolean }) {
 export function EmptyState({ icon = 'heart', title, sub, action, tint = colors.brandSoft }: { icon?: IconName; title: string; sub?: string; action?: React.ReactNode; tint?: string }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12, flex: 1 }}>
-      <Box bg={tint} r={28} sh={SH.md} inner={{ width: 88, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={38} color={colors.ink} />
-      </Box>
+      <View style={{ width: 96, height: 96, borderRadius: 34, backgroundColor: tint, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
+        <Icon name={icon} size={40} color={colors.ink} />
+      </View>
       <T v="h3" center style={{ marginTop: 6 }}>{title}</T>
       {sub ? <T v="small" color={colors.textMuted} center>{sub}</T> : null}
       {action}
@@ -251,7 +300,7 @@ export function MenuRow({ icon, label, value, onPress, tint = colors.brandSoft, 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, !last && styles.rowLine, pressed && { backgroundColor: colors.bgSunken }]}>
       <View style={[styles.rowIcon, { backgroundColor: tint }]}>
-        <Icon name={icon} size={17} color={colors.ink} />
+        <Icon name={icon} size={18} color={colors.ink} />
       </View>
       <T v="bodyStrong" style={{ flex: 1 }}>{label}</T>
       {badge ? <Badge n={badge} /> : null}
@@ -264,32 +313,33 @@ export function MenuRow({ icon, label, value, onPress, tint = colors.brandSoft, 
 const OUTER_KEYS = new Set(['margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginHorizontal', 'marginVertical', 'flex', 'width', 'alignSelf', 'position', 'top', 'left', 'right', 'bottom', 'transform']);
 
 /** Kart: xarici yerləşmə (margin, flex, width) kölgəli qutuya, qalanı (padding, gap…) daxili sahəyə tətbiq olunur */
-export function Card({ children, style, bg, sh = SH.md, r = radius.lg }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; bg?: string; sh?: number; r?: number }) {
+export function Card({ children, style, bg, sh = SH.md, r = radius.lg, hard }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; bg?: string; sh?: number; r?: number; hard?: boolean }) {
   const flat = (StyleSheet.flatten(style) ?? {}) as Record<string, unknown>;
   const outer: Record<string, unknown> = {};
   const innerS: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(flat)) (OUTER_KEYS.has(k) ? outer : innerS)[k] = v;
-  return <Box bg={bg} sh={sh} r={r} style={outer as ViewStyle} inner={innerS as ViewStyle}>{children}</Box>;
+  const tinted = bg && bg !== colors.card;
+  return <Box bg={bg} sh={tinted && !hard ? 0 : sh} r={r} hard={hard} style={outer as ViewStyle} inner={innerS as ViewStyle}>{children}</Box>;
 }
 
 export function SectionTitle({ title, action, onAction, style }: { title: string; action?: string; onAction?: () => void; style?: StyleProp<ViewStyle> }) {
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', marginTop: 22, marginBottom: 12 }, style]}>
-      <T v="h3" style={{ flex: 1 }}>{title}</T>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 12 }, style]}>
+      <T v="h3" style={{ flex: 1, fontSize: 19 }}>{title}</T>
       {action ? (
-        <Pressable onPress={onAction} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <T v="small" color={colors.brand} style={{ fontFamily: fonts.bold }}>{action}</T>
-          <Icon name="chevron" size={14} color={colors.brand} />
+        <Pressable onPress={onAction} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 10, height: 28, borderRadius: 14, backgroundColor: colors.card }}>
+          <T v="small" color={colors.ink} style={{ fontFamily: fonts.bold }}>{action}</T>
+          <Icon name="chevron" size={13} color={colors.ink} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-/** Kiçik stiker etiketi */
-export function Tag({ label, bg = colors.highlight, fg = colors.ink, icon, style, border = true }: { label: string | number; bg?: string; fg?: string; icon?: IconName; style?: StyleProp<ViewStyle>; border?: boolean }) {
+/** Kiçik etiket (düz rəngli həb) */
+export function Tag({ label, bg = colors.highlight, fg = colors.ink, icon, style }: { label: string | number; bg?: string; fg?: string; icon?: IconName; style?: StyleProp<ViewStyle>; border?: boolean }) {
   return (
-    <View style={[styles.tag, { backgroundColor: bg }, !border && { borderWidth: 0 }, style]}>
+    <View style={[styles.tag, { backgroundColor: bg }, style]}>
       {icon ? <Icon name={icon} size={11} color={fg} /> : null}
       <Text style={[styles.tagText, { color: fg }]}>{label}</Text>
     </View>
@@ -308,7 +358,7 @@ export function Badge({ n, style }: { n: number; style?: StyleProp<ViewStyle> })
 export const UnreadDot = ({ n }: { n: number }) => <Badge n={n} style={{ position: 'absolute', top: -6, right: -12 }} />;
 
 export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
-  return <View style={[{ height: 2, backgroundColor: colors.ink, borderRadius: 1 }, style]} />;
+  return <View style={[{ height: 1, backgroundColor: colors.hairline }, style]} />;
 }
 
 export function LiveDot({ color = colors.brand }: { color?: string }) {
@@ -318,22 +368,24 @@ export function LiveDot({ color = colors.brand }: { color?: string }) {
 const styles = StyleSheet.create({
   header: { height: 60, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 36, borderRadius: radius.pill,
-    borderWidth: stroke, borderColor: colors.ink, backgroundColor: colors.card,
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, height: 38, borderRadius: radius.pill,
+    backgroundColor: colors.card,
   },
-  chipText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  tabs: { flexDirection: 'row', borderWidth: stroke, borderColor: colors.ink, borderRadius: radius.pill, padding: 3, backgroundColor: colors.card },
-  tab: { flex: 1, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  chipText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink },
+  glass: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 26, borderRadius: 13, alignSelf: 'flex-start' },
+  glassText: { fontFamily: fonts.bold, fontSize: 11.5 },
+  tabs: { flexDirection: 'row', borderRadius: radius.pill, padding: 4, backgroundColor: colors.bgSunken },
+  tab: { flex: 1, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   input: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: radius.md,
-    borderWidth: stroke, borderColor: colors.ink, paddingHorizontal: 14, minHeight: 54,
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bgSunken, borderRadius: radius.md,
+    borderWidth: 1.5, borderColor: 'transparent', paddingHorizontal: 16, minHeight: 56,
   },
   inputText: { flex: 1, fontFamily: fonts.medium, fontSize: 16, color: colors.ink, paddingVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14 },
-  rowLine: { borderBottomWidth: 1.5, borderBottomColor: colors.hairline },
-  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.ink },
-  tag: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: colors.ink, alignSelf: 'flex-start' },
-  tagText: { fontFamily: fonts.black, fontSize: 10, letterSpacing: 0.3 },
-  badge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 1.5, borderColor: colors.ink },
+  rowLine: { borderBottomWidth: 1, borderBottomColor: colors.hairline },
+  rowIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, height: 22, borderRadius: 11, alignSelf: 'flex-start' },
+  tagText: { fontFamily: fonts.black, fontSize: 10.5, letterSpacing: 0.2 },
+  badge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: colors.card },
   badgeText: { color: colors.white, fontSize: 10, fontFamily: fonts.black },
 });

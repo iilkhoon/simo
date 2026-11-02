@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, vipColor } from '@/theme';
-import { Box, Btn, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
+import { GlassPill, Box, Btn, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
 import { GiftIcon } from '@/components/GiftIcon';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
@@ -239,7 +239,7 @@ export default function LiveRoom() {
   if (!room) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
   const Surface = rtc.RtcSurfaceView;
   const voice = room.type === 'VOICE';
-  const night = !voice;
+  const night = true;
   const hostSeat = seats.find((x) => x.seat === 0);
   const guestSeats = seats.filter((x) => x.seat !== 0);
 
@@ -247,10 +247,10 @@ export default function LiveRoom() {
     const talking = !!s.user && speaking.has(s.user.id === me?.id ? 0 : s.user.shortId);
     const size = big ? 84 : 60;
     return (
-      <Pressable key={s.seat} onPress={() => void toggleSeat(s)} style={[styles.seat, big && { width: 120 }]}>
+      <Pressable key={s.seat} onPress={() => void toggleSeat(s)} style={[styles.seat, big && { width: 120, gap: 14 }]}>
         <View style={[styles.seatDisc, { width: size + 8, height: size + 8, borderRadius: size }, talking && { backgroundColor: colors.online }, big && { backgroundColor: talking ? colors.online : colors.coin }]}>
           {s.user ? <Avatar uri={s.user.avatarUrl} name={s.user.name} size={size} ring={false} /> : (
-            <View style={[styles.emptySeat, { width: size, height: size, borderRadius: size }]}><Icon name="micOutline" size={22} color={colors.ink} /></View>
+            <View style={[styles.emptySeat, { width: size, height: size, borderRadius: size }]}><Icon name="micOutline" size={22} color={colors.nightMuted} /></View>
           )}
           {talking ? <View style={styles.talkTag}><Icon name="mic" size={10} color={colors.white} /></View> : null}
           {big ? <View style={styles.hostTag}><Text style={styles.hostTagText}>HOST</Text></View> : null}
@@ -261,8 +261,8 @@ export default function LiveRoom() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: voice ? colors.diamondSoft : colors.night }}>
-      <StatusBar style={voice ? 'dark' : 'light'} />
+    <View style={{ flex: 1, backgroundColor: colors.night }}>
+      <StatusBar style="light" />
       {voice ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {/* Səsli otaq fonu: nöqtəli "səhnə" naxışı */}
@@ -292,7 +292,7 @@ export default function LiveRoom() {
           <View style={{ maxWidth: 104 }}>
             <Text style={styles.hostName} numberOfLines={1}>{room.host.name}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <Icon name="eye" size={10} color={colors.textMuted} />
+              <Icon name="eye" size={10} color={colors.nightMuted} />
               <Text style={styles.hostSub}>{compact(viewers)}</Text>
             </View>
           </View>
@@ -307,17 +307,16 @@ export default function LiveRoom() {
               <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
             </View>
           ))}
-          <IconBtn name="close" size={36} sh={2} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
+          <IconBtn name="close" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
         </View>
       </SafeAreaView>
       <View style={styles.subTop} pointerEvents="none">
         <Tag label={voice ? 'VOICE' : 'LIVE'} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
-        {room.title ? <Tag label={room.title} bg={colors.card} /> : null}
+        {room.title ? <GlassPill label={room.title} /> : null}
       </View>
 
       {voice ? (
         <View style={styles.stage}>
-          <View style={styles.stageShadow} />
           <View style={styles.stageCard}>
             {hostSeat ? seatView(hostSeat, true) : null}
             <View style={styles.seatGrid}>{guestSeats.map((s) => seatView(s))}</View>
@@ -344,7 +343,7 @@ export default function LiveRoom() {
           style={{ maxHeight: voice ? 170 : 230, width: W * 0.74 }}
           contentContainerStyle={{ gap: 5 }}
           renderItem={({ item }) => (
-            <View style={[styles.line, night ? styles.lineNight : styles.lineDay, item.kind === 'gift' && { backgroundColor: colors.coin, borderColor: colors.ink, borderWidth: 1.5 }, item.kind === 'enter' && { opacity: 0.85 }]}>
+            <View style={[styles.line, night ? styles.lineNight : styles.lineDay, item.kind === 'gift' && { backgroundColor: colors.coin }, item.kind === 'enter' && { opacity: 0.85 }]}>
               <LevelBadge kind="wealth" level={item.user.wealthLevel} />
               <Text style={[styles.lineText, { color: night && item.kind !== 'gift' ? colors.nightText : colors.ink }]}>
                 <Text style={{ fontFamily: fonts.black, color: item.kind === 'gift' ? colors.ink : item.user.vipTier !== 'NONE' ? colors.coin : night ? colors.highlight : colors.brand }}>{item.user.name}  </Text>
@@ -364,7 +363,7 @@ export default function LiveRoom() {
           </View>
         ) : null}
         <SafeAreaView edges={['bottom']} style={styles.inputRow}>
-          <View style={[styles.inputBox, night && { backgroundColor: 'rgba(15,13,12,0.6)', borderColor: 'rgba(246,240,232,0.5)' }]}>
+          <View style={[styles.inputBox, night && { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
             <TextInput value={text} onChangeText={setText} onSubmitEditing={sendComment} placeholder={t('live.commentPlaceholder')} placeholderTextColor={night ? colors.nightMuted : colors.textDim} style={[styles.input, { color: night ? colors.nightText : colors.ink }]} returnKeyType="send" maxLength={200} />
           </View>
           {isHost ? (
@@ -424,38 +423,38 @@ const QUICK = ['rose', 'heart', 'kiss', 'pomegranate'];
 
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 6, gap: 8 },
-  hostPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.card, borderRadius: 24, borderWidth: 2, borderColor: colors.ink, padding: 3, paddingRight: 5, height: 46 },
-  hostName: { color: colors.ink, fontFamily: fonts.black, fontSize: 13 },
-  hostSub: { color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 11 },
-  follow: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.brand, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  rank: { position: 'absolute', bottom: -4, right: -3, width: 15, height: 15, borderRadius: 8, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  hostPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.glass, borderRadius: 24, padding: 3, paddingRight: 5, height: 46 },
+  hostName: { color: colors.white, fontFamily: fonts.black, fontSize: 13 },
+  hostSub: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 11 },
+  follow: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+  rank: { position: 'absolute', bottom: -4, right: -3, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rankText: { fontFamily: fonts.black, fontSize: 8, color: colors.ink },
   subTop: { position: 'absolute', top: 108, left: 14, right: 14, flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  stage: { position: 'absolute', top: 146, left: 12, right: 16 },
+  stage: { position: 'absolute', top: 146, left: 14, right: 14 },
   stageShadow: { position: 'absolute', left: 5, top: 5, right: -5, bottom: -5, borderRadius: 28, backgroundColor: colors.ink },
-  stageCard: { backgroundColor: colors.card, borderRadius: 28, borderWidth: 2.5, borderColor: colors.ink, paddingVertical: 18, alignItems: 'center' },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(47,107,255,0.25)' },
+  stageCard: { backgroundColor: colors.night2, borderRadius: 32, paddingVertical: 20, alignItems: 'center' },
+  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(205,184,255,0.16)' },
   seatGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 14, marginTop: 16, paddingHorizontal: 4 },
   seat: { width: (W - 40) / 4, alignItems: 'center', gap: 6 },
-  seatDisc: { borderWidth: 2.5, borderColor: colors.ink, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  emptySeat: { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.ink, borderStyle: 'dashed' },
-  talkTag: { position: 'absolute', bottom: -4, right: -2, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.online, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  hostTag: { position: 'absolute', bottom: -9, backgroundColor: colors.ink, borderRadius: 6, paddingHorizontal: 6, height: 17, justifyContent: 'center' },
-  hostTagText: { color: colors.coin, fontFamily: fonts.black, fontSize: 9, letterSpacing: 0.6 },
-  seatName: { color: colors.ink, fontFamily: fonts.bold, fontSize: 11.5, maxWidth: W / 4 - 12 },
+  seatDisc: { backgroundColor: colors.night3, alignItems: 'center', justifyContent: 'center' },
+  emptySeat: { backgroundColor: colors.night3, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1.5, borderColor: 'rgba(247,242,236,0.22)' },
+  talkTag: { position: 'absolute', bottom: -4, right: -2, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.online, alignItems: 'center', justifyContent: 'center' },
+  hostTag: { position: 'absolute', bottom: -9, backgroundColor: colors.coin, borderRadius: 6, paddingHorizontal: 6, height: 17, justifyContent: 'center' },
+  hostTagText: { color: colors.ink, fontFamily: fonts.black, fontSize: 9, letterSpacing: 0.6 },
+  seatName: { color: colors.nightText, fontFamily: fonts.bold, fontSize: 11.5, maxWidth: W / 4 - 12 },
   enterWrap: { position: 'absolute', top: '44%', left: 12, right: 12 },
-  enter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingHorizontal: 14, height: 40, borderRadius: 20, borderWidth: 2, borderColor: colors.ink },
+  enter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingHorizontal: 14, height: 40, borderRadius: 20 },
   enterText: { fontFamily: fonts.black, fontSize: 13, maxWidth: W - 90 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12, maxWidth: '100%' },
   lineNight: { backgroundColor: 'rgba(15,13,12,0.55)' },
-  lineDay: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.ink },
+  lineDay: { backgroundColor: colors.card },
   lineText: { fontSize: 13, fontFamily: fonts.medium, flexShrink: 1 },
   quick: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-  qg: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coinSoft, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  qg: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coinSoft, alignItems: 'center', justifyContent: 'center' },
   quickHint: { fontFamily: fonts.semibold, fontSize: 11, marginLeft: 4 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10 },
-  inputBox: { flex: 1, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.card, justifyContent: 'center', paddingHorizontal: 14 },
+  inputBox: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.card, justifyContent: 'center', paddingHorizontal: 14 },
   input: { fontFamily: fonts.medium, fontSize: 14 },
   endWrap: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
   endCard: { padding: 22, alignItems: 'center', gap: 14 },

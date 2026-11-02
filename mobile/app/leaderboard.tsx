@@ -69,7 +69,7 @@ export default function Leaderboard() {
 
 const styles = StyleSheet.create({
   podium: { flexDirection: 'row', padding: 16, paddingTop: 20 },
-  medal: { marginTop: -12, width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  medal: { marginTop: -12, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   medalText: { fontFamily: fonts.display, fontSize: 12, color: colors.ink },
   podName: { fontFamily: fonts.bold, marginTop: 6, maxWidth: 90 },
   podScore: { fontFamily: fonts.black, fontSize: 13 },

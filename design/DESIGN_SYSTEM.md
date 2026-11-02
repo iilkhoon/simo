@@ -1,78 +1,114 @@
-# Simo dizayn sistemi — "Nar"
+# Simo dizayn sistemi — "Nar 2"
 
-Simo-nun vizual dili **yumşaq neobrutalizmdir**: isti kağız fon, mürəkkəb-qara konturlar,
-bulanıqsız sərt kölgələr, düz rəng blokları və iri, xarakterli başlıqlar. Qradiyent və
-"parıltı" effektləri istifadə olunmur. Brend rəngi Azərbaycanın simvolu olan **nardan** gəlir.
+Simo-nun vizual dili iki qatdan ibarətdir.
 
-Kod mənbəyi: `mobile/src/theme.ts` (tokenlər) və `mobile/src/components/ui.tsx` (komponentlər).
+1. **Məhsul qatı (foto-birinci, yumşaq).** Bu qat insanları və canlı yayınları ön plana çıxarır.
+   - Tam ekran foto kartlar, məlumat fotonun üstündə yazılır.
+   - Ağ kartlar, iri radius (20–34 px), yumşaq kölgələr və çoxlu boşluq.
+2. **Brend qatı (oynaq, düz rəngli).** Bu qat Simo-ya xarakter verir.
+   - Düz rəng blokları və çat-qabarcığı formasında başlıqlar.
+   - "Nari" nar maskotu, nazar boncuğu və hədiyyə stikerləri.
+
+Qradiyent dekor kimi işlədilmir. Yeganə istisna foto üzərindəki tünd "scrim"dir: o, mətnin oxunması üçündür.
+
+Yayın, zəng, video lent və təsadüfi tanışlıq ekranları **Gecə (night) premium** rejimindədir: tünd fon, şüşə (glass) həblər, parlaq aksentlər.
+
+Kod mənbələri:
+
+- `mobile/src/theme.ts` — tokenlər;
+- `mobile/src/components/ui.tsx` — komponentlər;
+- `mobile/src/components/Logo.tsx` — loqo, maskot və nazar;
+- `web/styles.css` — veb üçün eyni tokenlər.
 
 ## Rənglər
 
 | Token | Hex | İstifadə |
 |---|---|---|
-| `paper` | `#F6F0E8` | Əsas fon |
-| `paper2` | `#ECE3D7` | Batıq sahələr, deaktiv düymələr |
-| `card` | `#FFFDF9` | Kartlar, stikerlər |
-| `ink` | `#17120F` | Mətn, konturlar, kölgələr |
-| `ink2` / `ink3` | `#5C524A` / `#9B9087` | İkinci dərəcəli mətn |
-| **`nar`** | `#F2344F` | Brend, əsas düymə, "canlı", video zəng |
-| `narSoft` | `#FFD9DE` | Nar fonlu sahələr |
+| `paper` | `#F7F2EC` | Əsas fon (isti bej) |
+| `paper2` | `#EFE7DE` | Sahələr (input), deaktiv düymələr, seqment fonu |
+| `card` | `#FFFFFF` | Kartlar |
+| `ink` | `#1A1512` | Mətn, tünd düymələr |
+| `ink2` / `ink3` | `#6B6058` / `#A89D94` | İkinci dərəcəli mətn |
+| **`nar`** | `#F2344F` | Brend, əsas düymə, "LIVE", video zəng |
 | `saffron` | `#FFB21E` | Coin, hədiyyə, VIP Qızıl |
-| `xazar` | `#2F6BFF` | Almaz, səsli zəng/otaq, VIP Almaz |
-| `mint` | `#14B577` | Onlayn, uğur |
-| `lime` | `#DDF46B` | Vurğu stikerləri ("YENİ", "1:1") |
-| `night` | `#0F0D0C` | İmmersiv ekranlar (video lent, yayın) |
+| `xazar` | `#2F6BFF` | Almaz, VIP Almaz |
+| `mint` | `#17B978` | Onlayn, uğur |
+| `lime` | `#D9F26B` | Vurğu blokları ("3 ortaq maraq", bonus) |
+| `lilac` | `#CDB8FF` | Səsli tanışlıq, ikinci brend bloku |
+| `sky` | `#8ED1FF` | Super bəyənmə, təsdiq nişanı (gecədə) |
+| `orange` | `#FF7A3D` | Maskot variantı, aksiya |
+| `night` / `night2` / `night3` | `#100E0D` / `#1D1A18` / `#2A2623` | Gecə rejimi qatları |
+| `glass` / `glassLight` | `rgba(16,14,13,.42)` / `rgba(255,255,255,.22)` | Foto və video üzərində həblər |
 
-Hər əsas rəngin yumşaq (`Soft`) variantı fon üçündür. Mətn həmişə `ink` və ya ağ olur.
+Hər əsas rəngin yumşaq (`…Soft`) variantı var. O, ikon fonları və kiçik bloklar üçündür.
 
 ## Tipoqrafiya
 
-- **Unbounded** (ExtraBold, Bold, SemiBold) başlıqlar və rəqəmlər üçündür: geniş və xarakterli.
-- **Onest** (400–800) mətn, düymə və etiketlər üçündür.
-- Hər iki şrift Azərbaycan (ə, ğ, ı, ş), Kiril hərflərini və manat simvolunu (₼) dəstəkləyir.
+İki şrift var. Hər ikisi Azərbaycan (ə, ğ, ı, ş), kiril hərflərini və ₼ işarəsini dəstəkləyir.
 
-| Üslub | Şrift | Ölçü |
-|---|---|---|
-| `hero` | Unbounded 800 | 38 |
-| `h1` | Unbounded 800 | 28 |
-| `h2` | Unbounded 700 | 21 |
-| `h3` | Unbounded 600 | 16 |
-| `body` | Onest 400 | 15 |
-| `label` | Onest 700, BÖYÜK HƏRF | 11 |
+- **Geologica** (600–900) başlıqlar, rəqəmlər və brend blokları üçündür: geometrik, yumru və mehriban.
+- **Onest** (400–800) mətn, düymələr və etiketlər üçündür.
 
-## Forma qaydaları
+| Stil | Şrift / ölçü |
+|---|---|
+| `hero` | Geologica 900 · 40 |
+| `h1` | Geologica 800 · 30 |
+| `h2` | Geologica 800 · 22 |
+| `h3` | Geologica 700 · 17 |
+| `title` | Onest 700 · 17 |
+| `body` | Onest 400 · 15 |
+| `small` | Onest 500 · 13 |
+| `label` | Onest 700 · 11, böyük hərf |
 
-- **Kontur:** bütün kart, düymə, çip və avatarlarda 2px `ink` kontur olur.
-- **Sərt kölgə:** kölgə 2/4/6 px sağa-aşağı sürüşdürülür, bulanıqlıq yoxdur. `Box` komponenti bunu ayrıca təbəqə kimi çəkir, ona görə iOS və Android-də eyni görünür.
-- **Basma effekti:** `PressBox` basılanda kölgənin üstünə "oturur", fiziki düymə hissi verir. Haptic geri-bildiriş də var.
-- **Radius:** 8 / 12 / 16 / 22 / 28 və həb formalı (pill).
-- **Stikerlər:** `Tag` etiketləri yüngül fırladılmış formada istifadə olunur. `Burst` (partlayış ulduzu) aksiya və hədiyyə anları üçündür.
+## Forma, kölgə, boşluq
+
+- **Radius:** xs 10 · sm 14 · md 20 · lg 26 · xl 34. Düymələr və çiplər tam yumrudur (pill).
+- **Kölgə:** `elev(1–3)` yumşaq, isti-qəhvəyi kölgədir. `glow(color)` əsas (nar) düymənin rəngli parıltısıdır.
+- **Kontur:** adi elementlərdə yoxdur. `Box hard` variantı (nazik kontur və sərt ofset kölgə) yalnız xüsusi promo stikerlər üçündür.
+- **Boşluq:**
+  - ekran kənarları 16;
+  - kartlar arası 10–12;
+  - bölmə başlığından əvvəl 24.
 
 ## Komponentlər
 
-| Komponent | Təyinatı |
-|---|---|
-| `Btn` | Düymə. Növlər: primary, dark, light, coin, mint, diamond. Ölçülər: lg, md, sm. |
-| `IconBtn` | Dairəvi ikon düyməsi. |
-| `Box`, `PressBox`, `Card` | Konturlu qutu və kart. |
-| `Tabs`, `Segmented`, `Chip` | Seçicilər. |
-| `Input` | Fokusda Nar rəngli kontur alır. |
-| `Tag`, `Badge`, `LiveDot` | Etiketlər. |
-| `MenuRow`, `SectionTitle`, `TitleBar`, `Header` | Siyahı sətri və başlıqlar. |
-| `Avatar` | VIP halqası və "LIVE" stikeri ilə. |
-| `GiftSheet`, `GiftOverlay` | Hədiyyə paneli və hədiyyə animasiyası. |
-| `IncomingCall` | Gələn zəng ekranı. |
+- **Btn**
+  - Növlər: `primary` (nar, parıltılı), `dark`, `light`, `coin`, `mint`, `diamond`, `ghost`.
+  - Ölçülər: lg 56, md 46, sm 36.
+  - `full={false}` olan düymə konteynerin ortasına düzülür.
+- **IconBtn:** dairəvi düymədir. Gecə rejimində `glassLight` fon və ağ ikonla istifadə olunur.
+- **Box / PressBox / Card:** ağ kart, yumşaq kölgə. Basıldıqda 0.97 miqyasına kiçilir.
+- **GlassPill:** foto və video üstündə məlumat etiketidir (məsafə, onlayn, maraqlar).
+- **SpeechBlock:** düz rəngli çat-qabarcığı başlığıdır. "Tanış ol. Danış. Sev.", "Match!" və promo başlıqlar üçündür.
+- **Chip / Segmented / Tabs:**
+  - Chip ağ həbdir, aktiv halda qara olur.
+  - Tabs `paper2` fon üzərində ağ "slider" göstərir.
+- **Input:** `paper2` fonlu sahədir. Fokusda nar konturu görünür.
+- **Avatar:** canlı yayında olanda nar halqası və "LIVE" həbi, VIP olanda səviyyə rəngində halqa göstərir.
+- **Tab paneli:** üzən ağ kapsuldur. Ortadakı qaldırılmış nar düyməsi təsadüfi video tanışlığı açır.
 
-## Hədiyyə ikonları
+## Brend elementləri
 
-`design/gifts.mjs` mənbə illüstrasiyalarını avtomatik olaraq düz rəngə çevirir və mürəkkəb kontur əlavə edir (`brutalize()`).
-Yenidən yaratmaq üçün:
+- **Loqo:** düz nar gövdəsi, içində ağ ürək. Tətbiq ikonu nar fonunda ağ işarədir.
+- **Nari (maskot):** gülümsəyən nar personajıdır. Əhval variantları: `happy`, `wink`, `love`, `wow`. Xoş gəlmisiniz, match, boş vəziyyətlər və tanışlıq bloklarında işlədilir.
+- **Nazar boncuğu:** uğur simvolu kimi stiker şəklində işlədilir.
+- **Hədiyyələr:** `design/gifts.mjs` ilə yaradılan düz rəngli SVG stikerlərdir.
 
-```bash
-node design/gifts.mjs
-```
+## Ekran qaydaları
 
-## Ekran rejimləri
+| Ekran | Rejim | Əsas fikir |
+|---|---|---|
+| Canlı mərkəz | Gündüz | Story sırası, tanışlıq blokları, foto kartlar |
+| Kəşf | Gündüz | Tam ekran foto kart, "N ortaq maraq", dairəvi hərəkət düymələri |
+| Təsadüfi tanışlıq | Gecə | Radar, tapılan insan tam foto ilə |
+| Zəng | Gecə | Bulanıq foto fon, şüşə idarəetmə paneli |
+| Video / səsli yayın | Gecə | Şüşə həblər, tünd səhnə kartı |
+| Video lent | Gecə | Tam ekran |
+| Pul kisəsi, VIP, qazanc | Gündüz | Düz rəng blokları (saffron, ink, xazar) |
 
-- **Kağız (gündüz):** kəşf, çat, profil, pul kisəsi, VIP, səsli otaq, zəng gözləmə ekranı.
-- **Gecə:** video lent, video yayın, aktiv video zəng. Burada da eyni stiker dili işlənir (ağ kart + qara kontur).
+## Hizalama qaydaları
+
+- **Başlıqlar:** Tab ekranlarının başlıq sırası minimum 54 px hündürlükdədir. Daxili ekranlarda `Header` 60 px-dir və bütün ekranlarda eyni yerdə durur.
+- **Şəbəkə enləri:** boşluqla hesablanır. Kölgə üçün əlavə margin qoyulmur.
+- **Absolute elementlər:** foto üzərindəki etiketlər kənarlardan simmetrik (10/12/14/18) yerləşdirilir.
+- **Ekran ölçüləri:** hər ekran 360 px (kiçik Android) və 390 px enində yoxlanılır.

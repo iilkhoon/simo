@@ -1,3 +1,4 @@
+import { ECON, diamondsToAzn } from '@/lib/economy';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -76,7 +77,7 @@ export default function Earnings() {
           <DiamondIcon size={42} />
           <Text style={styles.heroNum}>{me.diamonds.toLocaleString('en-US')}</Text>
         </View>
-        <Tag label={t('earnings.cashValue', { azn: (me.diamonds / 100).toFixed(2) })} bg={colors.highlight} style={{ height: 26, paddingHorizontal: 10 }} />
+        <Tag label={t('earnings.cashValue', { azn: diamondsToAzn(me.diamonds, false).toFixed(2) })} bg={colors.highlight} style={{ height: 26, paddingHorizontal: 10 }} />
         <T v="small" color="rgba(255,255,255,0.9)">{t('earnings.howTo')}</T>
       </Box>
 
@@ -93,23 +94,23 @@ export default function Earnings() {
 
       <Card style={styles.block}>
         <Text style={font.h3}>{t('earnings.exchange')}</Text>
-        <Text style={font.small}>{t('earnings.exchangeSub', { rate: 2 })}</Text>
+        <Text style={font.small}>{t('earnings.exchangeSub', { rate: ECON.diamondsPerCoin })}</Text>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}><Input value={exchange} onChangeText={(v) => setExchange(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="100" /></View>
-          <Btn full={false} size="lg" kind="coin" title={`→ 🪙 ${Math.floor(Number(exchange || 0) / 2)}`} onPress={doExchange} />
+          <Btn full={false} size="lg" kind="coin" title={`→ 🪙 ${Math.floor(Number(exchange || 0) / ECON.diamondsPerCoin)}`} onPress={doExchange} />
         </View>
       </Card>
 
       <Card style={styles.block}>
         <Text style={font.h3}>{t('earnings.withdraw')}</Text>
-        <Text style={font.small}>{t('earnings.min', { n: 5000 })} · 100 💎 = 1 ₼</Text>
-        <Input label={t('earnings.amount')} value={amount} onChangeText={(v) => setAmount(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="5000" />
+        <Text style={font.small}>{t('earnings.min', { n: ECON.minWithdrawDiamonds })} · {ECON.diamondsPerAzn} 💎 = 1 ₼ · {t('earnings.fee', { n: ECON.withdrawFeeRate * 100 })}</Text>
+        <Input label={t('earnings.amount')} value={amount} onChangeText={(v) => setAmount(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder={String(ECON.minWithdrawDiamonds)} />
         <Text style={font.small}>{t('earnings.method')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {METHODS.filter((m) => m !== 'AGENCY' || me.agency).map((m) => <Chip key={m} label={t(`earnings.methods.${m}`)} active={method === m} onPress={() => setMethod(m)} />)}
         </View>
         <Input label={t('earnings.account')} value={account} onChangeText={setAccount} placeholder="4169 •••• •••• ••••" />
-        <Btn title={`${t('earnings.withdraw')}${amount ? ` · ${(Number(amount) / 100).toFixed(2)} ₼` : ''}`} loading={busy} disabled={Number(amount) < 5000 || account.length < 4 || Number(amount) > me.diamonds} onPress={withdraw} />
+        <Btn title={`${t('earnings.withdraw')}${amount ? ` · ${diamondsToAzn(Number(amount)).toFixed(2)} ₼` : ''}`} loading={busy} disabled={Number(amount) < ECON.minWithdrawDiamonds || account.length < 4 || Number(amount) > me.diamonds} onPress={withdraw} />
       </Card>
 
       {list.length ? (
@@ -134,7 +135,7 @@ export default function Earnings() {
 
 const styles = StyleSheet.create({
   hero: { padding: 20, gap: 8 },
-  heroNum: { color: colors.white, fontSize: 42, fontFamily: fonts.display, letterSpacing: -1.5, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0.1 },
+  heroNum: { color: colors.white, fontSize: 42, fontFamily: fonts.display, letterSpacing: -1.5, textShadowColor: 'rgba(0,0,0,0.18)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
   block: { padding: 16, gap: 10, marginTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1.5, borderColor: colors.hairline },
 });

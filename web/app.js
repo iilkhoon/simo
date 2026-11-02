@@ -27,12 +27,12 @@
   ];
   let PACKAGES = [
     { id: 'coins_100', coins: 100, bonusCoins: 0, priceQepik: 199, popular: false },
-    { id: 'coins_300', coins: 300, bonusCoins: 15, priceQepik: 499, popular: false },
-    { id: 'coins_600', coins: 600, bonusCoins: 60, priceQepik: 999, popular: true },
-    { id: 'coins_1300', coins: 1300, bonusCoins: 200, priceQepik: 1999, popular: false },
-    { id: 'coins_3500', coins: 3500, bonusCoins: 700, priceQepik: 4999, popular: false },
-    { id: 'coins_7500', coins: 7500, bonusCoins: 2000, priceQepik: 9999, popular: false },
-    { id: 'coins_16000', coins: 16000, bonusCoins: 5000, priceQepik: 19999, popular: false },
+    { id: 'coins_300', coins: 300, bonusCoins: 10, priceQepik: 499, popular: false },
+    { id: 'coins_600', coins: 600, bonusCoins: 30, priceQepik: 999, popular: true },
+    { id: 'coins_1300', coins: 1300, bonusCoins: 100, priceQepik: 1999, popular: false },
+    { id: 'coins_3500', coins: 3500, bonusCoins: 350, priceQepik: 4999, popular: false },
+    { id: 'coins_7500', coins: 7500, bonusCoins: 1000, priceQepik: 9999, popular: false },
+    { id: 'coins_16000', coins: 16000, bonusCoins: 2400, priceQepik: 19999, popular: false },
   ];
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -60,8 +60,8 @@
       <div class="box pkg reveal in ${p.popular ? 'pop' : ''}">
         ${p.popular ? `<span class="tag">${esc(t('js.popular'))}</span>` : ''}
         <img src="assets/coin.svg" alt="">
-        <div class="num">${fmt(p.coins * 2 + p.bonusCoins)}</div>
-        <div class="bonus">${fmt(p.coins)} ×2${p.bonusCoins ? ` ${esc(t('js.bonus', { n: fmt(p.bonusCoins) }))}` : ''}</div>
+        <div class="num">${fmt(p.coins + p.bonusCoins)}</div>
+        <div class="bonus">${fmt(p.coins)}${p.bonusCoins ? ` ${esc(t('js.bonus', { n: fmt(p.bonusCoins) }))}` : ''} · ${esc(t('js.firstGift', { n: fmt(Math.min(300, p.coins + p.bonusCoins)) }))}</div>
         <div class="price">${azn(p.priceQepik)}</div>
       </div>`).join('');
   }
@@ -74,7 +74,7 @@
     el.innerHTML = row + row + row + row;
   }
 
-  // Kalkulyator: host payı 60%, 1 mesaj = 10 coin, 1 dəq video = 60 coin, 100 almaz = 1 ₼
+  // Kalkulyator: host payı 50% (almaz), 1 mesaj = 10 coin, 1 dəq video = 80 coin, 200 almaz = 1 ₼, 3% çıxarış haqqı
   function calc() {
     const m = +($('#rMsg')?.value ?? 0);
     const n = +($('#rMin')?.value ?? 0);
@@ -82,8 +82,8 @@
     $('#vMsg').textContent = m;
     $('#vMin').textContent = n;
     $('#vGift').textContent = fmt(g);
-    const coinsPerDay = m * 10 + n * 60 + g;
-    const azPerMonth = (coinsPerDay * 0.6 * 30) / 100;
+    const coinsPerDay = m * 10 + n * 80 + g;
+    const azPerMonth = ((coinsPerDay * 0.5 * 30) / 200) * 0.97;
     $('#calcOut').textContent = `≈ ${fmt(Math.round(azPerMonth))} ₼`;
   }
 

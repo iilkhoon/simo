@@ -3,20 +3,20 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
-import { ECONOMY, VIP_PLANS, activeVip, todayKey, vipRank } from '../economy.js';
+import { ECONOMY, VIP_PLANS, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
 import { creditCoins, spendCoins, spendDiamonds } from '../services/wallet.js';
 import { presentMe } from './users.js';
 
 export default async function walletRoutes(app: FastifyInstance) {
   app.get('/wallet/packages', async () => {
     const items = await prisma.coinPackage.findMany({ where: { active: true }, orderBy: { sort: 'asc' } });
-    return { items, firstRechargeMultiplier: ECONOMY.firstRechargeMultiplier };
+    return { items, firstRechargeBonus: { rate: ECONOMY.firstRechargeBonusRate, max: ECONOMY.firstRechargeBonusMax } };
   });
 
   app.get('/wallet', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const [user, history, packages] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, diamonds: true, firstRechargeDone: true, hostStatus: true } }),
+      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, promoCoins: true, diamonds: true, firstRechargeDone: true, hostStatus: true } }),
       prisma.walletTransaction.findMany({ where: { userId: me }, orderBy: { createdAt: 'desc' }, take: 100 }),
       prisma.coinPackage.findMany({ where: { active: true }, orderBy: { sort: 'asc' } }),
     ]);
@@ -26,9 +26,11 @@ export default async function walletRoutes(app: FastifyInstance) {
       packages,
       rates: {
         diamondsPerCoin: ECONOMY.diamondsPerCoin,
-        qepikPerDiamond: ECONOMY.qepikPerDiamond,
+        diamondsPerAzn: ECONOMY.diamondsPerAzn,
+        qepikPerDiamond: 100 / ECONOMY.diamondsPerAzn,
         minWithdrawDiamonds: ECONOMY.minWithdrawDiamonds,
-        firstRechargeMultiplier: ECONOMY.firstRechargeMultiplier,
+        withdrawFeeRate: ECONOMY.withdrawFeeRate,
+        firstRechargeBonus: { rate: ECONOMY.firstRechargeBonusRate, max: ECONOMY.firstRechargeBonusMax },
       },
     };
   });
@@ -60,7 +62,7 @@ export default async function walletRoutes(app: FastifyInstance) {
     if (pending > 0) throw err.badRequest('WITHDRAW_PENDING');
     const w = await prisma.$transaction(async (tx) => {
       const row = await tx.withdrawal.create({
-        data: { userId: me, diamonds: b.diamonds, amountQepik: b.diamonds * ECONOMY.qepikPerDiamond, method: b.method, account: b.account },
+        data: { userId: me, diamonds: b.diamonds, amountQepik: withdrawQepik(b.diamonds).net, method: b.method, account: b.account, note: `fee:${withdrawQepik(b.diamonds).fee}` },
       });
       await spendDiamonds(tx, me, b.diamonds, 'WITHDRAW', row.id);
       return row;
@@ -106,7 +108,7 @@ export default async function walletRoutes(app: FastifyInstance) {
         data: { checkinStreak: streak, lastCheckinAt: new Date() },
       });
       if (res.count === 0) throw err.badRequest('ALREADY_CHECKED_IN');
-      await creditCoins(tx, me, amount, 'CHECKIN', String(streak));
+      await creditCoins(tx, me, amount, 'CHECKIN', String(streak), '', true);
       return { amount, streak };
     });
     return { ...reward, me: await presentMe(me) };
