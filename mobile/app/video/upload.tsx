@@ -3,8 +3,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
-import { GradientButton, Header, Screen } from '@/components/ui';
+import { colors, font, radius, fonts } from '@/theme';
+import { Btn, Header, Screen } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -71,13 +71,13 @@ export default function Upload() {
         </Pressable>
         <TextInput value={caption} onChangeText={setCaption} placeholder={t('videos.caption')} placeholderTextColor={colors.textDim} style={styles.input} multiline maxLength={300} />
         <View style={{ flex: 1 }} />
-        <GradientButton title={t('videos.publish')} disabled={!video} loading={posting} onPress={publish} style={{ marginBottom: 20 }} />
+        <Btn title={t('videos.publish')} disabled={!video} loading={posting} onPress={publish} style={{ marginBottom: 20 }} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { height: 360, borderRadius: radius.lg, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
-  input: { backgroundColor: colors.surface, borderRadius: radius.md, color: '#fff', padding: 14, minHeight: 90, textAlignVertical: 'top', borderWidth: 1, borderColor: colors.border },
+  box: { height: 360, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 2, borderColor: colors.ink, borderStyle: 'dashed' },
+  input: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, padding: 14, minHeight: 90, textAlignVertical: 'top', borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium, fontSize: 15 },
 });

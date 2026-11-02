@@ -137,7 +137,29 @@ export const DIAMOND = `<defs>${lg('di_g', [[0, '#E9FDFF'], [.5, '#8FE9FF'], [1,
 <path d="M14 14h36l10 14-28 30L4 28z" fill="url(#di_g)"/>
 <path d="M4 28h56M14 14l8 14 10-14 10 14 8-14M22 28l10 30 10-30" stroke="#fff" stroke-width="1.5" fill="none" opacity=".7"/>`;
 
-const wrap = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${body.replace(/\n/g, '')}</svg>`;
+/* ── "Nar" dizayn dili: qradiyentlər düz rənglərə çevrilir, formalara mürəkkəb kontur əlavə olunur ── */
+const INK = '#17120F';
+const REMAP = { '#7B5CFF': '#2F6BFF', '#C850C0': '#F2344F', '#C9B8FF': '#DCE6FF', '#E0115F': '#F2344F', '#FF4D8D': '#F2344F' };
+const hex = (c) => (REMAP[c.toUpperCase()] ?? c).replace('#', '');
+const avg = (cols) => {
+  const rgb = cols.map((c) => { const h = hex(c); return [0, 2, 4].map((i) => parseInt(h.length === 3 ? h[i / 2].repeat(2) : h.slice(i, i + 2), 16)); });
+  return '#' + [0, 1, 2].map((i) => Math.round(rgb.reduce((a, x) => a + x[i], 0) / rgb.length).toString(16).padStart(2, '0')).join('').toUpperCase();
+};
+export function brutalize(body) {
+  const flat = {};
+  for (const m of body.matchAll(/<linearGradient id="([^"]+)"[^>]*>(.*?)<\/linearGradient>/gs)) {
+    flat[m[1]] = avg([...m[2].matchAll(/stop-color="([^"]+)"/g)].map((x) => x[1]));
+  }
+  let out = body.replace(/<defs>.*?<\/defs>/gs, '').replace(/url\(#([^)]+)\)/g, (_, id) => flat[id] ?? INK);
+  out = out.replace(/#[0-9A-Fa-f]{6}\b/g, (c) => REMAP[c.toUpperCase()] ?? c);
+  out = out.replace(/<(path|circle|ellipse|rect|polygon)\b([^>]*?)\/>/g, (m, tag, attrs) => {
+    if (!/fill="(?!none)/.test(attrs) || /stroke=|opacity=/.test(attrs)) return m;
+    return `<${tag}${attrs} stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  });
+  return out;
+}
+
+const wrap = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 70 70">${brutalize(body).replace(/\n/g, '')}</svg>`;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const webDir = path.join(root, '..', 'web', 'assets', 'gifts');

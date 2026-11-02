@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
-import { colors, gradients, radius, vipGradient } from '@/theme';
-import { GradientButton, Loader } from '@/components/ui';
+import { colors, fonts, vipColor } from '@/theme';
+import { Box, Btn, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
+import { GiftIcon } from '@/components/GiftIcon';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { LevelBadge } from '@/components/Badges';
@@ -36,7 +37,7 @@ export default function LiveRoom() {
   useKeepAwake();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { me, toast } = useStore();
+  const { me, toast, patchMe } = useStore();
   const [room, setRoom] = useState<Room | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -218,70 +219,121 @@ export default function LiveRoom() {
     await api(`/users/${room.hostId}/follow`, { body: {} }).catch(() => setFollowing(false));
   }
 
-  if (!room) return <View style={{ flex: 1, backgroundColor: colors.bg }}><Loader full /></View>;
+  async function quickGift(giftId: string) {
+    if (!room) return;
+    tap();
+    const g = useStore.getState().gifts.find((x) => x.id === giftId);
+    if (g && (me?.coins ?? 0) < g.price) {
+      toast(t('errors.INSUFFICIENT_COINS'), 'error');
+      router.push('/wallet');
+      return;
+    }
+    try {
+      const r = await api<{ coins: number }>('/gifts/send', { body: { giftId, receiverId: room.hostId, count: 1, context: 'LIVE', contextId: room.id } });
+      patchMe({ coins: r.coins });
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  }
+
+  if (!room) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
   const Surface = rtc.RtcSurfaceView;
   const voice = room.type === 'VOICE';
+  const night = !voice;
+  const hostSeat = seats.find((x) => x.seat === 0);
+  const guestSeats = seats.filter((x) => x.seat !== 0);
+
+  const seatView = (s: Seat, big?: boolean) => {
+    const talking = !!s.user && speaking.has(s.user.id === me?.id ? 0 : s.user.shortId);
+    const size = big ? 84 : 60;
+    return (
+      <Pressable key={s.seat} onPress={() => void toggleSeat(s)} style={[styles.seat, big && { width: 120 }]}>
+        <View style={[styles.seatDisc, { width: size + 8, height: size + 8, borderRadius: size }, talking && { backgroundColor: colors.online }, big && { backgroundColor: talking ? colors.online : colors.coin }]}>
+          {s.user ? <Avatar uri={s.user.avatarUrl} name={s.user.name} size={size} ring={false} /> : (
+            <View style={[styles.emptySeat, { width: size, height: size, borderRadius: size }]}><Icon name="micOutline" size={22} color={colors.ink} /></View>
+          )}
+          {talking ? <View style={styles.talkTag}><Icon name="mic" size={10} color={colors.white} /></View> : null}
+          {big ? <View style={styles.hostTag}><Text style={styles.hostTagText}>HOST</Text></View> : null}
+        </View>
+        <Text style={styles.seatName} numberOfLines={1}>{s.user ? s.user.name : `${t('live.seat')} ${s.seat}`}</Text>
+      </Pressable>
+    );
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: voice ? colors.diamondSoft : colors.night }}>
+      <StatusBar style={voice ? 'dark' : 'light'} />
       {voice ? (
-        <LinearGradient colors={['#3A1366', '#1E0B35', '#12071F']} style={StyleSheet.absoluteFill} />
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {/* Səsli otaq fonu: nöqtəli "səhnə" naxışı */}
+          {Array.from({ length: 14 }).map((_, r) => (
+            <View key={r} style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: r ? 44 : 22 }}>
+              {Array.from({ length: 8 }).map((__, c) => <View key={c} style={styles.dot} />)}
+            </View>
+          ))}
+        </View>
       ) : isHost && Surface ? (
         <Surface style={StyleSheet.absoluteFill} canvas={{ uid: 0 }} />
       ) : hostUid != null && Surface ? (
         <Surface style={StyleSheet.absoluteFill} canvas={{ uid: hostUid }} />
       ) : (
         <>
-          {room.coverUrl ? <Image source={{ uri: room.coverUrl }} style={StyleSheet.absoluteFill} blurRadius={8} /> : null}
-          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ color: colors.textMuted }}>{t('live.hostAway')}</Text>
+          {room.coverUrl ? <Image source={{ uri: room.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15,13,12,0.35)', alignItems: 'center', justifyContent: 'center', gap: 14 }]}>
+            <Avatar uri={room.host.avatarUrl} name={room.host.name} size={96} live />
+            <Tag label={t('live.hostAway')} bg={colors.card} style={{ alignSelf: 'center', height: 26, paddingHorizontal: 10 }} />
           </View>
         </>
       )}
-      <LinearGradient colors={['rgba(0,0,0,0.45)', 'transparent', 'transparent', 'rgba(0,0,0,0.6)']} locations={[0, 0.2, 0.6, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
       <SafeAreaView edges={['top']} style={styles.top}>
         <View style={styles.hostPill}>
-          <Avatar uri={room.host.avatarUrl} name={room.host.name} size={36} />
-          <View style={{ maxWidth: 110 }}>
+          <Avatar uri={room.host.avatarUrl} name={room.host.name} size={34} ring={false} />
+          <View style={{ maxWidth: 104 }}>
             <Text style={styles.hostName} numberOfLines={1}>{room.host.name}</Text>
-            <Text style={styles.hostSub}>{t('live.viewers', { n: compact(viewers) })}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Icon name="eye" size={10} color={colors.textMuted} />
+              <Text style={styles.hostSub}>{compact(viewers)}</Text>
+            </View>
           </View>
           {!isHost && !following ? (
-            <Pressable onPress={follow}>
-              <LinearGradient colors={gradients.primary} style={styles.follow}><Icon name="add" size={16} /></LinearGradient>
-            </Pressable>
+            <Pressable onPress={follow} style={styles.follow}><Icon name="add" size={16} color={colors.white} /></Pressable>
           ) : null}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, justifyContent: 'flex-end' }}>
-          {top.slice(0, 3).map((g) => <Avatar key={g.user.id} uri={g.user.avatarUrl} name={g.user.name} size={30} vipTier={g.user.vipTier} />)}
-          <Pressable onPress={isHost ? endLive : () => router.back()} style={styles.close}><Icon name="close" size={22} /></Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+          {top.slice(0, 3).map((g, i) => (
+            <View key={g.user.id} style={{ marginLeft: i ? -8 : 0, zIndex: 3 - i }}>
+              <Avatar uri={g.user.avatarUrl} name={g.user.name} size={30} ring={false} />
+              <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
+            </View>
+          ))}
+          <IconBtn name="close" size={36} sh={2} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
         </View>
       </SafeAreaView>
-      {room.title ? <Text style={styles.title} numberOfLines={1}>{room.title}</Text> : null}
+      <View style={styles.subTop} pointerEvents="none">
+        <Tag label={voice ? 'VOICE' : 'LIVE'} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
+        {room.title ? <Tag label={room.title} bg={colors.card} /> : null}
+      </View>
 
       {voice ? (
-        <View style={styles.seats}>
-          {seats.map((s) => {
-            const talking = s.user && speaking.has(s.user.id === me?.id ? 0 : s.user.shortId);
-            return (
-              <Pressable key={s.seat} onPress={() => void toggleSeat(s)} style={styles.seat}>
-                <View style={[styles.seatRing, talking && { borderColor: colors.online, shadowColor: colors.online, shadowOpacity: 0.9, shadowRadius: 10 }, s.seat === 0 && { borderColor: colors.gold }]}>
-                  {s.user ? <Avatar uri={s.user.avatarUrl} name={s.user.name} size={62} /> : <Icon name="mic" size={24} color={colors.textDim} />}
-                </View>
-                <Text style={styles.seatName} numberOfLines={1}>{s.user ? s.user.name : `${s.seat + 1}`}</Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.stage}>
+          <View style={styles.stageShadow} />
+          <View style={styles.stageCard}>
+            {hostSeat ? seatView(hostSeat, true) : null}
+            <View style={styles.seatGrid}>{guestSeats.map((s) => seatView(s))}</View>
+          </View>
         </View>
       ) : null}
 
       {enter ? (
-        <LinearGradient colors={enter.user.vipTier !== 'NONE' ? vipGradient(enter.user.vipTier) : gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.enter}>
-          <Text style={{ color: enter.user.vipTier !== 'NONE' ? '#2B1745' : '#fff', fontWeight: '900' }}>
-            {enter.user.vipTier !== 'NONE' ? t('live.vipEntered', { name: enter.user.name }) : t('live.entered', { name: enter.user.name })}
-          </Text>
-        </LinearGradient>
+        <View style={styles.enterWrap} pointerEvents="none">
+          <View style={[styles.enter, { backgroundColor: enter.user.vipTier !== 'NONE' ? vipColor(enter.user.vipTier).bg : colors.highlight }]}>
+            {enter.user.vipTier !== 'NONE' ? <Icon name="crown" size={16} color={vipColor(enter.user.vipTier).fg} /> : <Icon name="sparkles" size={16} color={colors.ink} />}
+            <Text style={[styles.enterText, { color: enter.user.vipTier !== 'NONE' ? vipColor(enter.user.vipTier).fg : colors.ink }]} numberOfLines={1}>
+              {enter.user.vipTier !== 'NONE' ? t('live.vipEntered', { name: enter.user.name }) : t('live.entered', { name: enter.user.name })}
+            </Text>
+          </View>
+        </View>
       ) : null}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.bottom}>
@@ -289,36 +341,46 @@ export default function LiveRoom() {
           inverted
           data={lines}
           keyExtractor={(l) => l.id}
-          style={{ maxHeight: 220, width: W * 0.72 }}
+          style={{ maxHeight: voice ? 170 : 230, width: W * 0.74 }}
           contentContainerStyle={{ gap: 5 }}
           renderItem={({ item }) => (
-            <View style={[styles.line, item.kind === 'gift' && { backgroundColor: 'rgba(255,77,141,0.35)' }]}>
+            <View style={[styles.line, night ? styles.lineNight : styles.lineDay, item.kind === 'gift' && { backgroundColor: colors.coin, borderColor: colors.ink, borderWidth: 1.5 }, item.kind === 'enter' && { opacity: 0.85 }]}>
               <LevelBadge kind="wealth" level={item.user.wealthLevel} />
-              <Text style={styles.lineText}>
-                <Text style={{ color: item.user.vipTier !== 'NONE' ? colors.gold : colors.peach, fontWeight: '800' }}>{item.user.name}: </Text>
+              <Text style={[styles.lineText, { color: night && item.kind !== 'gift' ? colors.nightText : colors.ink }]}>
+                <Text style={{ fontFamily: fonts.black, color: item.kind === 'gift' ? colors.ink : item.user.vipTier !== 'NONE' ? colors.coin : night ? colors.highlight : colors.brand }}>{item.user.name}  </Text>
                 {item.text}
               </Text>
             </View>
           )}
         />
+        {!isHost ? (
+          <View style={styles.quick}>
+            {QUICK.map((g) => (
+              <Pressable key={g} onPress={() => void quickGift(g)} style={styles.qg}>
+                <GiftIcon id={g} size={26} />
+              </Pressable>
+            ))}
+            <Text style={[styles.quickHint, { color: night ? colors.nightMuted : colors.textMuted }]}>{t('chat.quickGifts')}</Text>
+          </View>
+        ) : null}
         <SafeAreaView edges={['bottom']} style={styles.inputRow}>
-          <TextInput value={text} onChangeText={setText} onSubmitEditing={sendComment} placeholder={t('live.commentPlaceholder')} placeholderTextColor="rgba(255,255,255,0.6)" style={styles.input} returnKeyType="send" maxLength={200} />
+          <View style={[styles.inputBox, night && { backgroundColor: 'rgba(15,13,12,0.6)', borderColor: 'rgba(246,240,232,0.5)' }]}>
+            <TextInput value={text} onChangeText={setText} onSubmitEditing={sendComment} placeholder={t('live.commentPlaceholder')} placeholderTextColor={night ? colors.nightMuted : colors.textDim} style={[styles.input, { color: night ? colors.nightText : colors.ink }]} returnKeyType="send" maxLength={200} />
+          </View>
           {isHost ? (
             <>
               {!voice ? (
                 <>
-                  <Pressable onPress={() => rtc.controls.flip()} style={styles.roundBtn}><Icon name="flip" size={20} /></Pressable>
-                  <Pressable onPress={() => { rtc.controls.beauty(!beauty); setBeauty(!beauty); }} style={[styles.roundBtn, beauty && { backgroundColor: colors.orchid }]}><Icon name="beauty" size={20} /></Pressable>
+                  <IconBtn name="flip" size={42} sh={2} onPress={() => rtc.controls.flip()} />
+                  <IconBtn name="beauty" size={42} sh={2} bg={beauty ? colors.highlight : colors.card} onPress={() => { rtc.controls.beauty(!beauty); setBeauty(!beauty); }} />
                 </>
               ) : null}
-              <Pressable onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} style={styles.roundBtn}><Icon name={muted ? 'micOff' : 'mic'} size={20} /></Pressable>
+              <IconBtn name={muted ? 'micOff' : 'mic'} size={42} sh={2} bg={muted ? colors.ink : colors.card} color={muted ? colors.bg : colors.ink} onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} />
             </>
           ) : (
             <>
-              <Pressable onPress={() => { hearts.current?.burst(1); likeBatch.current += 1; }} style={styles.roundBtn}><Icon name="heart" size={22} color={colors.rose} /></Pressable>
-              <Pressable onPress={() => setGiftOpen(true)}>
-                <LinearGradient colors={gradients.primary} style={styles.roundBtn}><Icon name="gift" size={22} /></LinearGradient>
-              </Pressable>
+              <IconBtn name="heart" size={42} sh={2} color={colors.brand} onPress={() => { hearts.current?.burst(1); likeBatch.current += 1; }} />
+              <IconBtn name="gift" size={48} sh={3} bg={colors.coin} onPress={() => setGiftOpen(true)} />
             </>
           )}
         </SafeAreaView>
@@ -326,59 +388,77 @@ export default function LiveRoom() {
 
       <Hearts ref={hearts} />
       <GiftOverlay ref={overlay} />
-      {!isHost ? <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={room.hostId} context="LIVE" contextId={room.id} /> : null}
+      {!isHost ? <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={room.hostId} receiverName={room.host.name} context="LIVE" contextId={room.id} /> : null}
 
       <Modal visible={ended || !!summary} transparent animationType="fade">
         <View style={styles.endWrap}>
-          <View style={styles.endCard}>
-            <Avatar uri={room.host.avatarUrl} name={room.host.name} size={80} />
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>{summary ? t('live.summary') : t('live.ended')}</Text>
+          <Box r={28} sh={6} bg={colors.bg} style={{ alignSelf: 'stretch' }} inner={styles.endCard}>
+            <Avatar uri={room.host.avatarUrl} name={room.host.name} size={76} />
+            <T v="h2" center>{summary ? t('live.summary') : t('live.ended')}</T>
             {summary ? (
               <View style={styles.stats}>
-                {[
-                  [t('live.duration'), duration(summary.durationSec)],
-                  [t('live.peak'), String(summary.peakViewers)],
-                  [t('live.earned'), `💎 ${summary.diamonds}`],
-                  [t('live.likes'), compact(summary.likes)],
-                ].map(([k, v]) => (
-                  <View key={k} style={styles.stat}>
-                    <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>{v}</Text>
-                    <Text style={{ color: colors.textMuted, fontSize: 12 }}>{k}</Text>
-                  </View>
+                {([
+                  [t('live.duration'), duration(summary.durationSec), colors.card],
+                  [t('live.peak'), String(summary.peakViewers), colors.brandSoft],
+                  [t('live.earned'), `💎 ${summary.diamonds}`, colors.diamondSoft],
+                  [t('live.likes'), compact(summary.likes), colors.coinSoft],
+                ] as const).map(([k, v, bg]) => (
+                  <Box key={k} r={16} sh={3} bg={bg} style={{ width: '46%' }} inner={styles.stat}>
+                    <T v="num">{v}</T>
+                    <T v="tiny" color={colors.textMuted}>{k}</T>
+                  </Box>
                 ))}
               </View>
             ) : !isHost && !following ? (
-              <GradientButton small title={t('common.follow')} icon="add" onPress={follow} />
+              <Btn full={false} size="md" kind="primary" title={t('common.follow')} icon="add" onPress={follow} />
             ) : null}
-            <GradientButton title={t('common.close')} onPress={() => router.back()} style={{ alignSelf: 'stretch' }} />
-          </View>
+            <Btn kind="dark" title={t('common.close')} onPress={() => router.back()} />
+          </Box>
         </View>
       </Modal>
     </View>
   );
 }
 
+const QUICK = ['rose', 'heart', 'kiss', 'pomegranate'];
+
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 6, gap: 8 },
-  hostPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 26, padding: 4, paddingRight: 8 },
-  hostName: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  hostSub: { color: 'rgba(255,255,255,0.75)', fontSize: 11 },
-  follow: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  close: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
-  title: { position: 'absolute', top: 104, left: 16, color: '#fff', fontWeight: '700', backgroundColor: 'rgba(0,0,0,0.35)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, overflow: 'hidden', maxWidth: W - 32 },
-  seats: { position: 'absolute', top: 150, left: 0, right: 0, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 18 },
-  seat: { width: W / 4, alignItems: 'center', gap: 6 },
-  seatRing: { width: 70, height: 70, borderRadius: 35, borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
-  seatName: { color: '#fff', fontSize: 12, maxWidth: W / 4 - 10 },
-  enter: { position: 'absolute', top: '42%', left: 12, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 22 },
+  hostPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.card, borderRadius: 24, borderWidth: 2, borderColor: colors.ink, padding: 3, paddingRight: 5, height: 46 },
+  hostName: { color: colors.ink, fontFamily: fonts.black, fontSize: 13 },
+  hostSub: { color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 11 },
+  follow: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.brand, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  rank: { position: 'absolute', bottom: -4, right: -3, width: 15, height: 15, borderRadius: 8, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  rankText: { fontFamily: fonts.black, fontSize: 8, color: colors.ink },
+  subTop: { position: 'absolute', top: 108, left: 14, right: 14, flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  stage: { position: 'absolute', top: 146, left: 12, right: 16 },
+  stageShadow: { position: 'absolute', left: 5, top: 5, right: -5, bottom: -5, borderRadius: 28, backgroundColor: colors.ink },
+  stageCard: { backgroundColor: colors.card, borderRadius: 28, borderWidth: 2.5, borderColor: colors.ink, paddingVertical: 18, alignItems: 'center' },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(47,107,255,0.25)' },
+  seatGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 14, marginTop: 16, paddingHorizontal: 4 },
+  seat: { width: (W - 40) / 4, alignItems: 'center', gap: 6 },
+  seatDisc: { borderWidth: 2.5, borderColor: colors.ink, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  emptySeat: { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.ink, borderStyle: 'dashed' },
+  talkTag: { position: 'absolute', bottom: -4, right: -2, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.online, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  hostTag: { position: 'absolute', bottom: -9, backgroundColor: colors.ink, borderRadius: 6, paddingHorizontal: 6, height: 17, justifyContent: 'center' },
+  hostTagText: { color: colors.coin, fontFamily: fonts.black, fontSize: 9, letterSpacing: 0.6 },
+  seatName: { color: colors.ink, fontFamily: fonts.bold, fontSize: 11.5, maxWidth: W / 4 - 12 },
+  enterWrap: { position: 'absolute', top: '44%', left: 12, right: 12 },
+  enter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingHorizontal: 14, height: 40, borderRadius: 20, borderWidth: 2, borderColor: colors.ink },
+  enterText: { fontFamily: fonts.black, fontSize: 13, maxWidth: W - 90 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.35)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, maxWidth: '100%' },
-  lineText: { color: '#fff', fontSize: 13, flexShrink: 1 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
-  input: { flex: 1, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,0.4)', color: '#fff', paddingHorizontal: 16 },
-  roundBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  endWrap: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  endCard: { width: '100%', backgroundColor: colors.surface, borderRadius: radius.xl, padding: 24, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: colors.border },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
-  stat: { width: '45%', backgroundColor: colors.surface2, borderRadius: radius.md, padding: 12, alignItems: 'center', gap: 2 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12, maxWidth: '100%' },
+  lineNight: { backgroundColor: 'rgba(15,13,12,0.55)' },
+  lineDay: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.ink },
+  lineText: { fontSize: 13, fontFamily: fonts.medium, flexShrink: 1 },
+  quick: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  qg: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coinSoft, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  quickHint: { fontFamily: fonts.semibold, fontSize: 11, marginLeft: 4 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10 },
+  inputBox: { flex: 1, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.card, justifyContent: 'center', paddingHorizontal: 14 },
+  input: { fontFamily: fonts.medium, fontSize: 14 },
+  endWrap: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  endCard: { padding: 22, alignItems: 'center', gap: 14 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
+  stat: { padding: 12, alignItems: 'center', gap: 2 },
 });

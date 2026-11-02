@@ -15,11 +15,16 @@ const MAP = {
   coin: 'logo-bitcoin', refresh: 'refresh', time: 'time-outline', musical: 'musical-notes', lock: 'lock-closed',
   help: 'help-circle-outline', document: 'document-text-outline', phone: 'phone-portrait-outline', mail: 'mail-outline',
   beauty: 'color-wand', rocket: 'rocket', play: 'play', pause: 'pause', exit: 'exit-outline', cash: 'cash-outline',
-  undo: 'arrow-undo', thunder: 'flash',
+  undo: 'arrow-undo', thunder: 'flash', shuffle: 'shuffle', search: 'search', grid: 'grid-outline', emoji: 'happy-outline',
+  arrowUp: 'arrow-up', arrowRight: 'arrow-forward', radio: 'radio-outline', compassOutline: 'compass-outline',
+  chatsOutline: 'chatbubbles-outline', playOutline: 'play-circle-outline', liveOutline: 'radio-outline', headset: 'headset',
+  micOutline: 'mic-outline', videocamOutline: 'videocam-outline', callOutline: 'call-outline', end: 'call', hand: 'hand-left',
+  sofa: 'cafe', globe: 'earth', male: 'male', female: 'female', heartDislike: 'close', sparklesOutline: 'sparkles-outline',
+  attach: 'add', pin: 'location-outline', dots: 'ellipsis-vertical', check2: 'checkmark-done', tv: 'tv-outline',
 } as const;
 
 export type IconName = keyof typeof MAP;
 
-export function Icon({ name, size = 22, color = '#fff' }: { name: IconName; size?: number; color?: string }) {
+export function Icon({ name, size = 22, color = '#17120F' }: { name: IconName; size?: number; color?: string }) {
   return <Ionicons name={MAP[name]} size={size} color={color} />;
 }

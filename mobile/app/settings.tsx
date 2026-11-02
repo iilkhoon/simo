@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
+import { colors, font, fonts, radius } from '@/theme';
 import { Card, Chip, Header, MenuRow, Screen } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { LANGUAGES } from '@/i18n';
@@ -18,7 +18,7 @@ function Stepper({ value, onChange, min, max, step = 1 }: { value: number; onCha
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <Pressable onPress={() => onChange(Math.max(min, value - step))} style={styles.step}><Text style={styles.stepText}>−</Text></Pressable>
-      <Text style={{ color: '#fff', fontWeight: '800', minWidth: 34, textAlign: 'center' }}>{value}</Text>
+      <Text style={{ color: colors.ink, fontFamily: fonts.black, fontSize: 15, minWidth: 34, textAlign: 'center' }}>{value}</Text>
       <Pressable onPress={() => onChange(Math.min(max, value + step))} style={styles.step}><Text style={styles.stepText}>+</Text></Pressable>
     </View>
   );
@@ -94,21 +94,22 @@ export default function Settings() {
           <Text style={[font.body, { flex: 1 }]}>{t('settings.incognito')}</Text>
           <Switch
             value={me.incognito}
-            trackColor={{ true: colors.rose, false: colors.surface2 }}
+            trackColor={{ true: colors.brand, false: colors.bgSunken }}
+            thumbColor={colors.card}
             onValueChange={(v) => (me.vip?.incognito ? void patch({ incognito: v }) : router.push('/vip'))}
           />
         </View>
       </Card>
 
       <Card style={{ marginTop: 16 }}>
-        <MenuRow icon="ban" label={t('settings.blockList')} color={colors.danger} onPress={() => router.push('/blocked')} />
-        <MenuRow icon="document" label={t('settings.terms')} color={colors.textMuted} onPress={() => void Linking.openURL(`${WEB_URL}/terms.html`)} />
-        <MenuRow icon="shield" label={t('settings.privacy')} color={colors.textMuted} onPress={() => void Linking.openURL(`${WEB_URL}/privacy.html`)} />
-        <MenuRow icon="help" label={t('settings.support')} color={colors.textMuted} onPress={() => void Linking.openURL('mailto:support@simo.az')} />
+        <MenuRow icon="ban" label={t('settings.blockList')} tint={colors.brandSoft} onPress={() => router.push('/blocked')} />
+        <MenuRow icon="document" label={t('settings.terms')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/terms.html`)} />
+        <MenuRow icon="shield" label={t('settings.privacy')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/privacy.html`)} />
+        <MenuRow icon="help" label={t('settings.support')} tint={colors.bgSunken} onPress={() => void Linking.openURL('mailto:support@simo.az')} last />
       </Card>
       <Card style={{ marginTop: 16 }}>
         <Pressable onPress={() => void logout()} style={styles.danger}><Icon name="logout" color={colors.text} /><Text style={font.body}>{t('settings.logout')}</Text></Pressable>
-        <Pressable onPress={del} style={styles.danger}><Icon name="trash" color={colors.danger} /><Text style={[font.body, { color: colors.danger }]}>{t('settings.deleteAccount')}</Text></Pressable>
+        <Pressable onPress={del} style={[styles.danger, { borderBottomWidth: 0 }]}><Icon name="trash" color={colors.danger} /><Text style={[font.body, { color: colors.danger }]}>{t('settings.deleteAccount')}</Text></Pressable>
       </Card>
       <Text style={[font.tiny, { textAlign: 'center', marginTop: 20 }]}>{t('settings.version', { v: Constants.expoConfig?.version ?? '1.0.0' })} · {t('common.id', { id: me.shortId })}</Text>
     </Screen>
@@ -116,9 +117,9 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
-  section: { color: colors.textMuted, fontWeight: '700', marginTop: 18, marginBottom: 10, textTransform: 'uppercase', fontSize: 12, letterSpacing: 1 },
+  section: { color: colors.brand, fontFamily: fonts.bold, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1.1 },
   line: { flexDirection: 'row', alignItems: 'center' },
-  step: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
-  stepText: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  danger: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  stepText: { color: colors.ink, fontSize: 20, fontFamily: fonts.bold, marginTop: -2 },
+  danger: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1.5, borderColor: colors.hairline, borderRadius: radius.md },
 });

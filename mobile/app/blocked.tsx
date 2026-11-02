@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { font } from '@/theme';
-import { EmptyState, Header, OutlineButton, Screen } from '@/components/ui';
+import { Btn, EmptyState, Header, Screen } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { api } from '@/lib/api';
 import type { PublicUser } from '@/lib/types';
@@ -24,7 +24,7 @@ export default function Blocked() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar uri={item.avatarUrl} name={item.name} size={46} />
             <Text style={[font.body, { flex: 1 }]}>{item.name}</Text>
-            <OutlineButton small title={t('common.unblock')} onPress={() => void api(`/users/${item.id}/block`, { method: 'DELETE' }).then(load)} />
+            <Btn full={false} size="sm" kind="light" title={t('common.unblock')} onPress={() => void api(`/users/${item.id}/block`, { method: 'DELETE' }).then(load)} />
           </View>
         )}
       />

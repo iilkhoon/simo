@@ -1,12 +1,12 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import type { PublicUser } from '../lib/types';
-import { colors, gradients, radius } from '../theme';
+import { colors, fonts, radius, tintFor } from '../theme';
+import { IconBtn, Tag } from './ui';
 import { Icon } from './Icon';
 import { HostBadge, LevelBadge, VerifiedBadge, VipBadge } from './Badges';
 
@@ -21,45 +21,42 @@ function Card({ user, myInterests }: { user: PublicUser; myInterests: string[] }
   const photos = user.photos.length ? user.photos : user.avatarUrl ? [user.avatarUrl] : [];
   const shared = user.interests.filter((i) => myInterests.includes(i));
   return (
-    <View style={styles.card}>
-      {photos[photo] ? <Image source={{ uri: photos[photo] }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} /> : null}
-      <View style={styles.bars}>
-        {photos.length > 1 && photos.map((_, i) => <View key={i} style={[styles.bar, i === photo && { backgroundColor: '#fff' }]} />)}
-      </View>
-      <View style={styles.tapZones}>
-        <Pressable style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.max(0, p - 1))} />
-        <Pressable style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.min(photos.length - 1, p + 1))} />
-      </View>
-      <LinearGradient colors={gradients.card} style={styles.info} pointerEvents="box-none">
-        <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: user.id } })}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <View style={{ flex: 1, marginRight: 6, marginBottom: 6 }}>
+      <View style={styles.cardShadow} />
+      <View style={[styles.card, { backgroundColor: tintFor(user.name) }]}>
+        {photos[photo] ? <Image source={{ uri: photos[photo] }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} /> : null}
+        <View style={styles.bars}>
+          {photos.length > 1 && photos.map((_, i) => <View key={i} style={[styles.bar, i === photo && { backgroundColor: colors.card }]} />)}
+        </View>
+        <View style={styles.topTags}>
+          {user.online ? <Tag label={t('common.online').toUpperCase()} bg={colors.online} fg={colors.white} /> : null}
+          {user.distanceKm != null ? <Tag label={t('common.km', { n: user.distanceKm })} icon="location" bg={colors.card} /> : null}
+        </View>
+        <View style={styles.tapZones}>
+          <Pressable style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.max(0, p - 1))} />
+          <Pressable style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.min(photos.length - 1, p + 1))} />
+        </View>
+        <Pressable style={styles.info} onPress={() => router.push({ pathname: '/user/[id]', params: { id: user.id } })}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text style={styles.name} numberOfLines={1}>{user.name}{user.age ? `, ${user.age}` : ''}</Text>
-            {user.verified ? <VerifiedBadge size={22} /> : null}
+            {user.verified ? <VerifiedBadge size={20} /> : null}
+            <View style={{ flex: 1 }} />
+            <Icon name="arrowUp" size={18} color={colors.ink} />
           </View>
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            {user.online ? (
-              <View style={styles.online}><View style={styles.dot} /><Text style={styles.onlineText}>{t('common.online')}</Text></View>
-            ) : null}
+          <View style={{ flexDirection: 'row', gap: 5, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {user.isHost ? <HostBadge /> : null}
             <VipBadge tier={user.vipTier} />
             <LevelBadge kind="charm" level={user.charmLevel} />
-          </View>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-            {user.distanceKm != null ? (
-              <View style={styles.meta}><Icon name="location" size={14} color={colors.textMuted} /><Text style={styles.metaText}>{t('common.km', { n: user.distanceKm })}</Text></View>
-            ) : null}
-            {user.city ? <Text style={styles.metaText}>{user.city}</Text> : null}
+            {user.city ? <Tag label={user.city} bg={colors.bgSunken} border={false} /> : null}
           </View>
           {user.bio ? <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text> : null}
           {shared.length ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-              {shared.slice(0, 4).map((i) => (
-                <View key={i} style={styles.tag}><Text style={styles.tagText}>{t(`interests.${i}`)}</Text></View>
-              ))}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+              {shared.slice(0, 4).map((i) => <Tag key={i} label={t(`interests.${i}`)} icon="heart" bg={colors.brandSoft} />)}
             </View>
           ) : null}
         </Pressable>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -117,27 +114,19 @@ export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]
         {top ? (
           <Animated.View key={top.id} {...responder.panHandlers} style={[StyleSheet.absoluteFill, { transform: [{ translateX: pos.x }, { translateY: pos.y }, { rotate }] }]}>
             <Card user={top} myInterests={myInterests} />
-            <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}><Text style={[styles.stampText, { color: colors.online }]}>LIKE</Text></Animated.View>
-            <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOpacity }]}><Text style={[styles.stampText, { color: colors.danger }]}>NOPE</Text></Animated.View>
-            <Animated.View style={[styles.stamp, styles.stampSuper, { opacity: superOpacity }]}><Text style={[styles.stampText, { color: colors.diamond }]}>SUPER</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}><Text style={[styles.stampText, { color: colors.white }]}>LIKE</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOpacity }]}><Text style={[styles.stampText, { color: colors.ink }]}>NOPE</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampSuper, { opacity: superOpacity }]}><Text style={[styles.stampText, { color: colors.white }]}>SUPER</Text></Animated.View>
           </Animated.View>
         ) : null}
       </View>
       {top ? (
         <View style={styles.actions}>
-          <Pressable onPress={() => fling('PASS')} style={[styles.action, { width: 60, height: 60 }]}><Icon name="close" size={30} color={colors.danger} /></Pressable>
-          <Pressable onPress={() => fling('SUPERLIKE')} style={[styles.action, { width: 50, height: 50 }]}><Icon name="star" size={24} color={colors.diamond} /></Pressable>
-          <Pressable onPress={() => fling('LIKE')}>
-            <LinearGradient colors={gradients.primary} style={[styles.action, { width: 70, height: 70, borderWidth: 0 }]}>
-              <Icon name="heart" size={34} color="#fff" />
-            </LinearGradient>
-          </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: top.id, gift: '1' } })} style={[styles.action, { width: 50, height: 50 }]}>
-            <Icon name="gift" size={22} color={colors.gold} />
-          </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: top.id } })} style={[styles.action, { width: 60, height: 60 }]}>
-            <Icon name="chat" size={26} color={colors.violet} />
-          </Pressable>
+          <IconBtn name="close" size={58} sh={4} bg={colors.card} color={colors.ink} iconSize={30} onPress={() => fling('PASS')} />
+          <IconBtn name="star" size={48} sh={3} bg={colors.diamond} color={colors.white} onPress={() => fling('SUPERLIKE')} />
+          <IconBtn name="heart" size={70} sh={5} bg={colors.brand} color={colors.white} iconSize={34} onPress={() => fling('LIKE')} />
+          <IconBtn name="gift" size={48} sh={3} bg={colors.coin} color={colors.ink} onPress={() => router.push({ pathname: '/user/[id]', params: { id: top.id, gift: '1' } })} />
+          <IconBtn name="chat" size={58} sh={4} bg={colors.card} color={colors.ink} iconSize={26} onPress={() => router.push({ pathname: '/user/[id]', params: { id: top.id } })} />
         </View>
       ) : null}
     </View>
@@ -145,25 +134,19 @@ export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border },
+  cardShadow: { position: 'absolute', left: 6, top: 6, right: -6, bottom: -6, borderRadius: radius.xl, backgroundColor: colors.ink },
+  card: { flex: 1, borderRadius: radius.xl, overflow: 'hidden', borderWidth: 2.5, borderColor: colors.ink },
   bars: { position: 'absolute', top: 10, left: 12, right: 12, flexDirection: 'row', gap: 4 },
-  bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
+  bar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(23,18,15,0.35)' },
+  topTags: { position: 'absolute', top: 24, left: 12, flexDirection: 'row', gap: 6 },
   tapZones: { ...StyleSheet.absoluteFill, flexDirection: 'row', bottom: '40%' },
-  info: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 18, paddingTop: 80 },
-  name: { color: '#fff', fontSize: 30, fontWeight: '800', flexShrink: 1 },
-  online: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(61,220,151,0.18)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.online },
-  onlineText: { color: colors.online, fontSize: 11, fontWeight: '700' },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaText: { color: colors.textMuted, fontSize: 13 },
-  bio: { color: '#fff', marginTop: 8, fontSize: 14, opacity: 0.9 },
-  tag: { backgroundColor: 'rgba(255,255,255,0.14)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  tagText: { color: '#fff', fontSize: 12 },
-  stamp: { position: 'absolute', top: 50, borderWidth: 4, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
-  stampLike: { left: 24, borderColor: colors.online, transform: [{ rotate: '-15deg' }] },
-  stampNope: { right: 24, borderColor: colors.danger, transform: [{ rotate: '15deg' }] },
-  stampSuper: { alignSelf: 'center', top: undefined, bottom: 180, borderColor: colors.diamond },
-  stampText: { fontSize: 34, fontWeight: '900', letterSpacing: 2 },
-  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, paddingVertical: 14 },
-  action: { borderRadius: 40, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  info: { position: 'absolute', left: 10, right: 10, bottom: 10, padding: 14, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.ink },
+  name: { color: colors.ink, fontSize: 24, fontFamily: fonts.display, letterSpacing: -0.8, flexShrink: 1 },
+  bio: { color: colors.textMuted, marginTop: 8, fontSize: 14, fontFamily: fonts.regular, lineHeight: 19 },
+  stamp: { position: 'absolute', top: 60, borderWidth: 3, borderColor: colors.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4 },
+  stampLike: { left: 24, backgroundColor: colors.online, transform: [{ rotate: '-12deg' }] },
+  stampNope: { right: 24, backgroundColor: colors.card, transform: [{ rotate: '12deg' }] },
+  stampSuper: { alignSelf: 'center', top: undefined, bottom: 200, backgroundColor: colors.diamond },
+  stampText: { fontSize: 30, fontFamily: fonts.display, letterSpacing: 1 },
+  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 12 },
 });

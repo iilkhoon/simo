@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, FlatList, RefreshControl, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, font } from '@/theme';
-import { EmptyState, GradientButton, Header, Loader, Screen, Segmented } from '@/components/ui';
+import { Btn, EmptyState, Header, Loader, Screen, Segmented } from '@/components/ui';
 import { UserTile } from '@/components/UserTile';
 import { api } from '@/lib/api';
 import { syncLocation } from '@/lib/media';
@@ -37,16 +37,16 @@ export default function Nearby() {
 
   return (
     <Screen>
-      <Header title={`📍 ${t('discover.nearby')}`} />
+      <Header title={t('discover.nearby')} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Segmented value={radius} onChange={setRadius} options={RADII.map((r) => ({ key: r, label: t('common.km', { n: r }) }))} />
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 }}>
-        <Switch value={online} onValueChange={setOnline} trackColor={{ true: colors.online, false: colors.surface2 }} />
+        <Switch value={online} onValueChange={setOnline} trackColor={{ true: colors.online, false: colors.bgSunken }} thumbColor={colors.card} />
         <Text style={font.small}>{t('discover.onlineNow')}</Text>
       </View>
       {noLocation ? (
-        <EmptyState icon="location" title={t('common.permissionDenied')} action={<GradientButton small title={t('common.retry')} onPress={() => void syncLocation(true).then((ok) => { setNoLocation(!ok); void load(); })} />} />
+        <EmptyState icon="location" title={t('common.permissionDenied')} action={<Btn full={false} size="md" kind="dark" title={t('common.retry')} onPress={() => void syncLocation(true).then((ok) => { setNoLocation(!ok); void load(); })} />} />
       ) : !items ? <Loader full /> : (
         <FlatList
           data={items}
@@ -54,7 +54,7 @@ export default function Nearby() {
           keyExtractor={(u) => u.id}
           columnWrapperStyle={{ gap: 10 }}
           contentContainerStyle={{ gap: 10, paddingBottom: 30, flexGrow: 1 }}
-          refreshControl={<RefreshControl tintColor={colors.rose} refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
+          refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
           ListEmptyComponent={<EmptyState icon="location" title={t('discover.emptyTitle')} sub={t('discover.emptySub')} />}
           renderItem={({ item }) => <UserTile user={item} width={TW} />}
         />

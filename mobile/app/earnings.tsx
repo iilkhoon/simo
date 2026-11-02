@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
-import { Card, Chip, GradientButton, Header, Input, OutlineButton, Screen } from '@/components/ui';
+import { colors, font, fonts } from '@/theme';
+import { Box, Btn, Card, Chip, Header, Input, Screen, T, Tag } from '@/components/ui';
+import { Burst } from '@/components/Burst';
 import { DiamondIcon } from '@/components/GiftIcon';
 import { api } from '@/lib/api';
 import { errorText, timeAgo } from '@/lib/format';
@@ -69,15 +69,16 @@ export default function Earnings() {
   return (
     <Screen scroll>
       <Header title={t('earnings.title')} />
-      <LinearGradient colors={['#6FE3FF', '#7B5CFF', '#C850C0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-        <Text style={{ color: 'rgba(255,255,255,0.85)', fontWeight: '700' }}>{t('earnings.diamonds')}</Text>
+      <Box r={26} sh={6} bg={colors.diamond} inner={styles.hero}>
+        <View style={{ position: 'absolute', right: -40, top: -40 }}><Burst size={130} color={colors.diamondSoft} points={16} /></View>
+        <T v="label" color={colors.white}>{t('earnings.diamonds')}</T>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <DiamondIcon size={40} />
-          <Text style={{ color: '#fff', fontSize: 42, fontWeight: '900' }}>{me.diamonds}</Text>
+          <DiamondIcon size={42} />
+          <Text style={styles.heroNum}>{me.diamonds.toLocaleString('en-US')}</Text>
         </View>
-        <Text style={{ color: '#fff', fontWeight: '700' }}>{t('earnings.cashValue', { azn: (me.diamonds / 100).toFixed(2) })}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{t('earnings.howTo')}</Text>
-      </LinearGradient>
+        <Tag label={t('earnings.cashValue', { azn: (me.diamonds / 100).toFixed(2) })} bg={colors.highlight} style={{ height: 26, paddingHorizontal: 10 }} />
+        <T v="small" color="rgba(255,255,255,0.9)">{t('earnings.howTo')}</T>
+      </Box>
 
       {isHost ? (
         <Card style={styles.block}>
@@ -86,7 +87,7 @@ export default function Earnings() {
             <View style={{ flex: 1 }}><Input label={t('earnings.videoPrice')} value={video} onChangeText={setVideo} keyboardType="number-pad" /></View>
             <View style={{ flex: 1 }}><Input label={t('earnings.voicePrice')} value={voice} onChangeText={setVoice} keyboardType="number-pad" /></View>
           </View>
-          <OutlineButton small title={t('common.save')} onPress={savePrices} />
+          <Btn size="md" kind="dark" title={t('common.save')} onPress={savePrices} />
         </Card>
       ) : null}
 
@@ -95,7 +96,7 @@ export default function Earnings() {
         <Text style={font.small}>{t('earnings.exchangeSub', { rate: 2 })}</Text>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}><Input value={exchange} onChangeText={(v) => setExchange(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="100" /></View>
-          <OutlineButton small title={`→ 🪙 ${Math.floor(Number(exchange || 0) / 2)}`} onPress={doExchange} />
+          <Btn full={false} size="lg" kind="coin" title={`→ 🪙 ${Math.floor(Number(exchange || 0) / 2)}`} onPress={doExchange} />
         </View>
       </Card>
 
@@ -108,7 +109,7 @@ export default function Earnings() {
           {METHODS.filter((m) => m !== 'AGENCY' || me.agency).map((m) => <Chip key={m} label={t(`earnings.methods.${m}`)} active={method === m} onPress={() => setMethod(m)} />)}
         </View>
         <Input label={t('earnings.account')} value={account} onChangeText={setAccount} placeholder="4169 •••• •••• ••••" />
-        <GradientButton title={`${t('earnings.withdraw')}${amount ? ` · ${(Number(amount) / 100).toFixed(2)} ₼` : ''}`} loading={busy} disabled={Number(amount) < 5000 || account.length < 4 || Number(amount) > me.diamonds} onPress={withdraw} />
+        <Btn title={`${t('earnings.withdraw')}${amount ? ` · ${(Number(amount) / 100).toFixed(2)} ₼` : ''}`} loading={busy} disabled={Number(amount) < 5000 || account.length < 4 || Number(amount) > me.diamonds} onPress={withdraw} />
       </Card>
 
       {list.length ? (
@@ -121,7 +122,7 @@ export default function Earnings() {
                   <Text style={font.body}>{(w.amountQepik / 100).toFixed(2)} ₼ · {t(`earnings.methods.${w.method}`)}</Text>
                   <Text style={font.tiny}>{timeAgo(w.createdAt)} · 💎 {w.diamonds}</Text>
                 </View>
-                <Text style={{ color: w.status === 'PAID' ? colors.online : w.status === 'REJECTED' ? colors.danger : colors.gold, fontWeight: '700' }}>{t(`earnings.status.${w.status}`)}</Text>
+                <Tag label={t(`earnings.status.${w.status}`)} bg={w.status === 'PAID' ? colors.onlineSoft : w.status === 'REJECTED' ? colors.brandSoft : colors.coinSoft} />
               </View>
             ))}
           </Card>
@@ -132,7 +133,8 @@ export default function Earnings() {
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: radius.xl, padding: 22, gap: 6 },
+  hero: { padding: 20, gap: 8 },
+  heroNum: { color: colors.white, fontSize: 42, fontFamily: fonts.display, letterSpacing: -1.5, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0.1 },
   block: { padding: 16, gap: 10, marginTop: 14 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1.5, borderColor: colors.hairline },
 });

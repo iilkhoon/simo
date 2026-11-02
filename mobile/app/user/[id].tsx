@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, font, gradients, radius } from '@/theme';
-import { Chip, GradientButton, Loader, OutlineButton } from '@/components/ui';
+import { colors, fonts, tintFor } from '@/theme';
+import { Box, Btn, Card, Chip, IconBtn, Loader, PressBox, T, Tag } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { ActionSheet } from '@/components/ActionSheet';
-import { CoinAmount, HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
+import { HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
 import { api } from '@/lib/api';
 import { compact, errorText, timeAgo } from '@/lib/format';
 import { startCall } from '@/lib/calls';
@@ -20,6 +19,8 @@ import { useStore } from '@/store';
 import type { PublicUser } from '@/lib/types';
 
 const { width: W } = Dimensions.get('window');
+const PW = W - 24 - 6 - 4; // kənar boşluq + kölgə + kontur
+const PH = PW * 1.18;
 
 interface Profile {
   user: PublicUser; isFollowing: boolean; followers: number; following: number; matched: boolean; liked: boolean; blocked: boolean;
@@ -81,97 +82,113 @@ export default function UserProfile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <View style={{ height: W * 1.25 }}>
-          <FlatList
-            data={photos}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(x, i) => x + i}
-            onMomentumScrollEnd={(e) => setPhoto(Math.round(e.nativeEvent.contentOffset.x / W))}
-            renderItem={({ item }) => <Image source={{ uri: item }} style={{ width: W, height: W * 1.25 }} contentFit="cover" />}
-          />
-          <LinearGradient colors={['rgba(18,7,31,0.6)', 'transparent', 'transparent', colors.bg]} locations={[0, 0.2, 0.7, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-          <View style={[styles.topBar, { top: insets.top + 6 }]}>
-            <Pressable onPress={() => router.back()} style={styles.round}><Icon name="back" size={22} /></Pressable>
-            <View style={styles.dots}>
-              {photos.length > 1 && photos.map((_, i) => <View key={i} style={[styles.dotBar, i === photo && { backgroundColor: '#fff' }]} />)}
-            </View>
-            {!isMe ? <Pressable onPress={() => setMenu(true)} style={styles.round}><Icon name="more" size={22} /></Pressable> : <View style={{ width: 40 }} />}
+      <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingTop: insets.top + 6, paddingHorizontal: 12 }}>
+          <View style={styles.topBar}>
+            <IconBtn name="back" size={40} onPress={() => router.back()} />
+            <View style={{ flex: 1 }} />
+            {!isMe ? <IconBtn name="more" size={40} onPress={() => setMenu(true)} /> : <IconBtn name="settings" size={40} onPress={() => router.push('/edit-profile')} />}
           </View>
+          <Box r={28} sh={6} bg={tintFor(u.name)} style={{ marginTop: 12 }} inner={{ height: PH }}>
+            <FlatList
+              data={photos}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(x, i) => x + i}
+              onMomentumScrollEnd={(e) => setPhoto(Math.round(e.nativeEvent.contentOffset.x / PW))}
+              renderItem={({ item }) => <Image source={{ uri: item }} style={{ width: PW, height: PH }} contentFit="cover" />}
+            />
+            {photos.length > 1 ? (
+              <View style={styles.dots} pointerEvents="none">
+                {photos.map((_, i) => <View key={i} style={[styles.dotBar, i === photo && { backgroundColor: colors.card }]} />)}
+              </View>
+            ) : null}
+            <View style={styles.photoTags} pointerEvents="none">
+              {u.online ? <Tag label={t('common.online').toUpperCase()} bg={colors.online} fg={colors.white} /> : null}
+              {u.distanceKm != null ? <Tag label={t('common.km', { n: u.distanceKm })} icon="location" bg={colors.card} /> : null}
+            </View>
+          </Box>
         </View>
 
-        <View style={{ paddingHorizontal: 16, marginTop: -40, gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[font.h1, { flexShrink: 1 }]}>{u.name}{u.age ? `, ${u.age}` : ''}</Text>
-            {u.verified ? <VerifiedBadge size={24} /> : null}
+        <View style={{ paddingHorizontal: 16, marginTop: 16, gap: 12 }}>
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <T v="h1" style={{ flexShrink: 1 }}>{u.name}{u.age ? `, ${u.age}` : ''}</T>
+              {u.verified ? <VerifiedBadge size={24} /> : null}
+            </View>
+            <T v="small" color={colors.textMuted} style={{ marginTop: 2 }}>
+              {t('common.id', { id: u.shortId })}
+              {!u.online && u.lastSeenAt ? ` · ${t('profile.lastSeen', { t: timeAgo(u.lastSeenAt) })}` : ''}
+              {u.city ? ` · ${u.city}` : ''}
+            </T>
           </View>
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {u.isHost ? <HostBadge /> : null}
             <VipBadge tier={u.vipTier} />
             <LevelBadge kind="wealth" level={u.wealthLevel} />
             <LevelBadge kind="charm" level={u.charmLevel} />
-            <Text style={font.small}>{t('common.id', { id: u.shortId })}</Text>
           </View>
-          <Text style={font.small}>
-            {u.online ? `🟢 ${t('common.online')}` : u.lastSeenAt ? t('profile.lastSeen', { t: timeAgo(u.lastSeenAt) }) : ''}
-            {u.distanceKm != null ? `  ·  📍 ${t('common.km', { n: u.distanceKm })}` : u.city ? `  ·  📍 ${u.city}` : ''}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 20, alignItems: 'center' }}>
-            <Text style={font.body}><Text style={{ fontWeight: '800' }}>{compact(p.followers)}</Text> <Text style={font.small}>{t('common.followers')}</Text></Text>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <View style={styles.stat}><T v="num">{compact(p.followers)}</T><T v="tiny" color={colors.textMuted}>{t('common.followers')}</T></View>
+            <View style={styles.stat}><T v="num">{compact(p.following)}</T><T v="tiny" color={colors.textMuted}>{t('profile.followingCount')}</T></View>
+            <View style={{ flex: 1 }} />
             {!isMe ? (
-              p.isFollowing ? <OutlineButton small title={t('common.following')} onPress={toggleFollow} /> : <GradientButton small title={t('common.follow')} icon="add" onPress={toggleFollow} />
+              p.isFollowing ? <Btn full={false} size="sm" kind="light" title={t('common.following')} icon="checkmark" onPress={toggleFollow} /> : <Btn full={false} size="sm" kind="dark" title={t('common.follow')} icon="add" onPress={toggleFollow} />
             ) : (
-              <OutlineButton small title={t('common.edit')} icon="settings" onPress={() => router.push('/edit-profile')} />
+              <Btn full={false} size="sm" kind="light" title={t('common.edit')} icon="settings" onPress={() => router.push('/edit-profile')} />
             )}
           </View>
 
           {p.live ? (
-            <Pressable onPress={() => router.push({ pathname: '/live/[id]', params: { id: p.live!.id } })}>
-              <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.liveBanner}>
-                <Icon name="live" />
-                <Text style={{ color: '#fff', fontWeight: '800', flex: 1 }}>{t('profile.liveNow')}: {p.live.title}</Text>
-                <Text style={{ color: '#fff', fontWeight: '800' }}>{t('profile.watch')} ›</Text>
-              </LinearGradient>
-            </Pressable>
+            <PressBox r={18} sh={4} bg={colors.brand} onPress={() => router.push({ pathname: '/live/[id]', params: { id: p.live!.id } })} inner={styles.liveBanner}>
+              <View style={styles.liveDisc}><Icon name="radio" size={18} color={colors.ink} /></View>
+              <Text style={styles.liveText} numberOfLines={1}>{t('profile.liveNow')}: {p.live.title}</Text>
+              <Text style={styles.liveCta}>{t('profile.watch')}</Text>
+            </PressBox>
           ) : null}
 
           {u.bio ? (
-            <View style={styles.section}>
-              <Text style={font.h3}>{t('profile.about')}</Text>
-              <Text style={[font.body, { color: colors.textMuted, lineHeight: 21 }]}>{u.bio}</Text>
-            </View>
+            <Card r={20} sh={3}>
+              <View style={styles.section}>
+                <T v="label" color={colors.brand}>{t('profile.about')}</T>
+                <T v="body" color={colors.ink}>{u.bio}</T>
+              </View>
+            </Card>
           ) : null}
-          <View style={styles.section}>
-            <Text style={font.h3}>{t(`lookingFor.${u.lookingFor}`)}</Text>
-            {u.interests.length ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {u.interests.map((i) => <Chip key={i} label={t(`interests.${i}`)} active={me?.interests.includes(i)} />)}
-              </View>
-            ) : null}
-          </View>
-          {p.giftWall.length ? (
+          <Card r={20} sh={3}>
             <View style={styles.section}>
-              <Text style={font.h3}>🎁 {t('profile.giftWall')}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                {p.giftWall.map((g) => (
-                  <View key={g.giftId} style={styles.giftCell}>
-                    <GiftIcon id={g.giftId} size={40} />
-                    <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '700' }}>×{compact(g.count)}</Text>
-                  </View>
-                ))}
-              </View>
+              <T v="label" color={colors.brand}>{t(`lookingFor.${u.lookingFor}`)}</T>
+              {u.interests.length ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {u.interests.map((i) => <Chip key={i} label={t(`interests.${i}`)} active={me?.interests.includes(i)} color={colors.brand} />)}
+                </View>
+              ) : null}
             </View>
+          </Card>
+          {p.giftWall.length ? (
+            <Card r={20} sh={3} bg={colors.coinSoft}>
+              <View style={styles.section}>
+                <T v="label">{t('profile.giftWall')}</T>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {p.giftWall.map((g) => (
+                    <View key={g.giftId} style={styles.giftCell}>
+                      <GiftIcon id={g.giftId} size={38} />
+                      <Text style={styles.giftCount}>×{compact(g.count)}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </Card>
           ) : null}
           {p.videos.length ? (
-            <View style={styles.section}>
-              <Text style={font.h3}>{t('profile.videos')}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+            <View style={{ gap: 10 }}>
+              <T v="label" color={colors.brand}>{t('profile.videos')}</T>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {p.videos.map((v) => (
                   <View key={v.id} style={styles.videoCell}>
                     {v.thumbnailUrl ? <Image source={{ uri: v.thumbnailUrl }} style={StyleSheet.absoluteFill} /> : <Icon name="play" size={28} color={colors.textMuted} />}
-                    <Text style={styles.videoViews}>▶ {compact(v.views)}</Text>
+                    <View style={styles.videoViews}><Text style={styles.videoViewsText}>▶ {compact(v.views)}</Text></View>
                   </View>
                 ))}
               </View>
@@ -182,32 +199,24 @@ export default function UserProfile() {
 
       {!isMe ? (
         <View style={[styles.bar, { paddingBottom: insets.bottom + 10 }]}>
-          <Pressable onPress={message} style={styles.barBtn}>
-            <Icon name="chat" size={24} color={colors.violet} />
-            <Text style={styles.barText}>{t('profile.message')}</Text>
-          </Pressable>
-          <Pressable onPress={() => void startCall(u.id, 'VOICE')} style={styles.barBtn}>
-            <Icon name="call" size={24} color={colors.online} />
-            {u.isHost ? <CoinAmount n={`${u.voiceCallPrice}${t('common.perMin')}`} size={11} /> : <Text style={styles.barText}>{t('profile.voiceCall')}</Text>}
-          </Pressable>
-          <Pressable onPress={() => void startCall(u.id, 'VIDEO')} style={{ flex: 1.4 }}>
-            <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.videoBtn}>
-              <Icon name="videocam" size={24} />
-              <View>
-                <Text style={{ color: '#fff', fontWeight: '800' }}>{t('profile.videoCall')}</Text>
-                {u.isHost ? <Text style={{ color: '#fff', fontSize: 11, opacity: 0.9 }}>{u.videoCallPrice} {t('common.coins')}{t('common.perMin')}</Text> : null}
-              </View>
-            </LinearGradient>
-          </Pressable>
-          <Pressable onPress={() => setGiftOpen(true)} style={styles.barBtn}>
-            <Icon name="gift" size={24} color={colors.gold} />
-            <Text style={styles.barText}>{t('profile.gift')}</Text>
-          </Pressable>
+          <IconBtn name="chat" size={52} sh={3} onPress={message} />
+          <IconBtn name="gift" size={52} sh={3} bg={colors.coin} onPress={() => setGiftOpen(true)} />
+          <PressBox style={{ flex: 1 }} r={26} sh={3} bg={colors.diamond} onPress={() => void startCall(u.id, 'VOICE')} inner={styles.callBtn}>
+            <Icon name="call" size={20} color={colors.white} />
+            {u.isHost ? <Text style={styles.callPrice}>{u.voiceCallPrice}/{t('match.min')}</Text> : null}
+          </PressBox>
+          <PressBox style={{ flex: 1.5 }} r={26} sh={3} bg={colors.brand} onPress={() => void startCall(u.id, 'VIDEO')} inner={styles.callBtn}>
+            <Icon name="videocam" size={21} color={colors.white} />
+            <View>
+              <Text style={styles.callTitle}>{t('profile.videoCall')}</Text>
+              {u.isHost ? <Text style={styles.callPrice}>{u.videoCallPrice} {t('common.coins')}/{t('match.min')}</Text> : null}
+            </View>
+          </PressBox>
         </View>
       ) : null}
 
       <GiftOverlay ref={overlay} />
-      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={u.id} context="PROFILE" onSent={(e) => { overlay.current?.push(e); toast(t('gifts.sent'), 'success'); void load(); }} />
+      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={u.id} receiverName={u.name} context="PROFILE" onSent={(e) => { overlay.current?.push(e); toast(t('gifts.sent'), 'success'); void load(); }} />
       <ActionSheet
         visible={menu}
         onClose={() => setMenu(false)}
@@ -231,17 +240,23 @@ export default function UserProfile() {
 }
 
 const styles = StyleSheet.create({
-  topBar: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  round: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
-  dots: { flex: 1, flexDirection: 'row', gap: 4, marginHorizontal: 12 },
-  dotBar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
-  section: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, gap: 10, borderWidth: 1, borderColor: colors.border },
-  liveBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md },
-  giftCell: { alignItems: 'center', width: 60 },
-  videoCell: { width: (W - 32 - 32 - 8) / 3, aspectRatio: 0.7, backgroundColor: colors.surface2, borderRadius: 8, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  videoViews: { position: 'absolute', left: 6, bottom: 4, color: '#fff', fontSize: 11, fontWeight: '700' },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 10, backgroundColor: 'rgba(18,7,31,0.97)', borderTopWidth: 1, borderColor: colors.border },
-  barBtn: { flex: 1, alignItems: 'center', gap: 3 },
-  barText: { color: colors.textMuted, fontSize: 11, fontWeight: '600' },
-  videoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 54, borderRadius: radius.pill },
+  topBar: { flexDirection: 'row', alignItems: 'center' },
+  dots: { position: 'absolute', top: 10, left: 14, right: 14, flexDirection: 'row', gap: 4 },
+  dotBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(23,18,15,0.35)' },
+  photoTags: { position: 'absolute', left: 12, bottom: 12, flexDirection: 'row', gap: 6 },
+  stat: { alignItems: 'flex-start' },
+  section: { padding: 16, gap: 10 },
+  liveBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+  liveDisc: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  liveText: { color: colors.white, fontFamily: fonts.bold, flex: 1, fontSize: 14 },
+  liveCta: { color: colors.ink, backgroundColor: colors.card, fontFamily: fonts.black, fontSize: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, overflow: 'hidden' },
+  giftCell: { alignItems: 'center', width: 58, paddingVertical: 6, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1.5, borderColor: colors.ink },
+  giftCount: { color: colors.ink, fontSize: 11, fontFamily: fonts.black },
+  videoCell: { width: (W - 32 - 12) / 3, aspectRatio: 0.72, backgroundColor: colors.bgSunken, borderRadius: 12, borderWidth: 2, borderColor: colors.ink, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  videoViews: { position: 'absolute', left: 5, bottom: 5, backgroundColor: colors.card, borderRadius: 6, borderWidth: 1.5, borderColor: colors.ink, paddingHorizontal: 4 },
+  videoViewsText: { color: colors.ink, fontSize: 10, fontFamily: fonts.black },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 12, backgroundColor: colors.card, borderTopWidth: 2, borderColor: colors.ink },
+  callBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52 },
+  callTitle: { color: colors.white, fontFamily: fonts.bold, fontSize: 14 },
+  callPrice: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.semibold, fontSize: 11 },
 });

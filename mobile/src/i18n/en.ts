@@ -2,6 +2,7 @@ import type { Dict } from './az';
 
 const en: Dict = {
   common: {
+    yesterday: 'Yesterday',
     ok: 'OK', cancel: 'Cancel', save: 'Save', next: 'Continue', back: 'Back', done: 'Done', close: 'Close',
     retry: 'Try again', loading: 'Loading…', send: 'Send', search: 'Search', seeAll: 'See all',
     coins: 'coins', diamonds: 'diamonds', online: 'Online', offline: 'Offline', km: '{{n}} km', years: '{{n}} y.o.',
@@ -61,6 +62,7 @@ const en: Dict = {
     filters: 'Filters', onlineNow: 'Online now', checkinTitle: 'Daily bonus', checkinCta: 'Claim',
   },
   live: {
+    quickVideo: 'Video match', quickVideoSub: 'Face to face with someone new', quickVoice: 'Voice match', quickVoiceSub: 'Just voices, totally relaxed', listeners: '{{n}} listening', videoHint: 'Go live on camera', voiceHint: 'Voice room with 8 seats', titleLabel: 'Title', rules: 'Nudity, insults and spam are not allowed. Streams that break the rules are closed.',
     title: 'Live', popular: 'Popular', new: 'New', nearby: 'Nearby', voice: 'Voice rooms', following: 'Following',
     goLive: 'Go live', startVideo: 'Video live', startVoice: 'Voice room', titlePlaceholder: 'Stream title…', start: 'Start',
     viewers: '{{n}} watching', ended: 'Stream ended', endConfirm: 'End your stream?', end: 'End',
@@ -75,6 +77,7 @@ const en: Dict = {
     uploading: 'Uploading… {{p}}%', uploaded: 'Video posted!',
   },
   chat: {
+    tabChats: 'Chats', tabCalls: 'Calls', noCalls: 'No calls yet', noCallsSub: 'Try Video match to talk face to face in one tap', callBack: 'Call back', quickGifts: 'One-tap gifts', icebreakers: ['Hi! 👋', 'How are you? 😊', 'Loved your profile ✨', 'What are you up to today?', 'Tea together? ☕'], peekTitle: 'Start the conversation', sentGift: 'sent a gift',
     title: 'Messages', empty: 'No chats yet', emptySub: 'Like someone in Discover and make the first move',
     placeholder: 'Message…', msgPrice: 'Message: {{price}} coins', firstFree: 'First message is free ✨',
     vipFree: 'VIP: {{n}} free messages left today', free: 'Free', typing: 'typing…', gift: 'Gift: {{name}} ×{{n}}',
@@ -83,14 +86,16 @@ const en: Dict = {
     matches: 'New matches', read: 'Seen', safety: 'For your safety, phone numbers and links are hidden',
   },
   call: {
+    flip: 'Flip',
     calling: 'Calling…', incomingVideo: 'Video call', incomingVoice: 'Voice call', accept: 'Accept',
     decline: 'Decline', end: 'End', price: '{{price}} coins/min', lowBalance: 'Balance covers {{n}} more min. Top up so the call doesn’t drop!',
     ended: 'Call ended', reasons: { NO_ANSWER: 'No answer', REJECTED: 'Call declined', INSUFFICIENT_COINS: 'Out of coins', HANGUP: 'Call ended', CANCELLED: 'Call cancelled', DISCONNECTED: 'Connection lost' },
     rtcMissing: 'Calling is not available in this build (development build required)',
     speaker: 'Speaker', camera: 'Camera', mic: 'Mic',
   },
-  gifts: { title: 'Gifts', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury' },
+  gifts: { title: 'Gifts', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury', pick: 'Pick a gift' },
   wallet: {
+    usage1: 'Messages', usage2: 'Calls', usage3: 'Gifts', secure: 'Payments are processed securely via App Store / Google Play or Epoint', noHistory: 'No transactions yet',
     title: 'Wallet', balance: 'Simo Coin balance', recharge: 'Buy coins', firstBonus: 'FIRST TOP-UP: ×2 COINS',
     history: 'Transactions', bonus: '+{{n}} bonus', popular: 'Popular', success: '+{{n}} coins added! 🎉',
     pending: 'Verifying payment…', failed: 'Payment failed', storeUnavailable: 'Store payments unavailable',
@@ -103,6 +108,7 @@ const en: Dict = {
     },
   },
   vip: {
+    heroTitle: 'Stay ahead of everyone', best: 'Best value',
     title: 'Simo VIP', subtitle: 'Stand out. Meet more people.', buy: '{{price}} coins — 30 days',
     activeUntil: '{{tier}} active until {{date}}', days: '{{n}} days', current: 'Current', extend: 'Extend',
     perks: {
@@ -129,7 +135,11 @@ const en: Dict = {
     pitch: 'Agencies bring hosts together, support them and earn an extra {{n}}% on every host’s earnings.',
     hostPitch: 'Join an agency — training, support and higher earnings!',
   },
+  match: {
+    video: 'Video', voice: 'Voice', searching: 'Searching…', searchingSub: 'Finding someone online for you', none: 'Everyone is busy right now', noneSub: 'Try again in a moment or check out live streams', min: 'min', next: 'Next', call: 'Call', billing: 'Charged only after they answer', profile: 'Profile',
+  },
   me: {
+    hostPitch: 'Chat, receive gifts, cash out diamonds',
     wallet: 'Wallet', vip: 'VIP membership', earnings: 'My earnings', agency: 'Agency', likes: 'Who likes me',
     visitors: 'Profile visitors', rewards: 'Bonuses & tasks', leaderboard: 'Leaderboard', settings: 'Settings',
     editProfile: 'Edit profile', becomeHost: 'Become a host & earn 💰', hostPending: 'Your host application is under review',
@@ -148,6 +158,7 @@ const en: Dict = {
     version: 'Version {{v}}',
   },
   profile: {
+    followingCount: 'Following',
     about: 'About', interests: 'Interests', giftWall: 'Gift wall', videos: 'Videos', message: 'Message',
     videoCall: 'Video', voiceCall: 'Voice', gift: 'Gift', verified: 'Verified', host: 'Host',
     lastSeen: 'Last seen: {{t}}', liveNow: 'Live now', watch: 'Watch', matchRequired: 'A mutual match is required to call',

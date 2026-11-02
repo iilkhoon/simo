@@ -2,6 +2,7 @@ import type { Dict } from './az';
 
 const ru: Dict = {
   common: {
+    yesterday: 'Вчера',
     ok: 'Ок', cancel: 'Отмена', save: 'Сохранить', next: 'Далее', back: 'Назад', done: 'Готово', close: 'Закрыть',
     retry: 'Повторить', loading: 'Загрузка…', send: 'Отправить', search: 'Поиск', seeAll: 'Все',
     coins: 'монет', diamonds: 'алмазов', online: 'Онлайн', offline: 'Офлайн', km: '{{n}} км', years: '{{n}} лет',
@@ -61,6 +62,7 @@ const ru: Dict = {
     filters: 'Фильтры', onlineNow: 'Сейчас онлайн', checkinTitle: 'Ежедневный бонус', checkinCta: 'Забрать',
   },
   live: {
+    quickVideo: 'Видеознакомство', quickVideoSub: 'Лицом к лицу со случайным человеком', quickVoice: 'Голосовое знакомство', quickVoiceSub: 'Только голос, полный комфорт', listeners: '{{n}} слушателей', videoHint: 'Прямой эфир с камерой', voiceHint: 'Голосовая комната на 8 мест', titleLabel: 'Название', rules: 'В эфире запрещены обнажённость, оскорбления и спам. Нарушающие эфиры закрываются.',
     title: 'Эфир', popular: 'Популярное', new: 'Новые', nearby: 'Рядом', voice: 'Голосовые комнаты', following: 'Подписки',
     goLive: 'Начать эфир', startVideo: 'Видеоэфир', startVoice: 'Голосовая комната', titlePlaceholder: 'Название эфира…', start: 'Начать',
     viewers: '{{n}} зрителей', ended: 'Эфир завершён', endConfirm: 'Завершить эфир?', end: 'Завершить',
@@ -75,6 +77,7 @@ const ru: Dict = {
     uploading: 'Загрузка… {{p}}%', uploaded: 'Видео опубликовано!',
   },
   chat: {
+    tabChats: 'Чаты', tabCalls: 'Звонки', noCalls: 'Звонков пока нет', noCallsSub: 'Видеознакомство — поговори с кем-то лицом к лицу в один клик', callBack: 'Перезвонить', quickGifts: 'Подарок в одно касание', icebreakers: ['Привет! 👋', 'Как дела? 😊', 'Мне очень понравился твой профиль ✨', 'Чем занимаешься сегодня?', 'Попьём чаю? ☕'], peekTitle: 'Начни разговор', sentGift: 'отправил(а) подарок',
     title: 'Сообщения', empty: 'Пока нет чатов', emptySub: 'Поставь лайк в разделе знакомств и сделай первый шаг',
     placeholder: 'Сообщение…', msgPrice: 'Сообщение: {{price}} монет', firstFree: 'Первое сообщение бесплатно ✨',
     vipFree: 'VIP: сегодня {{n}} бесплатных сообщений', free: 'Бесплатно', typing: 'печатает…', gift: 'Подарок: {{name}} ×{{n}}',
@@ -83,14 +86,16 @@ const ru: Dict = {
     matches: 'Новые совпадения', read: 'Прочитано', safety: 'Для безопасности номера телефонов и ссылки скрываются',
   },
   call: {
+    flip: 'Повернуть',
     calling: 'Вызов…', incomingVideo: 'Видеозвонок', incomingVoice: 'Аудиозвонок', accept: 'Принять',
     decline: 'Отклонить', end: 'Завершить', price: '{{price}} монет/мин', lowBalance: 'Баланса хватит на {{n}} мин. Пополни, чтобы разговор не прервался!',
     ended: 'Звонок завершён', reasons: { NO_ANSWER: 'Нет ответа', REJECTED: 'Звонок отклонён', INSUFFICIENT_COINS: 'Закончился баланс', HANGUP: 'Звонок завершён', CANCELLED: 'Звонок отменён', DISCONNECTED: 'Соединение потеряно' },
     rtcMissing: 'Модуль звонков недоступен в этой сборке (нужен development build)',
     speaker: 'Динамик', camera: 'Камера', mic: 'Микрофон',
   },
-  gifts: { title: 'Подарки', send: 'Отправить', balance: 'Баланс', recharge: 'Пополнить', sent: 'Подарок отправлен! 🎁', azerbaijan: 'Азербайджан', popular: 'Популярные', luxury: 'Люкс' },
+  gifts: { title: 'Подарки', send: 'Отправить', balance: 'Баланс', recharge: 'Пополнить', sent: 'Подарок отправлен! 🎁', azerbaijan: 'Азербайджан', popular: 'Популярные', luxury: 'Люкс', pick: 'Выбери подарок' },
   wallet: {
+    usage1: 'Сообщения', usage2: 'Звонки', usage3: 'Подарки', secure: 'Платежи безопасно проходят через App Store / Google Play или Epoint', noHistory: 'Операций пока нет',
     title: 'Кошелёк', balance: 'Баланс Simo Coin', recharge: 'Пополнить монеты', firstBonus: 'ПЕРВОЕ ПОПОЛНЕНИЕ ×2 МОНЕТ',
     history: 'Операции', bonus: '+{{n}} бонус', popular: 'Популярно', success: '+{{n}} монет зачислено! 🎉',
     pending: 'Проверяем оплату…', failed: 'Оплата не прошла', storeUnavailable: 'Оплата через магазин недоступна',
@@ -103,6 +108,7 @@ const ru: Dict = {
     },
   },
   vip: {
+    heroTitle: 'Будь впереди всех', best: 'Выгоднее',
     title: 'Simo VIP', subtitle: 'Будь в центре внимания. Знакомься больше.', buy: '{{price}} монет — 30 дней',
     activeUntil: '{{tier}} активен до {{date}}', days: '{{n}} дней', current: 'Текущий', extend: 'Продлить',
     perks: {
@@ -129,7 +135,11 @@ const ru: Dict = {
     pitch: 'Агентства объединяют хостов, поддерживают их и получают дополнительно {{n}}% с дохода каждого хоста.',
     hostPitch: 'Вступи в агентство — обучение, поддержка и больший доход!',
   },
+  match: {
+    video: 'Видео', voice: 'Голос', searching: 'Ищем…', searchingSub: 'Подбираем для тебя кого-то онлайн', none: 'Сейчас все заняты', noneSub: 'Попробуй чуть позже или загляни в эфиры', min: 'мин', next: 'Дальше', call: 'Позвонить', billing: 'Оплата только после ответа', profile: 'Профиль',
+  },
   me: {
+    hostPitch: 'Общайся, получай подарки, выводи алмазы',
     wallet: 'Кошелёк', vip: 'VIP-статус', earnings: 'Мой доход', agency: 'Агентство', likes: 'Кому я нравлюсь',
     visitors: 'Гости профиля', rewards: 'Бонусы и задания', leaderboard: 'Рейтинг', settings: 'Настройки',
     editProfile: 'Редактировать профиль', becomeHost: 'Стань хостом и зарабатывай 💰', hostPending: 'Заявка на хоста на проверке',
@@ -148,6 +158,7 @@ const ru: Dict = {
     version: 'Версия {{v}}',
   },
   profile: {
+    followingCount: 'Подписки',
     about: 'О себе', interests: 'Интересы', giftWall: 'Стена подарков', videos: 'Видео', message: 'Написать',
     videoCall: 'Видео', voiceCall: 'Звонок', gift: 'Подарок', verified: 'Подтверждён', host: 'Хост',
     lastSeen: 'Был(а) в сети: {{t}}', liveNow: 'Сейчас в эфире', watch: 'Смотреть', matchRequired: 'Для звонка нужно взаимное совпадение',

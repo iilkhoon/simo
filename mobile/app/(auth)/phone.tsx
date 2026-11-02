@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Box } from '@/components/ui';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
-import { GradientButton, Header, Screen } from '@/components/ui';
+import { colors, fonts } from '@/theme';
+import { Btn, Header, Screen, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { useStore } from '@/store';
@@ -38,9 +39,9 @@ export default function Phone() {
     <Screen>
       <Header />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, gap: 16 }}>
-        <Text style={font.h1}>{t('auth.phoneTitle')}</Text>
-        <Text style={font.small}>{t('auth.phoneSub')}</Text>
-        <View style={styles.row}>
+        <T v="h1">{t('auth.phoneTitle')}</T>
+        <T v="body" color={colors.textMuted}>{t('auth.phoneSub')}</T>
+        <Box r={18} sh={4} inner={styles.row}>
           <View style={styles.prefix}><Text style={styles.prefixText}>🇦🇿 +994</Text></View>
           <TextInput
             autoFocus
@@ -51,18 +52,20 @@ export default function Phone() {
             placeholderTextColor={colors.textDim}
             style={styles.input}
             maxLength={12}
+            selectionColor={colors.brand}
           />
-        </View>
+        </Box>
+        <T v="tiny" color={colors.textDim}>Azercell · Bakcell · Nar · Naxtel</T>
         <View style={{ flex: 1 }} />
-        <GradientButton title={t('auth.sendCode')} disabled={digits.length !== 9} loading={loading} onPress={send} style={{ marginBottom: 16 }} />
+        <Btn title={t('auth.sendCode')} disabled={digits.length !== 9} loading={loading} onPress={send} style={{ marginBottom: 16 }} />
       </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 10 },
-  prefix: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 14, justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  prefixText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  input: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, height: 60, borderWidth: 1, borderColor: colors.border, letterSpacing: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', height: 66 },
+  prefix: { height: '100%', paddingHorizontal: 14, justifyContent: 'center', borderRightWidth: 2, borderColor: colors.ink, backgroundColor: colors.bgSunken },
+  prefixText: { color: colors.ink, fontSize: 17, fontFamily: fonts.black },
+  input: { flex: 1, color: colors.ink, fontSize: 24, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: '100%', letterSpacing: 0.5 },
 });

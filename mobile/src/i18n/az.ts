@@ -1,5 +1,6 @@
 const az = {
   common: {
+    yesterday: 'Dünən',
     ok: 'Oldu', cancel: 'Ləğv et', save: 'Yadda saxla', next: 'Davam', back: 'Geri', done: 'Hazır', close: 'Bağla',
     retry: 'Yenidən cəhd et', loading: 'Yüklənir…', send: 'Göndər', search: 'Axtar', seeAll: 'Hamısı',
     coins: 'coin', diamonds: 'almaz', online: 'Onlayn', offline: 'Oflayn', km: '{{n}} km', years: '{{n}} yaş',
@@ -59,6 +60,7 @@ const az = {
     filters: 'Filtrlər', onlineNow: 'İndi onlayn', checkinTitle: 'Gündəlik bonus', checkinCta: 'Götür',
   },
   live: {
+    quickVideo: 'Video tanışlıq', quickVideoSub: 'Təsadüfi biri ilə üz-üzə', quickVoice: 'Səsli tanışlıq', quickVoiceSub: 'Yalnız səs, tam rahat', listeners: '{{n}} dinləyici', videoHint: 'Kamera ilə canlı yayın', voiceHint: '8 nəfərlik səsli otaq', titleLabel: 'Başlıq', rules: 'Yayında çılpaqlıq, təhqir və spam qadağandır. Qaydaları pozan yayınlar bağlanır.',
     title: 'Canlı', popular: 'Populyar', new: 'Yeni', nearby: 'Yaxında', voice: 'Səsli otaqlar', following: 'İzlədiklərim',
     goLive: 'Yayına çıx', startVideo: 'Video yayın', startVoice: 'Səsli otaq', titlePlaceholder: 'Yayın başlığı…', start: 'Başla',
     viewers: '{{n}} izləyici', ended: 'Yayın bitdi', endConfirm: 'Yayını bitirmək istəyirsən?', end: 'Bitir',
@@ -73,22 +75,25 @@ const az = {
     uploading: 'Yüklənir… {{p}}%', uploaded: 'Video paylaşıldı!',
   },
   chat: {
+    tabChats: 'Söhbətlər', tabCalls: 'Zənglər', noCalls: 'Hələ zəng yoxdur', noCallsSub: 'Video tanışlıqla bir kliklə kimsə ilə üz-üzə danış', callBack: 'Geri zəng', quickGifts: 'Bir toxunuşla hədiyyə', icebreakers: ['Salam! 👋', 'Necəsən? 😊', 'Profilin çox xoşuma gəldi ✨', 'Bu gün nə edirsən?', 'Çay içək? ☕'], peekTitle: 'Söhbətə başla', sentGift: 'hədiyyə göndərdi',
     title: 'Mesajlar', empty: 'Hələ söhbət yoxdur', emptySub: 'Kəşf et bölməsində kimisə bəyən və ilk addımı at',
     placeholder: 'Mesaj yaz…', msgPrice: 'Mesaj: {{price}} coin', firstFree: 'İlk mesaj pulsuzdur ✨',
     vipFree: 'VIP: bu gün {{n}} pulsuz mesaj', free: 'Pulsuz', typing: 'yazır…', gift: 'Hədiyyə: {{name}} ×{{n}}',
-    callVideo: 'Görüntülü zəng', callVoice: 'Sesli zəng', missed: 'Buraxılmış zəng', rejected: 'Rədd edildi',
+    callVideo: 'Görüntülü zəng', callVoice: 'Səsli zəng', missed: 'Buraxılmış zəng', rejected: 'Rədd edildi',
     cancelled: 'Ləğv edildi', duration: 'Müddət {{t}}', blocked: 'Bu istifadəçi ilə yazışma mümkün deyil',
     matches: 'Yeni uyğunluqlar', read: 'Oxundu', safety: 'Təhlükəsizlik üçün telefon nömrələri və linklər gizlədilir',
   },
   call: {
-    calling: 'Zəng edilir…', incomingVideo: 'Görüntülü zəng', incomingVoice: 'Sesli zəng', accept: 'Qəbul et',
+    flip: 'Çevir',
+    calling: 'Zəng edilir…', incomingVideo: 'Görüntülü zəng', incomingVoice: 'Səsli zəng', accept: 'Qəbul et',
     decline: 'Rədd et', end: 'Bitir', price: '{{price}} coin/dəq', lowBalance: 'Balansın {{n}} dəqiqəyə çatır. Yüklə ki, söhbət kəsilməsin!',
     ended: 'Zəng bitdi', reasons: { NO_ANSWER: 'Cavab verilmədi', REJECTED: 'Zəng rədd edildi', INSUFFICIENT_COINS: 'Balans bitdi', HANGUP: 'Zəng bitdi', CANCELLED: 'Zəng ləğv edildi', DISCONNECTED: 'Bağlantı kəsildi' },
     rtcMissing: 'Zəng modulu bu versiyada aktiv deyil (development build lazımdır)',
     speaker: 'Dinamik', camera: 'Kamera', mic: 'Mikrofon',
   },
-  gifts: { title: 'Hədiyyələr', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks' },
+  gifts: { title: 'Hədiyyələr', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks', pick: 'Hədiyyə seç' },
   wallet: {
+    usage1: 'Mesajlar', usage2: 'Zənglər', usage3: 'Hədiyyələr', secure: 'Ödənişlər App Store / Google Play və ya Epoint vasitəsilə təhlükəsiz həyata keçirilir', noHistory: 'Hələ əməliyyat yoxdur',
     title: 'Pul kisəsi', balance: 'Simo Coin balansı', recharge: 'Coin yüklə', firstBonus: 'İLK YÜKLƏMƏDƏ ×2 COIN',
     history: 'Əməliyyatlar', bonus: '+{{n}} bonus', popular: 'Populyar', success: '+{{n}} coin yükləndi! 🎉',
     pending: 'Ödəniş yoxlanılır…', failed: 'Ödəniş alınmadı', storeUnavailable: 'Mağaza ödənişi əlçatan deyil',
@@ -101,6 +106,7 @@ const az = {
     } as Record<string, string>,
   },
   vip: {
+    heroTitle: 'Hamıdan öndə ol', best: 'Ən sərfəli',
     title: 'Simo VIP', subtitle: 'Diqqət mərkəzində ol. Daha çox tanış ol.', buy: '{{price}} coin — 30 gün',
     activeUntil: '{{tier}} aktivdir: {{date}} tarixinədək', days: '{{n}} gün', current: 'Cari', extend: 'Uzat',
     perks: {
@@ -116,7 +122,7 @@ const az = {
     methods: { CARD: 'Bank kartı', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Agentlik vasitəsilə' } as Record<string, string>,
     requests: 'Sorğular', status: { PENDING: 'Gözləmədə', APPROVED: 'Təsdiqləndi', PAID: 'Ödənildi', REJECTED: 'Rədd edildi' } as Record<string, string>,
     sent: 'Sorğu göndərildi. 1-3 iş günü ərzində ödəniləcək.', howTo: 'Mesaj, zəng və hədiyyələrdən almaz qazan',
-    callPrices: 'Zəng qiymətlərim', videoPrice: 'Görüntülü (coin/dəq)', voicePrice: 'Sesli (coin/dəq)',
+    callPrices: 'Zəng qiymətlərim', videoPrice: 'Görüntülü (coin/dəq)', voicePrice: 'Səsli (coin/dəq)',
   },
   agency: {
     title: 'Agentlik', create: 'Agentlik yarat', join: 'Agentliyə qoşul', code: 'Agentlik kodu', name: 'Agentlik adı',
@@ -127,7 +133,11 @@ const az = {
     pitch: 'Agentliklər hostları bir araya gətirir, onlara dəstək olur və hər hostun qazancından əlavə {{n}}% komissiya alır.',
     hostPitch: 'Agentliyə qoşul — təlim, dəstək və daha yüksək qazanc!',
   },
+  match: {
+    video: 'Video', voice: 'Səsli', searching: 'Axtarılır…', searchingSub: 'Sənin üçün onlayn birini tapırıq', none: 'Hazırda boş adam yoxdur', noneSub: 'Bir az sonra yenidən yoxla və ya canlı yayınlara bax', min: 'dəq', next: 'Növbəti', call: 'Zəng et', billing: 'Ödəniş yalnız qəbul ediləndən sonra', profile: 'Profil',
+  },
   me: {
+    hostPitch: 'Söhbət et, hədiyyə al, almazı nağdlaşdır',
     wallet: 'Pul kisəsi', vip: 'VIP üzvlük', earnings: 'Qazancım', agency: 'Agentlik', likes: 'Məni bəyənənlər',
     visitors: 'Profilimə baxanlar', rewards: 'Bonuslar və tapşırıqlar', leaderboard: 'Liderlər', settings: 'Parametrlər',
     editProfile: 'Profili redaktə et', becomeHost: 'Host ol və qazan 💰', hostPending: 'Host müraciətin yoxlanılır',
@@ -146,6 +156,7 @@ const az = {
     version: 'Versiya {{v}}',
   },
   profile: {
+    followingCount: 'İzlədikləri',
     about: 'Haqqında', interests: 'Maraqlar', giftWall: 'Hədiyyə divarı', videos: 'Videolar', message: 'Mesaj',
     videoCall: 'Video', voiceCall: 'Səs', gift: 'Hədiyyə', verified: 'Təsdiqlənmiş', host: 'Host',
     lastSeen: 'Son aktivlik: {{t}}', liveNow: 'İndi canlıdadır', watch: 'İzlə', matchRequired: 'Zəng üçün qarşılıqlı uyğunluq lazımdır',

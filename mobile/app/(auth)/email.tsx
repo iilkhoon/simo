@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, font } from '@/theme';
-import { GradientButton, Header, Input, Screen } from '@/components/ui';
+import { colors, fonts } from '@/theme';
+import { Btn, Header, Input, Screen, T, Tabs } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { startSession } from '@/lib/session';
@@ -36,13 +36,14 @@ export default function Email() {
     <Screen>
       <Header />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, gap: 14 }}>
-        <Text style={font.h1}>{mode === 'login' ? t('auth.login') : t('auth.register')}</Text>
-        <Input placeholder={t('auth.email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
-        <Input placeholder={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry autoComplete={mode === 'login' ? 'password' : 'new-password'} />
-        {mode === 'register' ? <Input placeholder={t('auth.referral')} value={referral} onChangeText={setReferral} autoCapitalize="none" /> : null}
-        <GradientButton title={mode === 'login' ? t('auth.login') : t('auth.register')} loading={loading} disabled={!email.includes('@') || password.length < 8} onPress={submit} />
+        <T v="h1">{mode === 'login' ? t('auth.login') : t('auth.register')}</T>
+        <Tabs value={mode} onChange={setMode} options={[{ key: 'register', label: t('auth.register') }, { key: 'login', label: t('auth.login') }]} />
+        <Input label={t('auth.email')} placeholder="ad@mail.az" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+        <Input label={t('auth.password')} placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry autoComplete={mode === 'login' ? 'password' : 'new-password'} />
+        {mode === 'register' ? <Input label={t('auth.referral')} placeholder="123456" value={referral} onChangeText={setReferral} autoCapitalize="none" /> : null}
+        <Btn title={mode === 'login' ? t('auth.login') : t('auth.register')} loading={loading} disabled={!email.includes('@') || password.length < 8} onPress={submit} />
         <Pressable onPress={() => setMode(mode === 'login' ? 'register' : 'login')} style={{ alignSelf: 'center', padding: 8 }}>
-          <Text style={{ color: colors.rose, fontWeight: '700' }}>{mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}</Text>
+          <Text style={{ color: colors.brand, fontFamily: fonts.bold }}>{mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
       </KeyboardAvoidingView>

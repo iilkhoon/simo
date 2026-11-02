@@ -2,22 +2,28 @@ import React, { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font } from '@/theme';
-import { EmptyState, GradientButton, Loader, Screen } from '@/components/ui';
+import { colors, fonts } from '@/theme';
+import { Badge, Btn, EmptyState, IconBtn, Loader, Screen, T, Tabs, TitleBar } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/Badges';
+import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
-import { timeAgo } from '@/lib/format';
+import { duration, timeAgo } from '@/lib/format';
+import { startCall } from '@/lib/calls';
 import { getSocket } from '@/lib/socket';
 import { useStore } from '@/store';
-import type { PublicUser } from '@/lib/types';
+import type { Call, PublicUser } from '@/lib/types';
 
 interface Conv { id: string; user: PublicUser; lastMessageText: string; lastMessageAt: string; unread: number }
+interface CallRow extends Call { createdAt: string; endedAt: string | null; peer: PublicUser | null }
 
 export default function Chats() {
   const { t } = useTranslation();
   const setUnread = useStore((s) => s.setUnreadChats);
+  const myId = useStore((s) => s.me?.id);
+  const [tab, setTab] = useState<'chats' | 'calls'>('chats');
   const [items, setItems] = useState<Conv[] | null>(null);
+  const [calls, setCalls] = useState<CallRow[] | null>(null);
   const [matches, setMatches] = useState<PublicUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -33,16 +39,25 @@ export default function Chats() {
     }
   }, [setUnread]);
 
+  const loadCalls = useCallback(async () => {
+    try {
+      setCalls((await api<{ items: CallRow[] }>('/calls')).items);
+    } catch {
+      setCalls((cur) => cur ?? []);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void load();
+      void loadCalls();
       const s = getSocket();
       const h = () => void load();
       s?.on('message:new', h);
       return () => {
         s?.off('message:new', h);
       };
-    }, [load]),
+    }, [load, loadCalls]),
   );
 
   async function openMatch(u: PublicUser) {
@@ -50,58 +65,101 @@ export default function Chats() {
     router.push({ pathname: '/chat/[id]', params: { id: r.id } });
   }
 
+  const refresh = async () => {
+    setRefreshing(true);
+    await (tab === 'chats' ? load() : loadCalls());
+    setRefreshing(false);
+  };
+
   return (
     <Screen>
-      <Text style={[font.h1, { paddingVertical: 8 }]}>{t('chat.title')}</Text>
-      {items === null ? (
+      <TitleBar title={t('chat.title')} right={<IconBtn name="people" size={40} onPress={() => router.push('/likes')} />} />
+      <Tabs value={tab} onChange={setTab} options={[{ key: 'chats', label: t('chat.tabChats') }, { key: 'calls', label: t('chat.tabCalls') }]} />
+      <View style={{ height: 10 }} />
+      {tab === 'chats' ? (
+        items === null ? (
+          <Loader full />
+        ) : (
+          <FlatList
+            data={items.filter((c) => c.lastMessageText)}
+            keyExtractor={(c) => c.id}
+            refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={refresh} />}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              matches.length ? (
+                <View style={{ marginBottom: 8, marginTop: 4 }}>
+                  <T v="label" color={colors.brand} style={{ marginBottom: 10 }}>{t('chat.matches')}</T>
+                  <FlatList
+                    horizontal
+                    data={matches}
+                    keyExtractor={(u) => u.id}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 12, paddingRight: 8 }}
+                    renderItem={({ item }) => (
+                      <Pressable onPress={() => void openMatch(item)} style={{ alignItems: 'center', width: 66 }}>
+                        <Avatar uri={item.avatarUrl} name={item.name} size={60} online={item.online} vipTier="GOLD" />
+                        <Text style={styles.matchName} numberOfLines={1}>{item.name}</Text>
+                      </Pressable>
+                    )}
+                  />
+                </View>
+              ) : undefined
+            }
+            ListEmptyComponent={
+              <EmptyState icon="chat" title={t('chat.empty')} sub={t('chat.emptySub')} action={<Btn full={false} size="md" kind="dark" title={t('tabs.discover')} onPress={() => router.push('/(tabs)/discover')} />} />
+            }
+            renderItem={({ item }) => (
+              <Pressable onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })} style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.bgSunken }]}>
+                <Avatar uri={item.user.avatarUrl} name={item.user.name} size={54} online={item.user.online} vipTier={item.user.vipTier} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <Text style={styles.name} numberOfLines={1}>{item.user.name}</Text>
+                    {item.user.verified ? <VerifiedBadge size={14} /> : null}
+                    {item.user.isHost ? <View style={styles.hostDot} /> : null}
+                  </View>
+                  <Text style={[styles.last, item.unread > 0 && { color: colors.ink, fontFamily: fonts.bold }]} numberOfLines={1}>{item.lastMessageText}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                  <Text style={[styles.time, item.unread > 0 && { color: colors.brand }]}>{timeAgo(item.lastMessageAt)}</Text>
+                  {item.unread > 0 ? <Badge n={item.unread} /> : <Icon name="check2" size={14} color={colors.textDim} />}
+                </View>
+              </Pressable>
+            )}
+          />
+        )
+      ) : calls === null ? (
         <Loader full />
       ) : (
         <FlatList
-          data={items.filter((c) => c.lastMessageText)}
+          data={calls.filter((c) => c.peer)}
           keyExtractor={(c) => c.id}
-          refreshControl={<RefreshControl tintColor={colors.rose} refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
+          refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={refresh} />}
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
-          ListHeaderComponent={
-            matches.length ? (
-              <View style={{ marginBottom: 12 }}>
-                <Text style={[font.h3, { marginBottom: 10 }]}>💞 {t('chat.matches')}</Text>
-                <FlatList
-                  horizontal
-                  data={matches}
-                  keyExtractor={(u) => u.id}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 14 }}
-                  renderItem={({ item }) => (
-                    <Pressable onPress={() => void openMatch(item)} style={{ alignItems: 'center', width: 68 }}>
-                      <Avatar uri={item.avatarUrl} name={item.name} size={62} online={item.online} live />
-                      <Text style={{ color: '#fff', fontSize: 12, marginTop: 6 }} numberOfLines={1}>{item.name}</Text>
-                    </Pressable>
-                  )}
-                />
-              </View>
-            ) : undefined
-          }
-          ListEmptyComponent={
-            <EmptyState icon="chat" title={t('chat.empty')} sub={t('chat.emptySub')} action={<GradientButton small title={t('tabs.discover')} onPress={() => router.push('/(tabs)')} />} />
-          }
-          renderItem={({ item }) => (
-            <Pressable onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
-              <Avatar uri={item.user.avatarUrl} name={item.user.name} size={56} online={item.user.online} vipTier={item.user.vipTier} />
-              <View style={{ flex: 1, gap: 3 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Text style={styles.name} numberOfLines={1}>{item.user.name}</Text>
-                  {item.user.verified ? <VerifiedBadge size={14} /> : null}
+          ListEmptyComponent={<EmptyState icon="call" title={t('chat.noCalls')} sub={t('chat.noCallsSub')} tint={colors.diamondSoft} action={<Btn full={false} size="md" kind="primary" icon="videocam" title={t('live.quickVideo')} onPress={() => router.push({ pathname: '/match', params: { type: 'VIDEO' } })} />} />}
+          renderItem={({ item }) => {
+            const out = item.callerId === myId;
+            const missed = !item.startedAt;
+            const secs = item.startedAt && item.endedAt ? Math.round((new Date(item.endedAt).getTime() - new Date(item.startedAt).getTime()) / 1000) : 0;
+            const peer = item.peer!;
+            return (
+              <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: peer.id } })} style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.bgSunken }]}>
+                <Avatar uri={peer.avatarUrl} name={peer.name} size={50} online={peer.online} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={[styles.name, missed && !out && { color: colors.brand }]} numberOfLines={1}>{peer.name}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <Icon name={out ? 'arrowUp' : 'arrowRight'} size={13} color={missed ? colors.brand : colors.online} />
+                    <Text style={styles.last}>
+                      {item.type === 'VIDEO' ? t('chat.callVideo') : t('chat.callVoice')}
+                      {secs ? ` · ${duration(secs)}` : missed ? ` · ${t(out ? 'chat.cancelled' : 'chat.missed')}` : ''}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={[styles.last, item.unread > 0 && { color: '#fff', fontWeight: '600' }]} numberOfLines={1}>{item.lastMessageText}</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                <Text style={styles.time}>{timeAgo(item.lastMessageAt)}</Text>
-                {item.unread > 0 ? (
-                  <View style={styles.badge}><Text style={styles.badgeText}>{item.unread}</Text></View>
-                ) : null}
-              </View>
-            </Pressable>
-          )}
+                <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+                <IconBtn name={item.type === 'VIDEO' ? 'videocam' : 'call'} size={38} bg={item.type === 'VIDEO' ? colors.brandSoft : colors.diamondSoft} onPress={() => void startCall(peer.id, item.type)} />
+              </Pressable>
+            );
+          }}
         />
       )}
     </Screen>
@@ -109,10 +167,10 @@ export default function Chats() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  name: { color: '#fff', fontSize: 16, fontWeight: '700', flexShrink: 1 },
-  last: { color: colors.textMuted, fontSize: 14 },
-  time: { color: colors.textDim, fontSize: 12 },
-  badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: colors.rose, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  badgeText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 16, borderBottomWidth: 1.5, borderBottomColor: colors.hairline },
+  matchName: { color: colors.ink, fontSize: 12, marginTop: 6, fontFamily: fonts.semibold },
+  name: { color: colors.ink, fontSize: 16, fontFamily: fonts.bold, flexShrink: 1 },
+  last: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.regular },
+  time: { color: colors.textDim, fontSize: 12, fontFamily: fonts.semibold },
+  hostDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.coin, borderWidth: 1.5, borderColor: colors.ink },
 });

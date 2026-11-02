@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions, type ListViewToken } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
-import { colors, gradients } from '@/theme';
-import { EmptyState, GradientButton, Loader } from '@/components/ui';
+import { colors, fonts } from '@/theme';
+import { Btn, EmptyState, IconBtn, Loader, Tabs, tap } from '@/components/ui';
+import { sheetStyles } from '@/components/ActionSheet';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { GiftSheet } from '@/components/GiftSheet';
@@ -39,7 +40,7 @@ function Player({ uri, active, height }: { uri: string; active: boolean; height:
   return (
     <Pressable onPress={() => setPaused((p) => !p)} style={{ height }}>
       <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
-      {paused ? <View style={styles.pause}><Icon name="play" size={64} color="rgba(255,255,255,0.85)" /></View> : null}
+      {paused ? <View style={styles.pause}><View style={styles.playDisc}><Icon name="play" size={40} color={colors.ink} /></View></View> : null}
     </Pressable>
   );
 }
@@ -63,7 +64,8 @@ function Comments({ video, onClose, onAdded }: { video: Video | null; onClose: (
   return (
     <Modal visible={!!video} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 8 }]}>
+      <View style={[sheetStyles.sheet, styles.sheet, { paddingBottom: insets.bottom + 8 }]}>
+        <View style={sheetStyles.grip} />
         <Text style={styles.sheetTitle}>{t('videos.comments')} · {items.length}</Text>
         <FlatList
           data={items}
@@ -73,15 +75,15 @@ function Comments({ video, onClose, onAdded }: { video: Video | null; onClose: (
             <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 8 }}>
               <Avatar uri={item.user?.avatarUrl} name={item.user?.name} size={34} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.user?.name} · {timeAgo(item.createdAt)}</Text>
-                <Text style={{ color: '#fff', marginTop: 2 }}>{item.text}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12, fontFamily: fonts.semibold }}>{item.user?.name} · {timeAgo(item.createdAt)}</Text>
+                <Text style={{ color: colors.ink, marginTop: 2, fontFamily: fonts.regular, fontSize: 14.5 }}>{item.text}</Text>
               </View>
             </View>
           )}
         />
         <View style={styles.inputRow}>
           <TextInput value={text} onChangeText={setText} placeholder={t('videos.addComment')} placeholderTextColor={colors.textDim} style={styles.input} maxLength={300} />
-          <Pressable onPress={send} style={styles.send}><Icon name="send" size={18} /></Pressable>
+          <Pressable onPress={send} style={styles.send}><Icon name="arrowUp" size={20} color={colors.white} /></Pressable>
         </View>
       </View>
     </Modal>
@@ -159,12 +161,13 @@ export default function Videos() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: colors.night }}>
+      {focused ? <StatusBar style="light" /> : null}
       {items === null ? (
-        <Loader full />
+        <Loader full night />
       ) : items.length === 0 ? (
         <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 50 }}>
-          <EmptyState icon="video" title={t('videos.empty')} action={<GradientButton small title={t('videos.upload')} onPress={() => router.push('/video/upload')} />} />
+          <EmptyState icon="video" title={t('videos.empty')} action={<Btn full={false} size="md" icon="add" title={t('videos.upload')} onPress={() => router.push('/video/upload')} />} />
         </View>
       ) : (
         <FlatList
@@ -186,48 +189,48 @@ export default function Videos() {
           renderItem={({ item, index }) => (
             <View style={{ height: H }}>
               <Player uri={item.url} active={focused && index === active} height={H} />
-              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.shade} pointerEvents="none" />
               <View style={styles.side}>
                 <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: item.user.id } })} style={{ alignItems: 'center' }}>
-                  <Avatar uri={item.user.avatarUrl} name={item.user.name} size={46} />
+                  <Avatar uri={item.user.avatarUrl} name={item.user.name} size={48} ring={false} />
                   {!item.following && item.user.id !== meId ? (
-                    <Pressable onPress={() => void follow(item)} style={styles.plus}><Icon name="add" size={14} /></Pressable>
+                    <Pressable onPress={() => void follow(item)} style={styles.plus}><Icon name="add" size={14} color={colors.white} /></Pressable>
                   ) : null}
                 </Pressable>
-                <Pressable onPress={() => void toggleLike(item)} style={styles.sideBtn}>
-                  <Icon name="heart" size={34} color={item.liked ? colors.rose : '#fff'} />
+                <Pressable onPress={() => { tap(); void toggleLike(item); }} style={styles.sideBtn}>
+                  <View style={[styles.disc, item.liked && { backgroundColor: colors.brand }]}><Icon name="heart" size={24} color={item.liked ? colors.white : colors.ink} /></View>
                   <Text style={styles.sideText}>{compact(item.likesCount)}</Text>
                 </Pressable>
                 <Pressable onPress={() => setCommentsFor(item)} style={styles.sideBtn}>
-                  <Icon name="chatOutline" size={32} />
+                  <View style={styles.disc}><Icon name="chatOutline" size={22} color={colors.ink} /></View>
                   <Text style={styles.sideText}>{compact(item.commentsCount)}</Text>
                 </Pressable>
                 {item.user.id !== meId ? (
                   <Pressable onPress={() => setGiftFor(item)} style={styles.sideBtn}>
-                    <LinearGradient colors={gradients.primary} style={styles.giftBtn}><Icon name="gift" size={22} /></LinearGradient>
+                    <View style={[styles.disc, { backgroundColor: colors.coin }]}><Icon name="gift" size={22} color={colors.ink} /></View>
                     <Text style={styles.sideText}>{compact(item.giftsCoins)}</Text>
                   </Pressable>
                 ) : null}
                 <Pressable onPress={() => void Share.share({ message: `${item.user.name} · Simo ${WEB_URL}` })} style={styles.sideBtn}>
-                  <Icon name="share" size={30} />
+                  <View style={styles.disc}><Icon name="share" size={21} color={colors.ink} /></View>
                 </Pressable>
               </View>
               <View style={styles.caption}>
-                <Text style={styles.author}>@{item.user.name} {item.user.verified ? '✓' : ''}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.author}>@{item.user.name}</Text>
+                  {item.user.verified ? <Icon name="verified" size={15} color={colors.diamond} /> : null}
+                  <Text style={styles.views}>· ▶ {compact(item.views)}</Text>
+                </View>
                 {item.caption ? <Text style={styles.captionText} numberOfLines={3}>{item.caption}</Text> : null}
-                <Text style={styles.views}>▶ {compact(item.views)}</Text>
               </View>
             </View>
           )}
         />
       )}
       <View style={[styles.topBar, { top: insets.top + 6 }]}>
-        {(['following', 'foryou'] as const).map((k) => (
-          <Pressable key={k} onPress={() => setTab(k)}>
-            <Text style={[styles.topTab, tab === k && styles.topTabActive]}>{k === 'foryou' ? t('videos.forYou') : t('videos.following')}</Text>
-          </Pressable>
-        ))}
-        <Pressable onPress={() => router.push('/video/upload')} style={styles.upload}><Icon name="add" size={22} /></Pressable>
+        <View style={{ width: 210 }}>
+          <Tabs night value={tab} onChange={setTab} options={[{ key: 'following', label: t('videos.following') }, { key: 'foryou', label: t('videos.forYou') }]} />
+        </View>
+        <IconBtn name="add" size={40} bg={colors.brand} color={colors.white} style={styles.upload} onPress={() => router.push('/video/upload')} />
       </View>
       <GiftOverlay ref={overlay} />
       <Comments video={commentsFor} onClose={() => setCommentsFor(null)} onAdded={() => commentsFor && patch(commentsFor.id, { commentsCount: commentsFor.commentsCount + 1 })} />
@@ -236,6 +239,7 @@ export default function Videos() {
           visible
           onClose={() => setGiftFor(null)}
           receiverId={giftFor.user.id}
+          receiverName={giftFor.user.name}
           context="VIDEO"
           contextId={giftFor.id}
           onSent={(e) => {
@@ -250,23 +254,21 @@ export default function Videos() {
 
 const styles = StyleSheet.create({
   pause: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  shade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 260 },
-  side: { position: 'absolute', right: 10, bottom: 30, alignItems: 'center', gap: 18 },
-  plus: { marginTop: -10, backgroundColor: colors.rose, borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
-  sideBtn: { alignItems: 'center', gap: 2 },
-  sideText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  giftBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  caption: { position: 'absolute', left: 14, right: 80, bottom: 24 },
-  author: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  captionText: { color: '#fff', marginTop: 6, fontSize: 14 },
-  views: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 6 },
-  topBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 22 },
-  topTab: { color: 'rgba(255,255,255,0.6)', fontSize: 17, fontWeight: '700' },
-  topTabActive: { color: '#fff', textDecorationLine: 'underline' },
-  upload: { position: 'absolute', right: 16, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-  sheet: { backgroundColor: '#1A0C2C', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16 },
-  sheetTitle: { color: '#fff', fontWeight: '800', fontSize: 16, textAlign: 'center', marginBottom: 8 },
+  playDisc: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.card, borderWidth: 2.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', paddingLeft: 6 },
+  side: { position: 'absolute', right: 10, bottom: 26, alignItems: 'center', gap: 14 },
+  plus: { marginTop: -11, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  sideBtn: { alignItems: 'center', gap: 3 },
+  disc: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  sideText: { color: colors.white, fontSize: 12, fontFamily: fonts.black, textShadowColor: colors.ink, textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 1 },
+  caption: { position: 'absolute', left: 12, right: 78, bottom: 22, backgroundColor: 'rgba(15,13,12,0.55)', borderRadius: 16, padding: 12 },
+  author: { color: colors.white, fontFamily: fonts.black, fontSize: 15 },
+  captionText: { color: colors.nightText, marginTop: 5, fontSize: 14, fontFamily: fonts.regular, lineHeight: 19 },
+  views: { color: colors.nightMuted, fontSize: 12, fontFamily: fonts.semibold },
+  topBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  upload: { position: 'absolute', right: 12 },
+  sheet: { paddingTop: 10, paddingHorizontal: 16 },
+  sheetTitle: { color: colors.ink, fontFamily: fonts.displayBold, fontSize: 16, textAlign: 'center', marginVertical: 8 },
   inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  input: { flex: 1, backgroundColor: colors.surface, color: '#fff', borderRadius: 22, paddingHorizontal: 16, height: 44 },
-  send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.rose, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, backgroundColor: colors.card, color: colors.ink, borderRadius: 22, paddingHorizontal: 16, height: 46, borderWidth: 2, borderColor: colors.ink, fontFamily: fonts.medium },
+  send: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
 });

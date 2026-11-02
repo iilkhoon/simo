@@ -39,7 +39,3 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-
-# native (EAS prebuild yaradır)
-/android
-/ios

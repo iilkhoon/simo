@@ -115,6 +115,17 @@ async function main() {
       assert.ok(g && g.distanceKm >= 1 && g.distanceKm < 5);
     });
 
+    await step('Təsadüfi video tanışlıq: onlayn host seçilir, keçilən təkrar gəlmir', async () => {
+      await prisma.user.update({ where: { id: girlId }, data: { online: true } });
+      const m = await api('GET', '/calls/match?type=VIDEO', man);
+      assert.equal(m.status, 200);
+      assert.ok(m.data.user, 'onlayn host tapılmalıdır');
+      assert.equal(m.data.user.gender, 'FEMALE');
+      assert.ok(m.data.price > 0);
+      const skipped = await api('GET', `/calls/match?type=VOICE&skip=${girlId}`, man);
+      assert.notEqual(skipped.data.user?.id, girlId);
+    });
+
     await step('Qarşılıqlı bəyənmə → uyğunluq', async () => {
       const a = await api('POST', '/swipes', man, { toId: girlId, action: 'LIKE' });
       assert.equal(a.data.matched, false);

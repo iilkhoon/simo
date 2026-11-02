@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, gradients, radius } from '@/theme';
-import { Card, GradientButton, Header, Input, Loader, OutlineButton, Screen } from '@/components/ui';
+import { colors, font, fonts, radius } from '@/theme';
+import { Box, Btn, Card, Header, Input, Loader, Screen, T, Tabs, Tag } from '@/components/ui';
+import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { DiamondAmount } from '@/components/Badges';
 import { api } from '@/lib/api';
@@ -62,9 +62,9 @@ export default function Agency() {
     return (
       <Screen scroll>
         <Header title={a.name} />
-        {a.status !== 'ACTIVE' ? <Text style={[font.small, { color: colors.gold, textAlign: 'center', marginBottom: 10 }]}>⏳ {t('agency.pending')}</Text> : null}
-        <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>{t('agency.inviteCode', { code: a.code })}</Text>
+        {a.status !== 'ACTIVE' ? <Tag label={`⏳ ${t('agency.pending')}`} bg={colors.coinSoft} style={{ alignSelf: 'center', marginBottom: 10, height: 26, paddingHorizontal: 10 }} /> : null}
+        <Box r={26} sh={6} bg={colors.lilac} inner={styles.hero}>
+          <T v="label">{t('agency.inviteCode', { code: a.code })}</T>
           <View style={styles.statsRow}>
             {[
               [t('agency.members'), String(dash.stats?.members ?? 0)],
@@ -72,14 +72,14 @@ export default function Agency() {
               [t('agency.month'), `💎 ${dash.stats?.monthDiamonds ?? 0}`],
             ].map(([k, v]) => (
               <View key={k} style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900' }}>{v}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{k}</Text>
+                <T v="num">{v}</T>
+                <T v="tiny" color={colors.textMuted}>{k}</T>
               </View>
             ))}
           </View>
-          <Text style={{ color: '#fff', fontWeight: '800' }}>{t('agency.commission')}: 💎 {dash.stats?.monthCommission ?? 0}</Text>
-          <OutlineButton small title={t('common.share')} icon="share" onPress={() => void Share.share({ message: `Simo ${t('agency.code')}: ${a.code}` })} />
-        </LinearGradient>
+          <T v="bodyStrong">{t('agency.commission')}: 💎 {dash.stats?.monthCommission ?? 0}</T>
+          <Btn size="md" kind="dark" title={t('common.share')} icon="share" onPress={() => void Share.share({ message: `Simo ${t('agency.code')}: ${a.code}` })} />
+        </Box>
         {dash.requests?.length ? (
           <>
             <Text style={[font.h3, { marginTop: 18, marginBottom: 8 }]}>{t('agency.requests')}</Text>
@@ -89,7 +89,7 @@ export default function Agency() {
                   <Avatar uri={r.user.avatarUrl} name={r.user.name} size={40} />
                   <Text style={[font.body, { flex: 1 }]}>{r.user.name}</Text>
                   <Pressable onPress={() => void act(() => api(`/agencies/requests/${r.id}/approve`, { body: {} }))} style={[styles.small, { backgroundColor: colors.online }]}><Text style={styles.smallText}>{t('agency.approve')}</Text></Pressable>
-                  <Pressable onPress={() => void act(() => api(`/agencies/requests/${r.id}/reject`, { body: {} }))} style={[styles.small, { backgroundColor: colors.surface2 }]}><Text style={styles.smallText}>{t('agency.reject')}</Text></Pressable>
+                  <Pressable onPress={() => void act(() => api(`/agencies/requests/${r.id}/reject`, { body: {} }))} style={[styles.small, { backgroundColor: colors.card }]}><Text style={[styles.smallText, { color: colors.ink }]}>{t('agency.reject')}</Text></Pressable>
                 </View>
               ))}
             </Card>
@@ -105,7 +105,7 @@ export default function Agency() {
                 <Text style={font.tiny}>{t('agency.week')}: {m.weekDiamonds} · {t('agency.month')}: {m.monthDiamonds}</Text>
               </View>
               {!m.user.isHost ? (
-                <Pressable onPress={() => void act(() => api(`/agencies/members/${m.user.id}/approve-host`, { body: {} }), '✓')} style={[styles.small, { backgroundColor: colors.rose }]}><Text style={styles.smallText}>{t('agency.approveHost')}</Text></Pressable>
+                <Pressable onPress={() => void act(() => api(`/agencies/members/${m.user.id}/approve-host`, { body: {} }), '✓')} style={[styles.small, { backgroundColor: colors.brand }]}><Text style={styles.smallText}>{t('agency.approveHost')}</Text></Pressable>
               ) : <DiamondAmount n={m.monthDiamonds} size={14} />}
             </Pressable>
           ))}
@@ -122,7 +122,7 @@ export default function Agency() {
         <Card style={{ padding: 20, gap: 12, alignItems: 'center' }}>
           <Text style={font.h2}>{t('agency.yourAgency', { name: me.agency.name })}</Text>
           <Text style={font.small}>{t('agency.code')}: {me.agency.code}</Text>
-          <OutlineButton danger title={t('agency.leave')} onPress={() => void act(() => api('/agencies/leave', { body: {} }))} />
+          <Btn kind="light" title={t('agency.leave')} icon="exit" onPress={() => void act(() => api('/agencies/leave', { body: {} }))} />
         </Card>
       </Screen>
     );
@@ -131,25 +131,24 @@ export default function Agency() {
   return (
     <Screen scroll>
       <Header title={t('agency.title')} />
-      <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-        <Text style={{ fontSize: 34 }}>🏢</Text>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900' }}>{t('agency.hostPitch')}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.9)' }}>{t('agency.pitch', { n: 10 })}</Text>
-      </LinearGradient>
-      {myReq?.status === 'PENDING' ? <Text style={[font.small, { color: colors.gold, marginTop: 12 }]}>⏳ {myReq.agency.name} — {t('earnings.status.PENDING')}</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 10, marginVertical: 16 }}>
-        <OutlineButton small title={t('agency.join')} style={[{ flex: 1 }, mode === 'join' && { borderColor: colors.rose }]} onPress={() => setMode('join')} />
-        <OutlineButton small title={t('agency.create')} style={[{ flex: 1 }, mode === 'create' && { borderColor: colors.rose }]} onPress={() => setMode('create')} />
+      <Box r={26} sh={6} bg={colors.lilac} inner={styles.hero}>
+        <View style={styles.heroIcon}><Icon name="business" size={26} color={colors.ink} /></View>
+        <T v="h2">{t('agency.hostPitch')}</T>
+        <T v="body" color={colors.textMuted}>{t('agency.pitch', { n: 10 })}</T>
+      </Box>
+      {myReq?.status === 'PENDING' ? <Tag label={`⏳ ${myReq.agency.name} — ${t('earnings.status.PENDING')}`} bg={colors.coinSoft} style={{ marginTop: 12, height: 26, paddingHorizontal: 10 }} /> : null}
+      <View style={{ marginVertical: 16 }}>
+        <Tabs value={mode} onChange={setMode} options={[{ key: 'join', label: t('agency.join') }, { key: 'create', label: t('agency.create') }]} />
       </View>
       {mode === 'join' ? (
         <View style={{ gap: 12 }}>
           <Input label={t('agency.code')} value={code} onChangeText={(v) => setCode(v.toUpperCase())} autoCapitalize="characters" placeholder="ABC123" />
-          <GradientButton title={t('agency.join')} loading={busy} disabled={code.length < 4} onPress={() => void act(() => api('/agencies/join', { body: { code } }), t('agency.joinSent'))} />
+          <Btn title={t('agency.join')} loading={busy} disabled={code.length < 4} onPress={() => void act(() => api('/agencies/join', { body: { code } }), t('agency.joinSent'))} />
         </View>
       ) : (
         <View style={{ gap: 12 }}>
           <Input label={t('agency.name')} value={name} onChangeText={setName} maxLength={40} />
-          <GradientButton title={t('agency.create')} loading={busy} disabled={name.trim().length < 3} onPress={() => void act(() => api('/agencies', { body: { name: name.trim() } }), t('agency.pending'))} />
+          <Btn title={t('agency.create')} loading={busy} disabled={name.trim().length < 3} onPress={() => void act(() => api('/agencies', { body: { name: name.trim() } }), t('agency.pending'))} />
         </View>
       )}
     </Screen>
@@ -157,9 +156,10 @@ export default function Agency() {
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: radius.xl, padding: 20, gap: 12 },
-  statsRow: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: radius.md, paddingVertical: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderColor: colors.border },
-  small: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
-  smallText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  hero: { padding: 20, gap: 12 },
+  heroIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  statsRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 2, borderColor: colors.ink, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1.5, borderColor: colors.hairline },
+  small: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.ink },
+  smallText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12 },
 });

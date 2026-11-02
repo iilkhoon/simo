@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font } from '@/theme';
+import { colors, font , fonts } from '@/theme';
 import { EmptyState, Header, Loader, Screen } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { GiftIcon } from '@/components/GiftIcon';
@@ -43,13 +43,13 @@ export default function Notifications() {
               <Avatar uri={item.actor?.avatarUrl} name={item.actor?.name} size={48} online={item.actor?.online} />
               <View style={{ flex: 1 }}>
                 <Text style={font.body}>
-                  <Text style={{ fontWeight: '800' }}>{item.actor?.name ?? 'Simo'} </Text>
+                  <Text style={{ fontFamily: fonts.black }}>{item.actor?.name ?? 'Simo'} </Text>
                   {t(`notifications.types.${item.type}`, { defaultValue: '' })}
                 </Text>
                 <Text style={font.tiny}>{timeAgo(item.createdAt)}</Text>
               </View>
               {item.type === 'gift' && item.data?.giftId ? <GiftIcon id={item.data.giftId} size={36} /> : null}
-              {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.rose }} /> : null}
+              {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand, borderWidth: 1.5, borderColor: colors.ink }} /> : null}
             </Pressable>
           )}
         />

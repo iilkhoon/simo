@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, gradients, radius } from '@/theme';
-import { EmptyState, Header, Loader, Screen, Segmented } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { Box, EmptyState, Header, Loader, Screen, Segmented, Tabs } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { CoinAmount } from '@/components/Badges';
 import { api } from '@/lib/api';
@@ -31,7 +30,8 @@ export default function Leaderboard() {
   return (
     <Screen>
       <Header title={t('leaderboard.title')} />
-      <Segmented<Kind> value={kind} onChange={setKind} options={[{ key: 'charm', label: `💗 ${t('leaderboard.charm')}` }, { key: 'wealth', label: `👑 ${t('leaderboard.wealth')}` }]} />
+      <Tabs<Kind> value={kind} onChange={setKind} options={[{ key: 'charm', label: `💗 ${t('leaderboard.charm')}` }, { key: 'wealth', label: `👑 ${t('leaderboard.wealth')}` }]} />
+      <View style={{ height: 8 }} />
       <Segmented<Period> value={period} onChange={setPeriod} options={(['day', 'week', 'month'] as Period[]).map((p) => ({ key: p, label: t(`leaderboard.${p}`) }))} />
       {!rows ? <Loader full /> : (
         <FlatList
@@ -40,16 +40,16 @@ export default function Leaderboard() {
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
           ListHeaderComponent={
             podium.length ? (
-              <LinearGradient colors={kind === 'charm' ? gradients.primary : gradients.gold} style={styles.podium}>
+              <Box r={26} sh={6} bg={kind === 'charm' ? colors.brand : colors.coin} style={{ marginVertical: 12 }} inner={styles.podium}>
                 {order.map((r, i) => r ? (
                   <Pressable key={r.user.id} onPress={() => router.push({ pathname: '/user/[id]', params: { id: r.user.id } })} style={{ alignItems: 'center', flex: 1, marginTop: i === 1 ? 0 : 26 }}>
-                    <Text style={{ fontSize: i === 1 ? 30 : 24 }}>{['🥈', '🥇', '🥉'][i]}</Text>
                     <Avatar uri={r.user.avatarUrl} name={r.user.name} size={i === 1 ? 80 : 62} vipTier={r.user.vipTier} />
-                    <Text style={styles.podName} numberOfLines={1}>{r.user.name}</Text>
-                    <Text style={styles.podScore}>{compact(r.score)}</Text>
+                    <View style={[styles.medal, { backgroundColor: [colors.card, colors.highlight, colors.coinSoft][i] }]}><Text style={styles.medalText}>{[2, 1, 3][i]}</Text></View>
+                    <Text style={[styles.podName, { color: kind === 'charm' ? colors.white : colors.ink }]} numberOfLines={1}>{r.user.name}</Text>
+                    <Text style={[styles.podScore, { color: kind === 'charm' ? colors.white : colors.ink }]}>{compact(r.score)}</Text>
                   </Pressable>
                 ) : <View key={i} style={{ flex: 1 }} />)}
-              </LinearGradient>
+              </Box>
             ) : undefined
           }
           ListEmptyComponent={podium.length ? undefined : <EmptyState icon="trophy" title={t('leaderboard.title')} />}
@@ -68,10 +68,12 @@ export default function Leaderboard() {
 }
 
 const styles = StyleSheet.create({
-  podium: { flexDirection: 'row', borderRadius: radius.xl, padding: 16, marginVertical: 12 },
-  podName: { color: '#fff', fontWeight: '800', marginTop: 6, maxWidth: 90 },
-  podScore: { color: '#fff', opacity: 0.9, fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  rank: { color: colors.textMuted, width: 26, fontWeight: '800', textAlign: 'center' },
-  name: { color: '#fff', fontWeight: '700', flex: 1 },
+  podium: { flexDirection: 'row', padding: 16, paddingTop: 20 },
+  medal: { marginTop: -12, width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  medalText: { fontFamily: fonts.display, fontSize: 12, color: colors.ink },
+  podName: { fontFamily: fonts.bold, marginTop: 6, maxWidth: 90 },
+  podScore: { fontFamily: fonts.black, fontSize: 13 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 4, borderBottomWidth: 1.5, borderBottomColor: colors.hairline },
+  rank: { color: colors.textMuted, width: 26, fontFamily: fonts.displayBold, textAlign: 'center' },
+  name: { color: colors.ink, fontFamily: fonts.bold, flex: 1, fontSize: 15 },
 });

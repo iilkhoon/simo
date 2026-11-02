@@ -1,10 +1,11 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { GiftEvent } from '../lib/types';
 import { giftName } from '../lib/format';
+import { colors, fonts } from '../theme';
 import { GiftIcon } from './GiftIcon';
 import { Avatar } from './Avatar';
+import { Burst } from './Burst';
 
 export interface GiftOverlayHandle {
   push: (e: GiftEvent) => void;
@@ -12,17 +13,18 @@ export interface GiftOverlayHandle {
 
 /**
  * Hədiyyə animasiyaları:
- *  SMALL  → sol tərəfdə sürüşən banner (kombo sayğacı ilə)
- *  BIG/LUXURY → ekranın mərkəzində böyük, parlayan animasiya
+ *  SMALL  → solda sürüşən stiker-banner + kombo sayğacı (×N "döyünür")
+ *  BIG/LUXURY → mərkəzdə fırlanan "partlayış" stikeri üzərində böyük hədiyyə
  */
 export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_, ref) {
   const [banner, setBanner] = useState<GiftEvent | null>(null);
   const [big, setBig] = useState<GiftEvent | null>(null);
   const bigQueue = useRef<GiftEvent[]>([]);
-  const bannerX = useRef(new Animated.Value(-320)).current;
+  const bannerX = useRef(new Animated.Value(-340)).current;
+  const comboScale = useRef(new Animated.Value(1)).current;
   const bigScale = useRef(new Animated.Value(0)).current;
   const bigOpacity = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
+  const spinV = useRef(new Animated.Value(0)).current;
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playingBig = useRef(false);
 
@@ -37,30 +39,32 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
     setBig(next);
     bigScale.setValue(0.2);
     bigOpacity.setValue(0);
-    glow.setValue(0);
+    spinV.setValue(0);
     const hold = next.gift.tier === 'LUXURY' ? 2600 : 1400;
+    Animated.timing(spinV, { toValue: 1, duration: hold + 1200, easing: Easing.linear, useNativeDriver: true }).start();
     Animated.sequence([
       Animated.parallel([
-        Animated.spring(bigScale, { toValue: 1, friction: 5, useNativeDriver: true }),
-        Animated.timing(bigOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
-        Animated.loop(Animated.timing(glow, { toValue: 1, duration: 1200, easing: Easing.linear, useNativeDriver: true }), { iterations: 3 }),
+        Animated.spring(bigScale, { toValue: 1, friction: 4, tension: 90, useNativeDriver: true }),
+        Animated.timing(bigOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
       ]),
       Animated.delay(hold),
       Animated.parallel([
-        Animated.timing(bigOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
-        Animated.timing(bigScale, { toValue: 1.4, duration: 350, useNativeDriver: true }),
+        Animated.timing(bigOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(bigScale, { toValue: 0.6, duration: 300, useNativeDriver: true }),
       ]),
     ]).start(() => playBig());
-  }, [bigOpacity, bigScale, glow]);
+  }, [bigOpacity, bigScale, spinV]);
 
   useImperativeHandle(ref, () => ({
     push(e: GiftEvent) {
       if (e.gift.tier === 'SMALL') {
         setBanner(e);
         Animated.spring(bannerX, { toValue: 0, friction: 7, useNativeDriver: true }).start();
+        comboScale.setValue(1.8);
+        Animated.spring(comboScale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
         if (bannerTimer.current) clearTimeout(bannerTimer.current);
         bannerTimer.current = setTimeout(() => {
-          Animated.timing(bannerX, { toValue: -320, duration: 250, useNativeDriver: true }).start(() => setBanner(null));
+          Animated.timing(bannerX, { toValue: -340, duration: 220, useNativeDriver: true }).start(() => setBanner(null));
         }, 2600);
       } else {
         bigQueue.current.push(e);
@@ -73,32 +77,36 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
     if (bannerTimer.current) clearTimeout(bannerTimer.current);
   }, []);
 
-  const spin = glow.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const spin = spinV.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '120deg'] });
+  const lux = big?.gift.tier === 'LUXURY';
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {banner ? (
         <Animated.View style={[styles.banner, { transform: [{ translateX: bannerX }] }]}>
-          <LinearGradient colors={['rgba(255,77,141,0.95)', 'rgba(123,92,255,0.85)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.bannerInner}>
-            <Avatar uri={banner.sender.avatarUrl} name={banner.sender.name} size={34} />
-            <View style={{ maxWidth: 130 }}>
+          <View style={styles.bannerShadow} />
+          <View style={styles.bannerInner}>
+            <Avatar uri={banner.sender.avatarUrl} name={banner.sender.name} size={32} />
+            <View style={{ maxWidth: 120 }}>
               <Text style={styles.bannerName} numberOfLines={1}>{banner.sender.name}</Text>
               <Text style={styles.bannerSub} numberOfLines={1}>{giftName(banner.gift)}</Text>
             </View>
-            <GiftIcon id={banner.gift.id} size={42} />
-          </LinearGradient>
-          <Text style={styles.combo}>×{banner.count}</Text>
+            <GiftIcon id={banner.gift.id} size={40} />
+          </View>
+          <Animated.Text style={[styles.combo, { transform: [{ scale: comboScale }] }]}>×{banner.count}</Animated.Text>
         </Animated.View>
       ) : null}
       {big ? (
         <Animated.View style={[styles.center, { opacity: bigOpacity }]}>
-          <Animated.View style={[styles.rays, { transform: [{ rotate: spin }] }]}>
-            <LinearGradient colors={['rgba(255,200,87,0.0)', 'rgba(255,94,142,0.45)', 'rgba(123,92,255,0.0)']} style={{ flex: 1, borderRadius: 200 }} />
+          <Animated.View style={{ position: 'absolute', transform: [{ rotate: spin }] }}>
+            <Burst size={lux ? 360 : 290} points={lux ? 18 : 14} color={lux ? colors.diamond : colors.coin} />
           </Animated.View>
-          <Animated.View style={{ transform: [{ scale: bigScale }], alignItems: 'center' }}>
-            <GiftIcon id={big.gift.id} size={big.gift.tier === 'LUXURY' ? 220 : 160} />
-            <Text style={styles.bigText}>{big.sender.name}</Text>
-            <Text style={styles.bigSub}>{giftName(big.gift)} ×{big.count}</Text>
+          <Animated.View style={{ transform: [{ scale: bigScale }], alignItems: 'center', zIndex: 2 }}>
+            <GiftIcon id={big.gift.id} size={lux ? 200 : 150} />
+            <View style={styles.bigLabel}>
+              <Text style={styles.bigText} numberOfLines={1}>{big.sender.name}</Text>
+              <Text style={styles.bigSub}>{giftName(big.gift)} ×{big.count}</Text>
+            </View>
           </Animated.View>
         </Animated.View>
       ) : null}
@@ -107,13 +115,14 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
 });
 
 const styles = StyleSheet.create({
-  banner: { position: 'absolute', left: 8, top: '38%', flexDirection: 'row', alignItems: 'center' },
-  bannerInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, paddingRight: 10, paddingVertical: 4, borderRadius: 30 },
-  bannerName: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  bannerSub: { color: 'rgba(255,255,255,0.85)', fontSize: 11 },
-  combo: { color: '#FFE58F', fontSize: 30, fontWeight: '900', fontStyle: 'italic', marginLeft: 8, textShadowColor: '#C850C0', textShadowRadius: 8 },
+  banner: { position: 'absolute', left: 10, top: '36%', flexDirection: 'row', alignItems: 'center' },
+  bannerShadow: { position: 'absolute', left: 3, top: 3, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.ink },
+  bannerInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, paddingRight: 8, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink },
+  bannerName: { color: colors.ink, fontFamily: fonts.black, fontSize: 13 },
+  bannerSub: { color: colors.brand, fontFamily: fonts.bold, fontSize: 11 },
+  combo: { color: colors.coin, fontSize: 34, fontFamily: fonts.display, marginLeft: 10, textShadowColor: colors.ink, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0.1 },
   center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  rays: { position: 'absolute', width: 380, height: 380 },
-  bigText: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 8, textShadowColor: '#000', textShadowRadius: 6 },
-  bigSub: { color: '#FFE58F', fontSize: 16, fontWeight: '800', textShadowColor: '#000', textShadowRadius: 6 },
+  bigLabel: { marginTop: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, alignItems: 'center', maxWidth: 260 },
+  bigText: { color: colors.ink, fontSize: 16, fontFamily: fonts.displayBold },
+  bigSub: { color: colors.brand, fontSize: 13, fontFamily: fonts.black },
 });

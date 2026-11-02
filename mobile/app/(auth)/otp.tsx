@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
-import { Header, Loader, Screen } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { Header, Loader, Screen, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { startSession } from '@/lib/session';
@@ -53,11 +53,11 @@ export default function Otp() {
   return (
     <Screen>
       <Header />
-      <Text style={font.h1}>{t('auth.otpTitle')}</Text>
-      <Text style={[font.small, { marginTop: 8 }]}>{t('auth.otpSub', { phone })}</Text>
+      <T v="h1">{t('auth.otpTitle')}</T>
+      <T v="body" color={colors.textMuted} style={{ marginTop: 8 }}>{t('auth.otpSub', { phone })}</T>
       <Pressable onPress={() => input.current?.focus()} style={styles.boxes}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <View key={i} style={[styles.box, code.length === i && { borderColor: colors.rose }]}>
+          <View key={i} style={[styles.box, code[i] ? { backgroundColor: colors.coinSoft } : null, code.length === i && { backgroundColor: colors.card, transform: [{ translateY: -3 }], shadowOpacity: 0 }]}>
             <Text style={styles.digit}>{code[i] ?? ''}</Text>
           </View>
         ))}
@@ -74,7 +74,7 @@ export default function Otp() {
       />
       {loading ? <Loader /> : null}
       <Pressable disabled={left > 0} onPress={resend} style={{ marginTop: 24, alignSelf: 'center' }}>
-        <Text style={{ color: left > 0 ? colors.textDim : colors.rose, fontWeight: '700' }}>
+        <Text style={{ color: left > 0 ? colors.textDim : colors.brand, fontFamily: fonts.bold, fontSize: 15 }}>
           {left > 0 ? t('auth.resendIn', { s: left }) : t('auth.resend')}
         </Text>
       </Pressable>
@@ -84,6 +84,6 @@ export default function Otp() {
 
 const styles = StyleSheet.create({
   boxes: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 32 },
-  box: { width: 48, height: 60, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  digit: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  box: { width: 48, height: 62, borderRadius: radius.sm, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  digit: { color: colors.ink, fontSize: 26, fontFamily: fonts.display },
 });

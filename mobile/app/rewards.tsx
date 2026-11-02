@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Share, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { colors, font, gradients, radius } from '@/theme';
-import { Card, GradientButton, Header, OutlineButton, Screen } from '@/components/ui';
+import { colors, font, fonts, radius } from '@/theme';
+import { Btn, Card, Header, Screen, Tag } from '@/components/ui';
 import { CoinIcon } from '@/components/GiftIcon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -38,28 +37,29 @@ export default function Rewards() {
       <Card style={{ padding: 16, gap: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={font.h3}>{t('rewards.checkin')}</Text>
-          <Text style={{ color: colors.peach, fontWeight: '800' }}>🔥 {t('rewards.streak', { n: streak })}</Text>
+          <Tag label={`🔥 ${t('rewards.streak', { n: streak })}`} bg={colors.brandSoft} style={{ height: 26, paddingHorizontal: 9 }} />
         </View>
         <View style={styles.days}>
           {rewards.map((r, i) => {
             const done = i < pos || (doneToday && i === pos);
             const today = i === pos;
             return (
-              <LinearGradient key={i} colors={done ? gradients.gold : today ? gradients.primary : [colors.surface2, colors.surface2]} style={[styles.day, i === 6 && { width: '100%' }]}>
-                <Text style={[styles.dayLabel, done && { color: '#3A1F00' }]}>{t('rewards.day', { n: i + 1 })}</Text>
+              <View key={i} style={[styles.day, { backgroundColor: done ? colors.coin : today ? colors.brandSoft : colors.card }, today && !done && { borderStyle: 'dashed' }, i === 6 && { width: '100%', flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
+                <Text style={styles.dayLabel}>{t('rewards.day', { n: i + 1 })}</Text>
                 <CoinIcon size={i === 6 ? 34 : 24} />
-                <Text style={[styles.dayAmount, done && { color: '#3A1F00' }]}>+{r}</Text>
-              </LinearGradient>
+                <Text style={styles.dayAmount}>+{r}</Text>
+                {done ? <View style={styles.tick}><Text style={{ color: colors.white, fontSize: 10, fontFamily: fonts.black }}>✓</Text></View> : null}
+              </View>
             );
           })}
         </View>
-        <GradientButton title={doneToday ? t('rewards.claimed') : t('rewards.claim')} disabled={doneToday} loading={busy} onPress={claim} />
+        <Btn title={doneToday ? t('rewards.claimed') : t('rewards.claim')} disabled={doneToday} loading={busy} onPress={claim} />
       </Card>
       <Card style={{ padding: 16, gap: 10, marginTop: 14 }}>
         <Text style={font.h3}>🤝 {t('rewards.inviteTitle')}</Text>
         <Text style={font.small}>{t('rewards.inviteSub')}</Text>
-        <Text style={{ color: colors.gold, fontWeight: '900', fontSize: 16 }}>{String(me.shortId)}</Text>
-        <OutlineButton small title={t('common.share')} icon="share" onPress={() => void Share.share({ message: t('rewards.inviteShare', { code: String(me.shortId), url: WEB_URL }) })} />
+        <View style={styles.code}><Text style={styles.codeText}>{String(me.shortId)}</Text></View>
+        <Btn size="md" kind="dark" title={t('common.share')} icon="share" onPress={() => void Share.share({ message: t('rewards.inviteShare', { code: String(me.shortId), url: WEB_URL }) })} />
       </Card>
     </Screen>
   );
@@ -67,7 +67,10 @@ export default function Rewards() {
 
 const styles = StyleSheet.create({
   days: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  day: { width: '22.8%', borderRadius: radius.md, alignItems: 'center', paddingVertical: 10, gap: 4 },
-  dayLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
-  dayAmount: { color: '#fff', fontWeight: '900' },
+  day: { width: '22.8%', borderRadius: radius.md, alignItems: 'center', paddingVertical: 10, gap: 4, borderWidth: 2, borderColor: colors.ink },
+  dayLabel: { color: colors.ink, fontSize: 11, fontFamily: fonts.bold },
+  dayAmount: { color: colors.ink, fontFamily: fonts.black },
+  tick: { position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.online, borderWidth: 1.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  code: { alignSelf: 'flex-start', backgroundColor: colors.coinSoft, borderWidth: 2, borderColor: colors.ink, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, borderStyle: 'dashed' },
+  codeText: { color: colors.ink, fontFamily: fonts.display, fontSize: 20, letterSpacing: 2 },
 });

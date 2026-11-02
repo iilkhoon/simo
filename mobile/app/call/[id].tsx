@@ -1,17 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
-import { colors, gradients } from '@/theme';
-import { Loader } from '@/components/ui';
+import { colors, fonts, tintFor } from '@/theme';
+import { Box, Loader, PressBox, T, Tag, tap } from '@/components/ui';
 import { Icon, type IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { CoinAmount } from '@/components/Badges';
+import { VerifiedBadge } from '@/components/Badges';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { api } from '@/lib/api';
@@ -21,13 +20,13 @@ import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
 
-function Ctrl({ icon, onPress, active = true, label }: { icon: IconName; onPress: () => void; active?: boolean; label?: string }) {
+function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
-    <Pressable onPress={onPress} style={{ alignItems: 'center', gap: 4 }}>
-      <View style={[styles.ctrl, !active && { backgroundColor: '#fff' }]}>
-        <Icon name={icon} size={24} color={active ? '#fff' : colors.bg} />
+    <Pressable onPress={() => { tap(); onPress(); }} style={({ pressed }) => [{ alignItems: 'center', gap: 5 }, pressed && { transform: [{ translateY: 2 }] }]}>
+      <View style={[styles.ctrl, { backgroundColor: tint ?? (active ? colors.bg : colors.ink) }]}>
+        <Icon name={icon} size={22} color={active || tint ? colors.ink : colors.bg} />
       </View>
-      {label ? <Text style={styles.ctrlLabel}>{label}</Text> : null}
+      {label ? <Text style={styles.ctrlLabel} numberOfLines={1}>{label}</Text> : null}
     </Pressable>
   );
 }
@@ -151,94 +150,151 @@ export default function CallScreen() {
   if (!call || !peer) return <View style={{ flex: 1, backgroundColor: colors.bg }}><Loader full /></View>;
   const connected = !!startedAt;
   const Surface = rtc.RtcSurfaceView;
+  const remoteVideo = isVideo && connected && remoteUid != null && !!Surface;
+  const elapsed = connected ? duration(Math.floor((now - startedAt!) / 1000)) : '';
+  const soft = isVideo ? colors.brandSoft : colors.diamondSoft;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {isVideo && connected && remoteUid != null && Surface ? (
-        <Surface style={StyleSheet.absoluteFill} canvas={{ uid: remoteUid }} />
+    <View style={{ flex: 1, backgroundColor: remoteVideo ? colors.night : soft }}>
+      <StatusBar style={remoteVideo ? 'light' : 'dark'} />
+      {remoteVideo ? (
+        <Surface style={StyleSheet.absoluteFill} canvas={{ uid: remoteUid! }} />
       ) : (
-        <>
-          {peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={StyleSheet.absoluteFill} blurRadius={24} /> : null}
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(43,16,85,0.55)', 'rgba(18,7,31,0.92)']} style={StyleSheet.absoluteFill} />
-          <View style={styles.center}>
-            <Avatar uri={peer.avatarUrl} name={peer.name} size={140} vipTier={peer.vipTier} />
+        <SafeAreaView edges={['top']} style={styles.center}>
+          <Tag label={(isVideo ? t('chat.callVideo') : t('chat.callVoice')).toUpperCase()} icon={isVideo ? 'videocam' : 'call'} bg={colors.ink} fg={colors.bg} style={{ alignSelf: 'center', height: 26, paddingHorizontal: 10, marginBottom: 26 }} />
+          <Box r={30} sh={6} bg={tintFor(peer.name)} style={{ transform: [{ rotate: '-2deg' }] }} inner={{ width: 210, height: 260 }}>
+            {peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{peer.name.slice(0, 1)}</T></View>
+            )}
+          </Box>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 24 }}>
             <Text style={styles.name}>{peer.name}</Text>
-            <Text style={styles.status}>{connected ? duration(Math.floor((now - startedAt!) / 1000)) : t('call.calling')}</Text>
-            {rtcError ? <Text style={styles.warn}>{t('call.rtcMissing')}</Text> : null}
+            {peer.verified ? <VerifiedBadge size={20} /> : null}
           </View>
-        </>
+          <View style={styles.statusPill}>
+            {connected ? <Wave /> : <Dots />}
+            <Text style={styles.status}>{connected ? elapsed : t('call.calling')}</Text>
+          </View>
+          {rtcError ? <Text style={styles.warn}>{t('call.rtcMissing')}</Text> : null}
+        </SafeAreaView>
       )}
+
       {isVideo && camOn && Surface && !rtcError ? (
-        <View style={styles.pip}>
-          <Surface style={{ flex: 1 }} canvas={{ uid: 0 }} zOrderMediaOverlay />
+        <View style={styles.pipWrap}>
+          <View style={styles.pipShadow} />
+          <View style={styles.pip}>
+            <Surface style={{ flex: 1 }} canvas={{ uid: 0 }} zOrderMediaOverlay />
+          </View>
         </View>
       ) : null}
 
-      <SafeAreaView style={styles.top} edges={['top']}>
-        {isVideo && connected ? (
-          <View style={styles.timer}>
-            <View style={styles.rec} />
-            <Text style={{ color: '#fff', fontWeight: '700' }}>{duration(Math.floor((now - startedAt!) / 1000))}</Text>
+      <SafeAreaView style={styles.top} edges={['top']} pointerEvents="box-none">
+        {remoteVideo ? (
+          <View style={styles.peerPill}>
+            <Avatar uri={peer.avatarUrl} name={peer.name} size={30} />
+            <View>
+              <Text style={styles.peerName} numberOfLines={1}>{peer.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={styles.rec} />
+                <Text style={styles.peerTime}>{elapsed}</Text>
+              </View>
+            </View>
           </View>
         ) : <View />}
-        {call.pricePerMin > 0 && isCaller ? (
-          <View style={styles.price}><CoinAmount n={t('call.price', { price: call.pricePerMin })} size={13} /></View>
-        ) : null}
+        {call.pricePerMin > 0 && isCaller ? <Tag label={t('call.price', { price: call.pricePerMin })} icon="cash" bg={colors.coin} style={{ height: 26, paddingHorizontal: 9 }} /> : null}
       </SafeAreaView>
 
       {lowBalance != null && isCaller ? (
-        <Pressable onPress={() => router.push('/wallet')} style={styles.low}>
-          <LinearGradient colors={gradients.gold} style={styles.lowInner}>
-            <Text style={{ color: '#3A1F00', fontWeight: '800', flex: 1 }}>{t('call.lowBalance', { n: lowBalance })}</Text>
-            <Text style={{ color: colors.rose, fontWeight: '900' }}>{t('wallet.recharge')} ›</Text>
-          </LinearGradient>
-        </Pressable>
+        <PressBox onPress={() => router.push('/wallet')} bg={colors.coin} r={18} sh={4} style={styles.low} inner={styles.lowInner}>
+          <Icon name="time" size={20} color={colors.ink} />
+          <Text style={styles.lowText}>{t('call.lowBalance', { n: lowBalance })}</Text>
+          <Text style={styles.lowCta}>{t('wallet.recharge')}</Text>
+        </PressBox>
       ) : null}
 
       <SafeAreaView edges={['bottom']} style={styles.controls}>
-        <View style={styles.row}>
-          <Ctrl icon={muted ? 'micOff' : 'mic'} active={!muted} onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} />
+        <View style={styles.dockShadow} />
+        <View style={styles.dock}>
+          <Ctrl icon={muted ? 'micOff' : 'mic'} active={!muted} label={t('call.mic')} onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} />
           {isVideo ? (
             <>
-              <Ctrl icon={camOn ? 'videocam' : 'videocamOff'} active={camOn} onPress={() => { rtc.controls.camera(!camOn); setCamOn(!camOn); }} />
-              <Ctrl icon="flip" onPress={() => rtc.controls.flip()} />
-              <Ctrl icon="beauty" active={beauty} onPress={() => { rtc.controls.beauty(!beauty); setBeauty(!beauty); }} />
+              <Ctrl icon={camOn ? 'videocam' : 'videocamOff'} active={camOn} label={t('call.camera')} onPress={() => { rtc.controls.camera(!camOn); setCamOn(!camOn); }} />
+              <Ctrl icon="flip" label={t('call.flip')} onPress={() => rtc.controls.flip()} />
+              <Ctrl icon="beauty" active={beauty} label={t('live.beauty')} onPress={() => { rtc.controls.beauty(!beauty); setBeauty(!beauty); }} />
             </>
           ) : (
-            <Ctrl icon={speaker ? 'speaker' : 'speakerOff'} active={speaker} onPress={() => { rtc.controls.speaker(!speaker); setSpeaker(!speaker); }} />
+            <Ctrl icon={speaker ? 'speaker' : 'speakerOff'} active={speaker} label={t('call.speaker')} onPress={() => { rtc.controls.speaker(!speaker); setSpeaker(!speaker); }} />
           )}
-          {isCaller ? (
-            <Pressable onPress={() => setGiftOpen(true)}>
-              <LinearGradient colors={gradients.primary} style={styles.ctrl}><Icon name="gift" size={24} /></LinearGradient>
-            </Pressable>
-          ) : null}
+          {isCaller ? <Ctrl icon="gift" label={t('gifts.title')} tint={colors.coin} onPress={() => setGiftOpen(true)} /> : null}
         </View>
-        <Pressable onPress={hangup} style={styles.hang}>
-          <Icon name="call" size={32} />
-        </Pressable>
+        <View style={{ marginTop: 18 }}>
+          <PressBox onPress={hangup} bg={colors.brand} r={40} sh={5} inner={styles.hang}>
+            <View style={{ transform: [{ rotate: '135deg' }] }}><Icon name="call" size={32} color={colors.white} /></View>
+          </PressBox>
+        </View>
       </SafeAreaView>
       <GiftOverlay ref={overlay} />
-      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
+      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} receiverName={peer.name} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
+    </View>
+  );
+}
+
+/** Danışıq zamanı səs dalğası */
+function Wave() {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const l = Animated.loop(Animated.timing(v, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: true }));
+    l.start();
+    return () => l.stop();
+  }, [v]);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, height: 16 }}>
+      {[0, 1, 2, 3].map((i) => (
+        <Animated.View key={i} style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: colors.online, transform: [{ scaleY: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: i % 2 ? [0.3, 1, 0.3] : [1, 0.3, 1] }) }] }} />
+      ))}
+    </View>
+  );
+}
+
+/** Zəng edilir… nöqtələri */
+function Dots() {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const l = Animated.loop(Animated.timing(v, { toValue: 3, duration: 1200, easing: Easing.linear, useNativeDriver: true }));
+    l.start();
+    return () => l.stop();
+  }, [v]);
+  return (
+    <View style={{ flexDirection: 'row', gap: 3 }}>
+      {[0, 1, 2].map((i) => (
+        <Animated.View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.brand, opacity: v.interpolate({ inputRange: [i, i + 0.5, i + 1], outputRange: [0.25, 1, 0.25], extrapolate: 'clamp' }) }} />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  name: { color: '#fff', fontSize: 28, fontWeight: '800', marginTop: 12 },
-  status: { color: colors.textMuted, fontSize: 17, fontWeight: '600' },
-  warn: { color: colors.gold, textAlign: 'center', paddingHorizontal: 30, marginTop: 10 },
-  pip: { position: 'absolute', top: 110, right: 14, width: 112, height: 160, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', backgroundColor: '#222' },
-  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8 },
-  timer: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
-  rec: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger },
-  price: { backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14 },
-  low: { position: 'absolute', left: 16, right: 16, top: 120 },
-  lowInner: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16 },
-  controls: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 16, gap: 22 },
-  row: { flexDirection: 'row', gap: 18 },
-  ctrl: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-  ctrlLabel: { color: '#fff', fontSize: 11 },
-  hang: { width: 74, height: 74, borderRadius: 37, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '135deg' }] },
+  center: { flex: 1, alignItems: 'center', paddingTop: 30 },
+  name: { color: colors.ink, fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.8 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 16, paddingHorizontal: 12, height: 32 },
+  status: { color: colors.ink, fontSize: 14, fontFamily: fonts.bold },
+  warn: { color: colors.textMuted, textAlign: 'center', paddingHorizontal: 30, marginTop: 12, fontFamily: fonts.medium },
+  pipWrap: { position: 'absolute', top: 110, right: 18, width: 108, height: 152 },
+  pipShadow: { position: 'absolute', left: 4, top: 4, right: -4, bottom: -4, borderRadius: 18, backgroundColor: colors.ink },
+  pip: { flex: 1, borderRadius: 18, overflow: 'hidden', borderWidth: 2.5, borderColor: colors.ink, backgroundColor: colors.night2 },
+  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, paddingTop: 8 },
+  peerPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 22, paddingLeft: 4, paddingRight: 12, height: 44 },
+  peerName: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13, maxWidth: 140 },
+  peerTime: { color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 11 },
+  rec: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.brand },
+  low: { position: 'absolute', left: 16, right: 16, top: 112 },
+  lowInner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+  lowText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13, flex: 1 },
+  lowCta: { color: colors.bg, backgroundColor: colors.ink, fontFamily: fonts.bold, fontSize: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, overflow: 'hidden' },
+  controls: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 18 },
+  dockShadow: { position: 'absolute', top: 4, left: 20, right: 12, height: 86, borderRadius: 28, backgroundColor: colors.ink },
+  dock: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginHorizontal: 16, marginRight: 20, height: 86, borderRadius: 28, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, alignItems: 'center' },
+  ctrl: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  ctrlLabel: { color: colors.ink, fontSize: 10.5, fontFamily: fonts.bold },
+  hang: { width: 76, height: 76, alignItems: 'center', justifyContent: 'center' },
 });

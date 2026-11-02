@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, font, radius } from '@/theme';
-import { Chip, GradientButton, Header, Input, Loader, Screen } from '@/components/ui';
+import { Btn, Chip, Header, Input, Loader, Screen } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -57,7 +57,7 @@ export default function EditProfile() {
       <Header title={t('me.editProfile')} />
       <View style={styles.photos}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <Pressable key={i} onPress={() => (photos[i] ? setPhotos(photos.filter((_, j) => j !== i)) : add())} style={[styles.photo, i === 0 && { borderColor: colors.rose }]}>
+          <Pressable key={i} onPress={() => (photos[i] ? setPhotos(photos.filter((_, j) => j !== i)) : add())} style={[styles.photo, i === 0 && { backgroundColor: colors.brandSoft }, photos[i] ? { borderStyle: 'solid' } : null]}>
             {photos[i] ? (
               <>
                 <Image source={{ uri: photos[i] }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -81,7 +81,7 @@ export default function EditProfile() {
             <Chip key={i} label={t(`interests.${i}`)} active={interests.includes(i)} onPress={() => setInterests((c) => (c.includes(i) ? c.filter((x) => x !== i) : c.length < 10 ? [...c, i] : c))} />
           ))}
         </View>
-        <GradientButton title={t('common.save')} loading={saving} disabled={name.trim().length < 2 || !photos.length} onPress={save} style={{ marginTop: 8 }} />
+        <Btn title={t('common.save')} loading={saving} disabled={name.trim().length < 2 || !photos.length} onPress={save} style={{ marginTop: 8 }} />
       </View>
     </Screen>
   );
@@ -89,6 +89,6 @@ export default function EditProfile() {
 
 const styles = StyleSheet.create({
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   remove: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
 });

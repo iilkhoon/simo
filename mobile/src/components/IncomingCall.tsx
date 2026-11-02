@@ -1,18 +1,18 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import { Animated, Modal, StyleSheet, Text, Vibration, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { errorText } from '../lib/format';
-import { colors } from '../theme';
-import { Avatar } from './Avatar';
+import { colors, fonts, tintFor } from '../theme';
 import { Icon } from './Icon';
-import { CoinAmount } from './Badges';
+import { Box, IconBtn, T, Tag } from './ui';
+import { LevelBadge, VerifiedBadge } from './Badges';
 
+/** Gələn zəng — tam ekran "kağız" kartı, fotoşəkil stiker kimi, iri qəbul/rədd düymələri */
 export function IncomingCall() {
   const { t } = useTranslation();
   const incoming = useStore((s) => s.incomingCall);
@@ -23,7 +23,10 @@ export function IncomingCall() {
   useEffect(() => {
     if (!incoming) return;
     Vibration.vibrate([0, 800, 600], true);
-    const loop = Animated.loop(Animated.timing(pulse, { toValue: 1, duration: 1400, useNativeDriver: true }));
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]));
     loop.start();
     return () => {
       Vibration.cancel();
@@ -34,8 +37,9 @@ export function IncomingCall() {
 
   if (!incoming) return null;
   const { call, caller } = incoming;
+  const video = call.type === 'VIDEO';
 
-  async function accept() {
+  function accept() {
     setIncoming(null);
     router.push({ pathname: '/call/[id]', params: { id: call.id, accept: '1' } });
   }
@@ -48,50 +52,54 @@ export function IncomingCall() {
     }
   }
 
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
-  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
+  const rot = pulse.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '8deg'] });
 
   return (
-    <Modal visible transparent animationType="fade">
-      <View style={StyleSheet.absoluteFill}>
-        {caller.avatarUrl ? <Image source={{ uri: caller.avatarUrl }} style={StyleSheet.absoluteFill} blurRadius={30} /> : null}
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        <LinearGradient colors={['rgba(43,16,85,0.6)', 'rgba(18,7,31,0.95)']} style={StyleSheet.absoluteFill} />
-      </View>
-      <View style={styles.wrap}>
-        <Text style={styles.kind}>{call.type === 'VIDEO' ? t('call.incomingVideo') : t('call.incomingVoice')}</Text>
-        <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 36 }}>
-          <Animated.View style={[styles.ring, { transform: [{ scale }], opacity }]} />
-          <Avatar uri={caller.avatarUrl} name={caller.name} size={130} vipTier={caller.vipTier} />
-        </View>
-        <Text style={styles.name}>{caller.name}{caller.age ? `, ${caller.age}` : ''}</Text>
-        {caller.city ? <Text style={styles.city}>{caller.city}</Text> : null}
-        {call.pricePerMin > 0 && useStore.getState().me?.id === call.callerId ? <CoinAmount n={t('call.price', { price: call.pricePerMin })} /> : null}
-        <View style={styles.actions}>
-          <Pressable onPress={decline} style={[styles.btn, { backgroundColor: colors.danger }]}>
-            <Icon name="call" size={30} color="#fff" />
-          </Pressable>
-          <Pressable onPress={accept} style={[styles.btn, { backgroundColor: colors.online }]}>
-            <Icon name={call.type === 'VIDEO' ? 'videocam' : 'call'} size={30} color="#fff" />
-          </Pressable>
-        </View>
-        <View style={styles.labels}>
-          <Text style={styles.label}>{t('call.decline')}</Text>
-          <Text style={styles.label}>{t('call.accept')}</Text>
-        </View>
+    <Modal visible transparent animationType="slide">
+      <View style={{ flex: 1, backgroundColor: video ? colors.brandSoft : colors.diamondSoft }}>
+        <SafeAreaView style={styles.wrap}>
+          <Tag label={video ? t('call.incomingVideo').toUpperCase() : t('call.incomingVoice').toUpperCase()} icon={video ? 'videocam' : 'call'} bg={colors.ink} fg={colors.bg} style={{ alignSelf: 'center', height: 26, paddingHorizontal: 10 }} />
+          <View style={{ alignItems: 'center', marginTop: 28 }}>
+            <Box r={28} sh={6} bg={tintFor(caller.name)} inner={{ width: 230, height: 290 }} style={{ transform: [{ rotate: '-2deg' }] }}>
+              {caller.avatarUrl ? <Image source={{ uri: caller.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{caller.name.slice(0, 1)}</T></View>
+              )}
+            </Box>
+            <Animated.View style={[styles.ringSticker, { transform: [{ rotate: rot }] }]}>
+              <Icon name={video ? 'videocam' : 'call'} size={26} color={colors.white} />
+            </Animated.View>
+          </View>
+          <View style={{ alignItems: 'center', marginTop: 22, gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.name}>{caller.name}{caller.age ? `, ${caller.age}` : ''}</Text>
+              {caller.verified ? <VerifiedBadge size={20} /> : null}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <LevelBadge level={caller.wealthLevel} kind="wealth" />
+              {caller.city ? <Tag label={caller.city} icon="location" bg={colors.card} /> : null}
+            </View>
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={styles.actions}>
+            <View style={styles.col}>
+              <IconBtn name="close" size={76} sh={5} bg={colors.ink} color={colors.bg} onPress={decline} />
+              <T v="bodyStrong">{t('call.decline')}</T>
+            </View>
+            <View style={styles.col}>
+              <IconBtn name={video ? 'videocam' : 'call'} size={76} sh={5} bg={colors.online} color={colors.white} onPress={accept} />
+              <T v="bodyStrong">{t('call.accept')}</T>
+            </View>
+          </View>
+        </SafeAreaView>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  kind: { color: colors.textMuted, fontSize: 16, fontWeight: '600', letterSpacing: 1 },
-  ring: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: colors.rose },
-  name: { color: '#fff', fontSize: 28, fontWeight: '800' },
-  city: { color: colors.textMuted, marginTop: 4, marginBottom: 8 },
-  actions: { flexDirection: 'row', gap: 90, marginTop: 60 },
-  btn: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
-  labels: { flexDirection: 'row', gap: 90, marginTop: 10 },
-  label: { color: '#fff', width: 76, textAlign: 'center', fontWeight: '600' },
+  wrap: { flex: 1, padding: 24 },
+  ringSticker: { position: 'absolute', right: '22%', top: -14, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.brand, borderWidth: 2.5, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  name: { color: colors.ink, fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.8 },
+  actions: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
+  col: { alignItems: 'center', gap: 10 },
 });

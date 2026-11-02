@@ -1,24 +1,27 @@
 import React, { useCallback } from 'react';
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Share, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, gradients, radius } from '@/theme';
-import { Card, MenuRow, Screen } from '@/components/ui';
+import { colors, fonts, vipColor } from '@/theme';
+import { Card, IconBtn, MenuRow, PressBox, Screen, T } from '@/components/ui';
+import { Burst } from '@/components/Burst';
 import { Avatar } from '@/components/Avatar';
 import { CoinAmount, DiamondAmount, HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
 import { useStore } from '@/store';
 import { WEB_URL } from '@/config';
 
-function Progress({ label, level, xp, next, color }: { label: string; level: number; xp: number; next: number; color: readonly [string, string] }) {
+function Progress({ label, level, xp, next, color }: { label: string; level: number; xp: number; next: number; color: string }) {
   const prev = level * level * 50;
   const pct = Math.min(1, Math.max(0, (xp - prev) / Math.max(1, next - prev)));
   return (
     <View style={{ flex: 1, gap: 6 }}>
-      <Text style={font.tiny}>{label} · Lv.{level}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <T v="label" color={colors.textMuted}>{label}</T>
+        <T v="label">Lv {level}</T>
+      </View>
       <View style={styles.track}>
-        <LinearGradient colors={color} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fill, { width: `${pct * 100}%` }]} />
+        <View style={[styles.fill, { width: `${Math.max(6, pct * 100)}%`, backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -39,110 +42,108 @@ export default function MeTab() {
 
   return (
     <Screen scroll>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
-        <Pressable onPress={() => router.push('/notifications')} style={styles.iconBtn}>
-          <Icon name="bell" size={20} />
-          {unreadNotifications ? <View style={styles.dot} /> : null}
-        </Pressable>
-        <Pressable onPress={() => router.push('/settings')} style={styles.iconBtn}><Icon name="settings" size={20} /></Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <T v="h1" style={{ flex: 1 }}>{t('tabs.me')}</T>
+        <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />
+        <IconBtn name="settings" size={40} onPress={() => router.push('/settings')} />
       </View>
 
-      <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} style={styles.head}>
-        <Avatar uri={me.avatarUrl} name={me.name} size={86} vipTier={me.vipTier} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={font.h2} numberOfLines={1}>{me.name}</Text>
-            {me.verified ? <VerifiedBadge size={18} /> : null}
+      {/* Profil kartı */}
+      <PressBox style={{ marginTop: 14 }} r={24} sh={5} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} inner={styles.head}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Avatar uri={me.avatarUrl} name={me.name} size={78} vipTier={me.vipTier} />
+          <View style={{ flex: 1, gap: 5 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <T v="h2" numberOfLines={1} style={{ flexShrink: 1 }}>{me.name}</T>
+              {me.verified ? <VerifiedBadge size={18} /> : null}
+            </View>
+            <T v="small" color={colors.textMuted}>{t('common.id', { id: me.shortId })}{me.age ? ` · ${t('common.years', { n: me.age })}` : ''}</T>
+            <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
+              {isHost ? <HostBadge /> : null}
+              <VipBadge tier={me.vipTier} />
+              <LevelBadge kind="wealth" level={me.wealth.level} />
+              <LevelBadge kind="charm" level={me.charm.level} />
+            </View>
           </View>
-          <Text style={font.small}>{t('common.id', { id: me.shortId })}{me.age ? ` · ${t('common.years', { n: me.age })}` : ''}</Text>
-          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-            {isHost ? <HostBadge /> : null}
-            <VipBadge tier={me.vipTier} />
-            <LevelBadge kind="wealth" level={me.wealth.level} />
-            <LevelBadge kind="charm" level={me.charm.level} />
-          </View>
+          <IconBtn name="more" size={36} sh={2} onPress={() => router.push('/edit-profile')} />
         </View>
-        <Pressable onPress={() => router.push('/edit-profile')} style={styles.edit}><Icon name="more" size={18} /></Pressable>
-      </Pressable>
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+          <Progress label={t('me.wealth')} level={me.wealth.level} xp={me.wealth.xp} next={me.wealth.next} color={colors.coin} />
+          <Progress label={t('me.charm')} level={me.charm.level} xp={me.charm.xp} next={me.charm.next} color={colors.brand} />
+        </View>
+      </PressBox>
 
-      <View style={{ flexDirection: 'row', gap: 16, marginVertical: 14 }}>
-        <Progress label={t('me.wealth')} level={me.wealth.level} xp={me.wealth.xp} next={me.wealth.next} color={['#FFB86B', '#F2711C']} />
-        <Progress label={t('me.charm')} level={me.charm.level} xp={me.charm.xp} next={me.charm.next} color={['#FF8FB8', '#C850C0']} />
+      {/* Balanslar */}
+      <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
+        <PressBox style={{ flex: 1 }} r={22} sh={4} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
+          <T v="label">Simo Coin</T>
+          <CoinAmount n={me.coins.toLocaleString('en-US')} size={24} />
+          <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
+          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={52} color={colors.brand} points={10} /><Text style={styles.x2Text}>×2</Text></View> : null}
+        </PressBox>
+        <PressBox style={{ flex: 1 }} r={22} sh={4} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
+          <T v="label">Simo Almaz</T>
+          <DiamondAmount n={me.diamonds.toLocaleString('en-US')} size={24} />
+          <View style={styles.cta}><Text style={styles.ctaText}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
+        </PressBox>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push('/wallet')}>
-          <LinearGradient colors={['#3B2410', '#24140A']} style={styles.balance}>
-            <Text style={font.small}>Simo Coin</Text>
-            <CoinAmount n={me.coins} size={24} />
-            <Text style={styles.balanceCta}>{t('wallet.recharge')} ›</Text>
-            {!me.firstRechargeDone ? <View style={styles.x2}><Text style={styles.x2Text}>×2</Text></View> : null}
-          </LinearGradient>
-        </Pressable>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push('/earnings')}>
-          <LinearGradient colors={['#10273B', '#0A1624']} style={styles.balance}>
-            <Text style={font.small}>Simo Almaz</Text>
-            <DiamondAmount n={me.diamonds} size={24} />
-            <Text style={[styles.balanceCta, { color: colors.diamond }]}>{t('me.earnings')} ›</Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
-
-      <Pressable onPress={() => router.push('/vip')} style={{ marginTop: 12 }}>
-        <LinearGradient colors={me.vip ? gradients.vipGold : gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.vip}>
-          <Icon name="crown" size={26} color={me.vip ? '#3A1F00' : '#fff'} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: me.vip ? '#3A1F00' : '#fff', fontWeight: '900', fontSize: 16 }}>{t('vip.title')}</Text>
-            <Text style={{ color: me.vip ? '#3A1F00' : '#fff', opacity: 0.85, fontSize: 12 }}>
-              {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: new Date(me.vipUntil).toLocaleDateString() }) : t('vip.subtitle')}
-            </Text>
-          </View>
-          <Icon name="chevron" size={18} color={me.vip ? '#3A1F00' : '#fff'} />
-        </LinearGradient>
-      </Pressable>
+      {/* VIP */}
+      <PressBox style={{ marginTop: 10 }} r={22} sh={4} bg={me.vip ? vipColor(me.vip.tier).bg : colors.ink} onPress={() => router.push('/vip')} inner={styles.vip}>
+        <View style={[styles.vipIcon, { backgroundColor: me.vip ? colors.card : colors.coin }]}><Icon name="crown" size={22} color={colors.ink} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.vipTitle, { color: me.vip ? vipColor(me.vip.tier).fg : colors.bg }]}>{t('vip.title')}</Text>
+          <Text style={[styles.vipSub, { color: me.vip ? vipColor(me.vip.tier).fg : colors.nightMuted }]} numberOfLines={2}>
+            {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: new Date(me.vipUntil).toLocaleDateString() }) : t('vip.subtitle')}
+          </Text>
+        </View>
+        <Icon name="chevron" size={18} color={me.vip ? vipColor(me.vip.tier).fg : colors.bg} />
+      </PressBox>
 
       {!isHost && me.gender === 'FEMALE' ? (
-        <Pressable onPress={() => router.push('/host-apply')} style={{ marginTop: 12 }}>
-          <LinearGradient colors={['#FF8A65', '#FF4D8D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.vip}>
-            <Text style={{ fontSize: 24 }}>💰</Text>
-            <Text style={{ color: '#fff', fontWeight: '800', flex: 1 }}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost')}</Text>
-            <Icon name="chevron" size={18} />
-          </LinearGradient>
-        </Pressable>
+        <PressBox style={{ marginTop: 10 }} r={22} sh={4} bg={colors.highlight} onPress={() => router.push('/host-apply')} inner={styles.vip}>
+          <View style={[styles.vipIcon, { backgroundColor: colors.card }]}><Icon name="sparkles" size={20} color={colors.ink} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.vipTitle, { color: colors.ink }]}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost')}</Text>
+            <Text style={[styles.vipSub, { color: colors.textMuted }]}>{t('me.hostPitch')}</Text>
+          </View>
+          <Icon name="chevron" size={18} color={colors.ink} />
+        </PressBox>
       ) : null}
 
-      <Card style={{ marginTop: 14 }}>
-        <MenuRow icon="heart" label={t('me.likes')} onPress={() => router.push('/likes')} />
-        <MenuRow icon="eye" label={t('me.visitors')} color={colors.violet} onPress={() => router.push('/visitors')} />
-        <MenuRow icon="gift" label={t('me.rewards')} color={colors.gold} onPress={() => router.push('/rewards')} />
-        <MenuRow icon="trophy" label={t('me.leaderboard')} color={colors.peach} onPress={() => router.push('/leaderboard')} />
+      <Card style={{ marginTop: 16 }}>
+        <MenuRow icon="heart" label={t('me.likes')} tint={colors.brandSoft} onPress={() => router.push('/likes')} />
+        <MenuRow icon="eye" label={t('me.visitors')} tint={colors.lilac} onPress={() => router.push('/visitors')} />
+        <MenuRow icon="gift" label={t('me.rewards')} tint={colors.coinSoft} onPress={() => router.push('/rewards')} />
+        <MenuRow icon="trophy" label={t('me.leaderboard')} tint={colors.highlight} onPress={() => router.push('/leaderboard')} last />
       </Card>
       <Card style={{ marginTop: 12 }}>
-        {isHost || me.diamonds > 0 ? <MenuRow icon="cash" label={t('me.earnings')} color={colors.diamond} onPress={() => router.push('/earnings')} /> : null}
-        <MenuRow icon="business" label={t('me.agency')} color={colors.orchid} value={me.agency?.name ?? me.ownedAgency?.name} onPress={() => router.push('/agency')} />
-        <MenuRow icon="video" label={t('me.myVideos')} color={colors.rose} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} />
+        {isHost || me.diamonds > 0 ? <MenuRow icon="cash" label={t('me.earnings')} tint={colors.diamondSoft} onPress={() => router.push('/earnings')} /> : null}
+        <MenuRow icon="business" label={t('me.agency')} tint={colors.lilac} value={me.agency?.name ?? me.ownedAgency?.name} onPress={() => router.push('/agency')} />
+        <MenuRow icon="video" label={t('me.myVideos')} tint={colors.brandSoft} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} />
         <MenuRow
           icon="share"
           label={t('me.invite')}
-          color={colors.online}
+          tint={colors.onlineSoft}
           onPress={() => void Share.share({ message: t('rewards.inviteShare', { code: String(me.shortId), url: WEB_URL }) })}
         />
-        <MenuRow icon="settings" label={t('me.settings')} color={colors.textMuted} onPress={() => router.push('/settings')} />
+        <MenuRow icon="settings" label={t('me.settings')} tint={colors.bgSunken} onPress={() => router.push('/settings')} last />
       </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  dot: { position: 'absolute', top: 7, right: 8, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.rose },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 6 },
-  edit: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 6, borderRadius: 3, backgroundColor: colors.surface2, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3 },
-  balance: { padding: 14, borderRadius: radius.lg, gap: 6, borderWidth: 1, borderColor: colors.border, minHeight: 104 },
-  balanceCta: { color: colors.gold, fontWeight: '700', fontSize: 13 },
-  x2: { position: 'absolute', top: 10, right: 10, backgroundColor: colors.rose, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
-  x2Text: { color: '#fff', fontWeight: '900', fontSize: 12 },
-  vip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radius.lg },
+  head: { padding: 16 },
+  track: { height: 12, borderRadius: 6, backgroundColor: colors.bgSunken, borderWidth: 1.5, borderColor: colors.ink, overflow: 'hidden' },
+  fill: { height: '100%', borderRightWidth: 1.5, borderColor: colors.ink },
+  balance: { padding: 14, gap: 8, minHeight: 116 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: colors.ink, borderRadius: 10, paddingHorizontal: 9, height: 24 },
+  ctaText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11.5 },
+  x2: { position: 'absolute', top: -6, right: -6, width: 52, height: 52, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '12deg' }] },
+  x2Text: { position: 'absolute', color: colors.white, fontFamily: fonts.display, fontSize: 13 },
+  vip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  vipIcon: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  vipTitle: { fontFamily: fonts.displayBold, fontSize: 15 },
+  vipSub: { fontFamily: fonts.medium, fontSize: 12, marginTop: 2 },
 });

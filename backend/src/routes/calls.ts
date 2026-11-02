@@ -70,6 +70,38 @@ export default async function callRoutes(app: FastifyInstance) {
     return { call, peer: presentUser(calleePublic), rtc: rtcToken(call.channel, caller.shortId, true) };
   });
 
+  /**
+   * Təsadüfi video/səsli tanışlıq: hazırda onlayn olan, məşğul olmayan təsdiqlənmiş hostlardan birini seçir.
+   * Seçim: üstünlük verilən cins, aktivlik, cazibə səviyyəsi + təsadüfilik. Zəngin özü POST /calls ilə başlayır.
+   */
+  app.get('/calls/match', { preHandler: requireAuth, config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req) => {
+    const me = uid(req);
+    const q = z.object({ type: z.enum(['VIDEO', 'VOICE']).default('VIDEO'), skip: z.string().optional() }).parse(req.query);
+    const viewer = await prisma.user.findUniqueOrThrow({ where: { id: me } });
+    const skip = new Set((q.skip ?? '').split(',').filter(Boolean).slice(0, 50));
+    skip.add(me);
+    const blocks = await prisma.block.findMany({ where: { OR: [{ blockerId: me }, { blockedId: me }] }, select: { blockerId: true, blockedId: true } });
+    blocks.forEach((b) => skip.add(b.blockerId === me ? b.blockedId : b.blockerId));
+    const busy = await prisma.call.findMany({ where: { status: { in: ['RINGING', 'ACTIVE'] } }, select: { callerId: true, calleeId: true } });
+    busy.forEach((c) => { skip.add(c.callerId); skip.add(c.calleeId); });
+    const candidates = await prisma.user.findMany({
+      where: {
+        id: { notIn: [...skip] }, hostStatus: 'APPROVED', online: true, banned: false, deletedAt: null,
+        ...(viewer.interestedIn ? { gender: viewer.interestedIn } : {}),
+      },
+      select: { ...publicUserSelect, photos: true },
+      take: 40,
+      orderBy: { lastSeenAt: 'desc' },
+    });
+    if (!candidates.length) return { user: null, price: null };
+    const weighted = candidates.map((u) => ({ u, w: 1 + Math.min(10, Math.sqrt(u.totalEarned / 1000)) + Math.random() * 4 }));
+    weighted.sort((a, b) => b.w - a.w);
+    const pick = weighted[Math.floor(Math.random() * Math.min(5, weighted.length))].u;
+    const vipDiscount = activeVip(viewer)?.callDiscount ?? 0;
+    const base = q.type === 'VIDEO' ? pick.videoCallPrice : pick.voiceCallPrice;
+    return { user: presentUser(pick), price: Math.ceil(base * (1 - vipDiscount)) };
+  });
+
   app.get('/calls/:id', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);

@@ -13,13 +13,17 @@ import { closePayments } from '@/lib/payments';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { Toasts } from '@/components/Toasts';
+import { useFonts } from 'expo-font';
+import { Unbounded_600SemiBold, Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
+import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { IncomingCall } from '@/components/IncomingCall';
 import type { Call, Message, PublicUser } from '@/lib/types';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function useBootstrap() {
+function useBootstrap(fontsReady: boolean) {
   useEffect(() => {
+    if (!fontsReady) return;
     const { setReady, setAuthed, refreshMe, logout } = useStore.getState();
     tokens.onLogout(() => void useStore.getState().logout());
     (async () => {
@@ -36,7 +40,7 @@ function useBootstrap() {
       setReady(true);
       void SplashScreen.hideAsync().catch(() => {});
     })();
-  }, []);
+  }, [fontsReady]);
 }
 
 /** Giriş edilmiş istifadəçi üçün real-time hadisələr */
@@ -98,19 +102,27 @@ function useAuthGate() {
 }
 
 export default function RootLayout() {
-  useBootstrap();
+  const [fontsLoaded, fontError] = useFonts({
+    Unbounded_600SemiBold, Unbounded_700Bold, Unbounded_800ExtraBold,
+    Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold,
+  });
+  // Şrift yüklənməsə belə tətbiq sistem şrifti ilə açılır
+  const fontsReady = fontsLoaded || !!fontError;
+  useBootstrap(fontsReady);
   const authed = useStore((s) => s.authed);
   useRealtime(authed);
   useAuthGate();
+  if (!fontsReady) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
           <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           <Stack.Screen name="call/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="live/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="match" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="vip" options={{ presentation: 'modal' }} />
         </Stack>
         <IncomingCall />

@@ -4,20 +4,22 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius } from '../theme';
+import { colors, fonts, radius } from '../theme';
 import { useStore } from '../store';
 import { api, ApiError } from '../lib/api';
 import { errorText, giftName } from '../lib/format';
 import type { GiftEvent } from '../lib/types';
 import { GiftIcon } from './GiftIcon';
 import { CoinAmount } from './Badges';
-import { Chip, GradientButton } from './ui';
+import { Btn, Tabs, Tag, tap } from './ui';
+import { sheetStyles } from './ActionSheet';
+import { Icon } from './Icon';
 
-const COUNTS = [1, 5, 10, 33, 99];
+const COUNTS = [1, 5, 10, 33, 99, 520];
 const CATS = ['popular', 'azerbaijan', 'luxury'] as const;
 
-export function GiftSheet({ visible, onClose, receiverId, context, contextId, onSent }: {
-  visible: boolean; onClose: () => void; receiverId: string; context: 'CHAT' | 'LIVE' | 'VIDEO' | 'CALL' | 'PROFILE'; contextId?: string;
+export function GiftSheet({ visible, onClose, receiverId, receiverName, context, contextId, onSent }: {
+  visible: boolean; onClose: () => void; receiverId: string; receiverName?: string; context: 'CHAT' | 'LIVE' | 'VIDEO' | 'CALL' | 'PROFILE'; contextId?: string;
   onSent?: (e: GiftEvent) => void;
 }) {
   const { t } = useTranslation();
@@ -35,13 +37,18 @@ export function GiftSheet({ visible, onClose, receiverId, context, contextId, on
   const list = useMemo(() => gifts.filter((g) => g.category === cat), [gifts, cat]);
   const gift = gifts.find((g) => g.id === selected);
   const total = (gift?.price ?? 0) * count;
+  const short = gift ? (me?.coins ?? 0) < total : false;
+
+  function topUp() {
+    onClose();
+    router.push('/wallet');
+  }
 
   async function send() {
     if (!gift) return;
-    if ((me?.coins ?? 0) < total) {
+    if (short) {
       toast(t('errors.INSUFFICIENT_COINS'), 'error');
-      onClose();
-      router.push('/wallet');
+      topUp();
       return;
     }
     setSending(true);
@@ -53,10 +60,7 @@ export function GiftSheet({ visible, onClose, receiverId, context, contextId, on
       if (context !== 'LIVE') onClose();
     } catch (e) {
       toast(errorText(e), 'error');
-      if (e instanceof ApiError && e.code === 'INSUFFICIENT_COINS') {
-        onClose();
-        router.push('/wallet');
-      }
+      if (e instanceof ApiError && e.code === 'INSUFFICIENT_COINS') topUp();
     } finally {
       setSending(false);
     }
@@ -65,61 +69,72 @@ export function GiftSheet({ visible, onClose, receiverId, context, contextId, on
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-        <View style={styles.grabber} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>{t('gifts.title')}</Text>
-          <Pressable
-            onPress={() => {
-              onClose();
-              router.push('/wallet');
-            }}
-            style={styles.balance}
-          >
+      <View style={[sheetStyles.sheet, styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
+        <View style={sheetStyles.grip} />
+        <View style={styles.head}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t('gifts.title')}</Text>
+            {receiverName ? <Text style={styles.to}>→ {receiverName}</Text> : null}
+          </View>
+          <Pressable onPress={topUp} style={styles.balance}>
             <CoinAmount n={me?.coins ?? 0} />
-            <Text style={{ color: colors.gold, fontWeight: '700' }}>{t('gifts.recharge')} ›</Text>
+            <View style={styles.plus}><Icon name="add" size={14} color={colors.ink} /></View>
           </Pressable>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-          {CATS.map((c) => (
-            <Chip key={c} label={t(`gifts.${c}`)} active={cat === c} onPress={() => setCat(c)} />
-          ))}
-        </View>
+        <Tabs options={CATS.map((c) => ({ key: c, label: t(`gifts.${c}`) }))} value={cat} onChange={setCat} />
         <FlatList
           data={list}
           numColumns={4}
           keyExtractor={(g) => g.id}
-          style={{ maxHeight: 260 }}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => setSelected(item.id)} style={[styles.cell, selected === item.id && styles.cellActive]}>
-              <GiftIcon id={item.id} size={46} />
-              <Text style={styles.name} numberOfLines={1}>{giftName(item)}</Text>
-              <CoinAmount n={item.price} size={12} />
-            </Pressable>
-          )}
-        />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
-          <View style={{ flexDirection: 'row', gap: 6, flex: 1, flexWrap: 'wrap' }}>
-            {COUNTS.map((c) => (
-              <Pressable key={c} onPress={() => setCount(c)} style={[styles.count, count === c && { backgroundColor: colors.rose }]}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>×{c}</Text>
+          style={{ maxHeight: 268, marginTop: 12 }}
+          columnWrapperStyle={{ gap: 8 }}
+          contentContainerStyle={{ gap: 8 }}
+          renderItem={({ item }) => {
+            const on = selected === item.id;
+            return (
+              <Pressable onPress={() => { tap(); setSelected(item.id); }} style={[styles.cell, on && styles.cellOn]}>
+                {item.tier !== 'SMALL' ? <Tag label={item.tier === 'LUXURY' ? 'FX+' : 'FX'} bg={item.tier === 'LUXURY' ? colors.diamond : colors.highlight} fg={item.tier === 'LUXURY' ? colors.white : colors.ink} style={styles.fx} /> : null}
+                <GiftIcon id={item.id} size={44} />
+                <Text style={styles.name} numberOfLines={1}>{giftName(item)}</Text>
+                <CoinAmount n={item.price} size={12} />
               </Pressable>
-            ))}
-          </View>
-          <GradientButton small title={gift ? `${t('gifts.send')} · ${total}` : t('gifts.send')} disabled={!gift} loading={sending} onPress={send} />
+            );
+          }}
+        />
+        <View style={styles.counts}>
+          {COUNTS.map((c) => (
+            <Pressable key={c} onPress={() => { tap(); setCount(c); }} style={[styles.count, count === c && { backgroundColor: colors.ink }]}>
+              <Text style={[styles.countText, count === c && { color: colors.bg }]}>×{c}</Text>
+            </Pressable>
+          ))}
         </View>
+        <Btn
+          style={{ marginTop: 12 }}
+          kind={short ? 'coin' : 'primary'}
+          icon={short ? 'add' : 'gift'}
+          title={!gift ? t('gifts.pick') : short ? t('gifts.recharge') : `${t('gifts.send')} · ${total}`}
+          disabled={!gift}
+          loading={sending}
+          onPress={send}
+        />
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
-  sheet: { backgroundColor: '#1A0C2C', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 16, borderTopWidth: 1, borderColor: colors.border },
-  grabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong, alignSelf: 'center', marginBottom: 12 },
-  balance: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
-  cell: { flex: 1 / 4, alignItems: 'center', paddingVertical: 8, borderRadius: radius.md, borderWidth: 1.5, borderColor: 'transparent', gap: 2 },
-  cellActive: { borderColor: colors.rose, backgroundColor: 'rgba(255,77,141,0.12)' },
-  name: { color: colors.text, fontSize: 11, fontWeight: '600', maxWidth: '95%' },
-  count: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: colors.surface2 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(15,13,12,0.25)' },
+  sheet: { paddingTop: 10, paddingHorizontal: 16 },
+  head: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
+  title: { fontFamily: fonts.displayBold, fontSize: 20, color: colors.ink },
+  to: { fontFamily: fonts.semibold, fontSize: 13, color: colors.textMuted },
+  balance: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.coinSoft, paddingLeft: 10, paddingRight: 4, height: 36, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.ink },
+  plus: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.ink },
+  cell: { flex: 1, maxWidth: '23.5%', alignItems: 'center', paddingTop: 10, paddingBottom: 8, borderRadius: radius.sm, borderWidth: 2, borderColor: colors.hairline, backgroundColor: colors.card, gap: 3 },
+  cellOn: { borderColor: colors.ink, backgroundColor: colors.coinSoft },
+  fx: { position: 'absolute', top: 4, right: 4, height: 16, paddingHorizontal: 4 },
+  name: { color: colors.ink, fontSize: 11, fontFamily: fonts.semibold, maxWidth: '92%' },
+  counts: { flexDirection: 'row', gap: 6, marginTop: 12 },
+  count: { flex: 1, height: 34, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
+  countText: { color: colors.ink, fontFamily: fonts.black, fontSize: 12 },
 });
