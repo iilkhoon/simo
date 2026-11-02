@@ -3,7 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAdmin } from '../lib/auth.js';
-import { creditCoins } from '../services/wallet.js';
+import { agencyMonthly, creditCoins } from '../services/wallet.js';
+import { agencyTier } from '../economy.js';
 import { endLive } from '../services/live.js';
 import { emitToUser } from '../realtime/hub.js';
 
@@ -13,7 +14,7 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.get('/admin/stats', async () => {
     const day = new Date(Date.now() - 86400_000);
     const month = new Date(Date.now() - 30 * 86400_000);
-    const [users, newUsers, online, hosts, lives, revenueDay, revenueMonth, pendingHosts, openReports, pendingWithdrawals, pendingAgencies] = await Promise.all([
+    const [users, newUsers, online, hosts, lives, revenueDay, revenueMonth, pendingHosts, openReports, pendingWithdrawals, pendingAgencies, pendingKyc] = await Promise.all([
       prisma.user.count({ where: { deletedAt: null } }),
       prisma.user.count({ where: { createdAt: { gte: day } } }),
       prisma.user.count({ where: { online: true } }),
@@ -25,12 +26,13 @@ export default async function adminRoutes(app: FastifyInstance) {
       prisma.report.count({ where: { status: 'OPEN' } }),
       prisma.withdrawal.count({ where: { status: 'PENDING' } }),
       prisma.agency.count({ where: { status: 'PENDING' } }),
+      prisma.verification.count({ where: { status: 'PENDING' } }),
     ]);
     return {
       users, newUsers, online, hosts, lives,
       revenueDayAzn: (revenueDay._sum.amountQepik ?? 0) / 100,
       revenueMonthAzn: (revenueMonth._sum.amountQepik ?? 0) / 100,
-      pendingHosts, openReports, pendingWithdrawals, pendingAgencies,
+      pendingHosts, openReports, pendingWithdrawals, pendingAgencies, pendingKyc,
     };
   });
 
@@ -105,7 +107,12 @@ export default async function adminRoutes(app: FastifyInstance) {
   });
 
   app.get('/admin/agencies', async () => {
-    const items = await prisma.agency.findMany({ include: { owner: { select: { shortId: true, name: true } }, _count: { select: { members: true } } }, orderBy: { createdAt: 'desc' } });
+    const list = await prisma.agency.findMany({ include: { owner: { select: { shortId: true, name: true, kycStatus: true } }, _count: { select: { members: true } } }, orderBy: { createdAt: 'desc' } });
+    const items = await Promise.all(list.map(async (a) => {
+      const monthly = a.status === 'ACTIVE' ? await agencyMonthly(prisma, a.id) : 0;
+      const t = agencyTier(monthly);
+      return { ...a, monthlyDiamonds: monthly, tier: t.tier, tierName: t.name, share: t.share };
+    }));
     return { items };
   });
 

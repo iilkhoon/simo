@@ -6,7 +6,7 @@ Simo Azərbaycan bazarı üçün tanışlıq, video/səsli zəng və canlı yay�
 
 - iOS və Android tətbiqi (Huawei AppGallery daxil);
 - backend API;
-- veb sayt (landing, coin yükləmə və admin panel).
+- veb sayt (landing, Nar yükləmə, hüquqi sənədlər və admin panel).
 
 Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
 
@@ -35,26 +35,31 @@ Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
   - "Yaxınlıqdakılar" bölməsi.
   - Tövsiyə alqoritmi bunları nəzərə alır: cins üstünlüyü, yaş, məsafə, aktivlik, ortaq maraqlar, VIP boost.
 - **Çat:**
-  - Ödənişli mesajlar (hostlara). İlk mesaj pulsuzdur, VIP-lər üçün də pulsuz limit var.
-  - Buz-qıran cavablar, bir toxunuşla hədiyyələr.
-  - Zəng tarixçəsi və geri zəng.
-- **İqtisadiyyat:**
-  - İstifadəçi Simo Coin xərcləyir, host isə ödənişli coin dəyərinin 50%-i qədər almaz qazanır.
-  - Agentlik hostların qazancından 10% komissiya alır. Komissiya platformanın payından ödənir.
-  - Almaz pula çevrilir: 200 almaz = 1 ₼, minimum 10 000 almaz, 3% xidmət haqqı.
-  - Bonus (promo) coinlər birinci xərclənir və nağdlaşan almaz yaratmır — bonus fırıldağının qarşısını alır.
-  - Platformanın payı mağaza komissiyasından sonra belə gəlirin ~60–85%-idir. Hesablama: [docs/ECONOMY.md](docs/ECONOMY.md).
-- **Bonuslar:**
-  - Qeydiyyatda 30 coin hədiyyə və ilk yükləmədə 300 coinədək hədiyyə (promo).
-  - 7 günlük gündəlik bonus (promo coin).
-  - Dəvət edən şəxs dəvət etdiyi istifadəçinin ilk alışından 10% alır (promo, ən çox 200 coin).
-- **VIP:** Gümüş, Qızıl və Almaz səviyyələri. Hər səviyyə pulsuz mesaj, zəng endirimi, "məni kim bəyənib", görünməz rejim və boost verir.
-- **Qısa videolar:** TikTok tipli lent. İstifadəçilər bəyənə, şərh yaza və hədiyyə göndərə bilər.
+  - Gündə 3 yeni söhbətdə ilk "salam" pulsuzdur, növbəti mesajların qiymətini host təyin edir. Host pulsuz söhbəti aça bilər.
+  - Foto və video yalnız qarşılıqlı izləyənlər arasında göndərilir.
+  - Buz-qıran cavablar, bir toxunuşla hədiyyələr, zəng tarixçəsi və geri zəng.
+- **İqtisadiyyat** (ətraflı: [docs/ECONOMY.md](docs/ECONOMY.md)):
+  - İstifadəçi **Nar** xərcləyir. Ödənişli Nar-ın 70%-i Simo-da qalır, 30%-i host və agentlik arasında bölünür.
+  - Agentlik payı səviyyəyə görə 15%-dən (Bürünc) 20%-dək (Almaz) artır. Qazanc yalnız aktiv agentliyin üzvü olan hostlara yazılır.
+  - Qazanc **Ləl**-dir: 100 Ləl = 1 ₼, minimum 5 000 Ləl, 3% haqq, həftədə 1 çıxarış, 7 gün gözləmə, KYC tələb olunur.
+  - Promo Nar birinci xərclənir və Ləl yaratmır — bonus fırıldağının qarşısını alır.
+- **Bonuslar və limitlər:**
+  - Qeydiyyatda 30 Nar, ilk yükləmədə 300 Nar-adək hədiyyə, 7 günlük gündəlik bonus (promo).
+  - Dəvət edən şəxs dəvət etdiyi istifadəçinin **hər alışından** 5% alır (promo, ən çox 500).
+  - Gündə 10 pulsuz bəyənmə və 1 super bəyənmə; "kimi göstərək" filtri həftədə 2 dəfə pulsuz.
+  - Paylaşaraq pulsuz qatılınan çəkilişlər.
+- **VIP və zadəganlıq:** Gümüş, Qızıl, Almaz VIP; Bəy, Xan, Şah zadəganlıq statusları. Profil qonaqlarını yalnız VIP görür.
+- **Lent:** TikTok tipli video və foto lenti (video ≤ 90 san). Bəyənmə, şərh, saxlama, paylaşma; müəllif bəyənənləri görür. Alqoritm bəyənmə, şərh, saxlama və baxışa görə sıralayır.
+- **Hekayələr:** 24 saatlıq; canlı olanlar birinci göstərilir.
+- **Şəxsi məzmun:** aylıq Nar abunəsi, qiyməti yaradıcı təyin edir. Çılpaqlıq qadağandır.
+- **Canlı yayım 2.0:** PK döyüşləri, qonaq dəvəti və qoşulma sorğusu, host paneli, oturacaq sayı seçilən səsli otaqlar, konkret oturacaqdakı şəxsə hədiyyə.
+- **Agentliklər:** agentlik kataloqu, müraciət formu, admin təsdiqi; host olmaq üçün tapşırıqlar (3 günlük hesab, 10 söhbət, profil, ilk paylaşım, KYC).
+- **Nişanlar:** səxavət və şöhrət səviyyələri, staj, təsdiq, "Bakı #1" kimi regional reytinqlər.
 - **Təhlükəsizlik:**
-  - Hostlar selfi ilə təsdiqlənir.
+  - Şəxsiyyət təsdiqi (KYC): ad, soyad, doğum tarixi, sənəd və selfi.
   - Çatda telefon nömrələri və linklər avtomatik gizlədilir.
   - Blok və şikayət imkanı var.
-  - Moderasiya admin paneldən aparılır.
+  - Moderasiya, KYC, agentlik və çəkilişlər admin paneldən idarə olunur.
 
 ## Lokal işə salma
 
@@ -145,7 +150,7 @@ npx eas-cli@latest build --profile huawei --platform android
 
 **Apple və Google qaydaları:**
 
-- Coin rəqəmsal məhsuldur, ona görə iOS və Google Play versiyalarında yalnız IAP istifadə olunur.
+- Nar rəqəmsal məhsuldur, ona görə iOS və Google Play versiyalarında yalnız IAP istifadə olunur.
 - Bu versiyalarda veb yükləməyə link göstərmək olmaz. Kod bunu `EXPO_PUBLIC_STORE` ilə avtomatik idarə edir.
 
 **Huawei:**

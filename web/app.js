@@ -74,7 +74,7 @@
     el.innerHTML = row + row + row + row;
   }
 
-  // Kalkulyator: host payı 50% (almaz), 1 mesaj = 10 coin, 1 dəq video = 80 coin, 200 almaz = 1 ₼, 3% çıxarış haqqı
+  // Kalkulyator (docs/ECONOMY.md): Bürünc agentlikdə host payı 15% (Ləl), 1 mesaj = 30 Nar, 1 dəq video = 80 Nar, 100 Ləl = 1 ₼, 3% çıxarış haqqı
   function calc() {
     const m = +($('#rMsg')?.value ?? 0);
     const n = +($('#rMin')?.value ?? 0);
@@ -82,8 +82,8 @@
     $('#vMsg').textContent = m;
     $('#vMin').textContent = n;
     $('#vGift').textContent = fmt(g);
-    const coinsPerDay = m * 10 + n * 80 + g;
-    const azPerMonth = ((coinsPerDay * 0.5 * 30) / 200) * 0.97;
+    const narPerDay = m * 30 + n * 80 + g;
+    const azPerMonth = ((narPerDay * 0.15 * 30) / 100) * 0.97;
     $('#calcOut').textContent = `≈ ${fmt(Math.round(azPerMonth))} ₼`;
   }
 

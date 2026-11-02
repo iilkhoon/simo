@@ -152,6 +152,11 @@ export default async function socialRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.get('/admin/raffles', { preHandler: requireAdmin }, async () => {
+    const items = await prisma.raffle.findMany({ orderBy: { createdAt: 'desc' }, take: 100, include: { _count: { select: { entries: true } } } });
+    return { items };
+  });
+
   app.post('/admin/raffles', { preHandler: requireAdmin }, async (req) => {
     const b = z.object({ title: z.string().min(3).max(80), description: z.string().max(500).default(''), prizeCoins: z.number().int().min(1).max(1_000_000), winners: z.number().int().min(1).max(100).default(1), endsAt: z.coerce.date() }).parse(req.body);
     return { raffle: await prisma.raffle.create({ data: b }) };

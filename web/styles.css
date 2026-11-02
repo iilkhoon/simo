@@ -295,3 +295,4 @@ h1, h2 { font-weight: 900; letter-spacing: -0.045em; }
 .speech.s2 { background: var(--violet); top: 40%; right: -3%; transform: rotate(5deg); }
 .speech.s2::after { left: 22px; }
 @media (max-width: 900px) { .speech, .phones .f4 { display: none; } }
+.doc .note { background: var(--card, #f4efe8); border-radius: 14px; padding: 12px 16px; font-size: 14px; }

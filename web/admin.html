@@ -120,7 +120,8 @@
     const TABS = [
       ['stats', 'Statistika'], ['hosts', 'Host müraciətləri', 'pendingHosts'], ['users', 'İstifadəçilər'],
       ['withdrawals', 'Pul çıxarışları', 'pendingWithdrawals'], ['reports', 'Şikayətlər', 'openReports'],
-      ['agencies', 'Agentliklər', 'pendingAgencies'], ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'],
+      ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['raffles', 'Çəkilişlər'],
+      ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'],
     ];
     function side() {
       $('#side').innerHTML = TABS.map(([k, l, c]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}${c && counts[c] ? `<span class="n">${counts[c]}</span>` : ''}</button>`).join('');
@@ -150,17 +151,17 @@
         const q = $('#uq') ? $('#uq').value : '';
         const { items } = await api(`/admin/users?q=${encodeURIComponent(q)}`);
         return `<h2 style="margin-bottom:18px">İstifadəçilər</h2><div class="toolbar"><input class="input" id="uq" placeholder="Ad, telefon, e-poçt və ya ID" value="${esc(q)}"><button class="btn sm dark" data-act="search">Axtar</button></div>` +
-          table(['İstifadəçi', 'Əlaqə', 'Coin / Almaz', 'Status', ''], items.map((u) => `<tr>
+          table(['İstifadəçi', 'Əlaqə', 'Nar / Ləl', 'Status', ''], items.map((u) => `<tr>
           <td>${userCell(u)}</td><td style="font-size:13px">${esc(u.phone || u.email || '')}</td>
-          <td>🪙 ${fmt(u.coins)}<br>💎 ${fmt(u.diamonds)}</td>
+          <td>Nar ${fmt(u.coins)}<br>Ləl ${fmt(u.diamonds)}</td>
           <td>${u.banned ? '<span class="st" style="background:var(--nar-soft)">BLOK</span> ' : ''}${u.hostStatus !== 'NONE' ? `<span class="st" style="background:var(--saffron-soft)">${esc(u.hostStatus)}</span> ` : ''}${u.verified ? '<span class="st" style="background:var(--xazar-soft)">✓</span>' : ''}${u.role === 'ADMIN' ? ' <span class="st">ADMIN</span>' : ''}</td>
-          <td class="acts"><button class="mini ${u.banned ? 'ok' : 'no'}" data-act="ban" data-id="${u.id}" data-v="${!u.banned}">${u.banned ? 'Blokdan çıxar' : 'Blokla'}</button><button class="mini" data-act="verify" data-id="${u.id}" data-v="${!u.verified}">${u.verified ? 'Təsdiqi götür' : 'Təsdiqlə'}</button><button class="mini dk" data-act="grant" data-id="${u.id}">+ Coin</button></td></tr>`));
+          <td class="acts"><button class="mini ${u.banned ? 'ok' : 'no'}" data-act="ban" data-id="${u.id}" data-v="${!u.banned}">${u.banned ? 'Blokdan çıxar' : 'Blokla'}</button><button class="mini" data-act="verify" data-id="${u.id}" data-v="${!u.verified}">${u.verified ? 'Təsdiqi götür' : 'Təsdiqlə'}</button><button class="mini dk" data-act="grant" data-id="${u.id}">+ Nar</button></td></tr>`));
       },
       async withdrawals() {
         const { items } = await api('/admin/withdrawals');
         return `<h2 style="margin-bottom:18px">Pul çıxarışları</h2>` + table(['İstifadəçi', 'Məbləğ', 'Üsul / hesab', 'Status', 'Tarix', ''], items.map((w) => `<tr>
           <td>${userCell(w.user)}<div class="muted" style="font-size:12px">${esc(w.user.phone || '')}</div></td>
-          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">💎 ${fmt(w.diamonds)}</div></td>
+          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">${fmt(w.diamonds)} Ləl</div></td>
           <td>${esc(w.method)}<div style="font-size:13px">${esc(w.account)}</div></td><td><span class="st">${esc(w.status)}</span></td><td>${date(w.createdAt)}</td>
           <td class="acts">${w.status === 'PENDING' ? `<button class="mini" data-act="wd" data-id="${w.id}" data-v="APPROVED">Təsdiq</button>` : ''}<button class="mini ok" data-act="wd" data-id="${w.id}" data-v="PAID">Ödənildi</button><button class="mini no" data-act="wd" data-id="${w.id}" data-v="REJECTED">Rədd</button></td></tr>`));
       },
@@ -170,11 +171,51 @@
           <td><span class="st">${esc(r.targetType)}</span><div class="muted" style="font-size:12px">${esc(r.targetUserId)}</div></td><td><b>${esc(r.reason)}</b></td><td style="max-width:260px">${esc(r.details || '')}</td><td>${date(r.createdAt)}</td>
           <td class="acts"><button class="mini ok" data-act="rep" data-id="${r.id}" data-v="RESOLVED">Həll et</button><button class="mini no" data-act="repban" data-id="${r.id}">Həll et + blokla</button><button class="mini" data-act="rep" data-id="${r.id}" data-v="DISMISSED">Rədd</button></td></tr>`));
       },
+      async kyc() {
+        const st = $('#kst') ? $('#kst').value : 'PENDING';
+        const { items } = await api(`/admin/kyc?status=${st}`);
+        const img = (u) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img class="ph" src="${esc(u)}" alt=""></a>` : '—');
+        const age = (d) => { const b = new Date(d); return Math.floor((Date.now() - b.getTime()) / (365.25 * 86400000)); };
+        return `<h2 style="margin-bottom:18px">Şəxsiyyət təsdiqi (KYC)</h2><div class="toolbar"><select class="input" id="kst">${['PENDING', 'APPROVED', 'REJECTED'].map((x) => `<option ${x === st ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="btn sm dark" data-act="search">Göstər</button></div>
+          <p class="muted" style="margin-bottom:12px">Selfi ilə sənəddəki üzü, ad-soyadı və doğum tarixini müqayisə edin. 18 yaşdan kiçikləri rədd edin. Şəkilləri yükləməyin və paylaşmayın.</p>` +
+          table(['İstifadəçi', 'Ad, soyad', 'Doğum tarixi', 'Sənəd', 'Arxa', 'Selfi', 'Profil', ''], items.map((v) => `<tr>
+          <td>${userCell(v.user)}</td><td><b>${esc(v.firstName)} ${esc(v.lastName)}</b><div class="muted" style="font-size:12px">${esc(v.docType)}</div></td>
+          <td>${date(v.birthDate)}<div class="${age(v.birthDate) < 18 ? '' : 'muted'}" style="font-size:12px;${age(v.birthDate) < 18 ? 'color:var(--nar);font-weight:700' : ''}">${age(v.birthDate)} yaş</div></td>
+          <td>${img(v.docFrontUrl)}</td><td>${img(v.docBackUrl)}</td><td>${img(v.selfieUrl)}</td><td>${img(v.user?.avatarUrl)}</td>
+          <td class="acts">${v.status === 'PENDING' ? `<button class="mini ok" data-act="kyc" data-id="${v.id}" data-v="APPROVED">Təsdiq</button><button class="mini no" data-act="kyc" data-id="${v.id}" data-v="REJECTED">Rədd</button>` : `<span class="st">${esc(v.status)}</span>${v.note ? `<div class="muted" style="font-size:12px">${esc(v.note)}</div>` : ''}`}</td></tr>`));
+      },
       async agencies() {
         const { items } = await api('/admin/agencies');
-        return `<h2 style="margin-bottom:18px">Agentliklər</h2>` + table(['Agentlik', 'Sahib', 'Üzv', 'Komissiya', 'Status', ''], items.map((a) => `<tr>
-          <td><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${esc(a.code)}</div></td><td>${esc(a.owner?.name)} · ${esc(a.owner?.shortId)}</td><td>${fmt(a._count?.members)}</td><td>${Math.round(a.commissionRate * 100)}%</td><td><span class="st">${esc(a.status)}</span></td>
-          <td class="acts"><button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Aktiv et</button><button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">Dayandır</button></td></tr>`));
+        const stBg = { PENDING: 'var(--saffron-soft)', ACTIVE: 'var(--mint-soft)', SUSPENDED: 'var(--nar-soft)' };
+        return `<h2 style="margin-bottom:18px">Agentliklər</h2><p class="muted" style="margin-bottom:12px">Səviyyə və pay son 30 gündə hostların qazancına görə avtomatik hesablanır (Bürünc 15% → Almaz 20%). Sahibin KYC-si təsdiqlənməyibsə aktiv etməyin.</p>` +
+          table(['Agentlik', 'Sahib', 'Əlaqə', 'Təcrübə', 'Üzv', 'Səviyyə', 'Status', ''], items.map((a) => `<tr>
+          <td><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${esc(a.code)}${a.city ? ` · ${esc(a.city)}` : ''}</div>${a.description ? `<div style="font-size:12px;max-width:220px">${esc(a.description)}</div>` : ''}</td>
+          <td>${esc(a.owner?.name)} · ${esc(a.owner?.shortId)}<div style="font-size:12px">KYC: <span class="st">${esc(a.owner?.kycStatus || '—')}</span></div></td>
+          <td style="font-size:13px">${esc(a.contactName || '')}<br>${esc(a.contactPhone || '')}</td>
+          <td style="font-size:13px;max-width:220px">${esc(a.experience || '')}${a.expectedHosts ? `<div class="muted">Gözlənilən host: ${fmt(a.expectedHosts)}</div>` : ''}</td>
+          <td>${fmt(a._count?.members)}</td>
+          <td><b>${esc(a.tierName)}</b> · ${Math.round(a.share * 100)}%<div class="muted" style="font-size:12px">30g: ${fmt(a.monthlyDiamonds)} Ləl</div></td>
+          <td><span class="st" style="background:${stBg[a.status] || 'var(--card)'}">${esc(a.status)}</span>${a.rejectReason ? `<div class="muted" style="font-size:12px">${esc(a.rejectReason)}</div>` : ''}</td>
+          <td class="acts">${a.status !== 'ACTIVE' ? `<button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Təsdiq et</button>` : ''}<button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">${a.status === 'PENDING' ? 'Rədd' : 'Dayandır'}</button></td></tr>`));
+      },
+      async raffles() {
+        const { items } = await api('/admin/raffles');
+        const soon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
+        return `<h2 style="margin-bottom:18px">Çəkilişlər</h2>
+          <form id="rfForm" class="box" style="padding:16px;margin-bottom:18px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+            <input class="input" name="title" placeholder="Başlıq" required minlength="3" maxlength="80">
+            <input class="input" name="prizeCoins" type="number" min="1" placeholder="Mükafat (promo Nar)" required>
+            <input class="input" name="winners" type="number" min="1" max="100" value="1" placeholder="Qalib sayı">
+            <input class="input" name="endsAt" type="datetime-local" value="${soon}" required>
+            <input class="input" name="description" placeholder="Şərtlər (məs. paylaş və qatıl)" maxlength="500" style="grid-column:1/-1">
+            <button class="btn sm dark" type="submit">Çəkiliş yarat</button>
+          </form>
+          <p class="muted" style="margin-bottom:12px">İştirak pulsuzdur. Qaliblər təsadüfi seçilir, mükafat promo Nar kimi yazılır (Ləl yaratmır).</p>` +
+          table(['Çəkiliş', 'Mükafat', 'İştirakçı', 'Bitir', 'Status', ''], items.map((r) => `<tr>
+          <td><b>${esc(r.title)}</b><div class="muted" style="font-size:12px;max-width:260px">${esc(r.description)}</div></td>
+          <td>${fmt(r.prizeCoins)} Nar × ${fmt(r.winners)}</td><td>${fmt(r._count?.entries)}</td><td>${date(r.endsAt)}</td>
+          <td>${r.drawnAt ? `<span class="st" style="background:var(--mint-soft)">Çəkilib</span><div class="muted" style="font-size:12px">${r.winnerIds.length} qalib</div>` : new Date(r.endsAt) < new Date() ? '<span class="st" style="background:var(--saffron-soft)">Bitib</span>' : '<span class="st">Aktiv</span>'}</td>
+          <td class="acts">${r.drawnAt ? '' : `<button class="mini ok" data-act="draw" data-id="${r.id}">Qalibi seç</button>`}</td></tr>`));
       },
       async payments() {
         const { items } = await api('/admin/payments');
@@ -204,15 +245,26 @@
         if (act === 'host') await api(`/admin/users/${id}`, { hostStatus: v });
         if (act === 'ban') { if (!confirm('Əminsiniz?')) return; await api(`/admin/users/${id}`, { banned: v === 'true' }); }
         if (act === 'verify') await api(`/admin/users/${id}`, { verified: v === 'true' });
-        if (act === 'grant') { const n = parseInt(prompt('Neçə coin?') || '', 10); if (!(n > 0)) return; await api(`/admin/users/${id}`, { grantCoins: n }); }
+        if (act === 'grant') { const n = parseInt(prompt('Neçə Nar?') || '', 10); if (!(n > 0)) return; await api(`/admin/users/${id}`, { grantCoins: n }); }
         if (act === 'wd') { const note = v === 'REJECTED' ? (prompt('Səbəb (istifadəçiyə görünür)') || '') : ''; await api(`/admin/withdrawals/${id}`, { status: v, note }); }
         if (act === 'rep') await api(`/admin/reports/${id}`, { status: v });
         if (act === 'repban') { if (!confirm('İstifadəçi bloklansın?')) return; await api(`/admin/reports/${id}`, { status: 'RESOLVED', banUser: true }); }
-        if (act === 'ag') await api(`/admin/agencies/${id}`, { status: v });
+        if (act === 'ag') { const rejectReason = v === 'SUSPENDED' ? (prompt('Səbəb (agentliyə görünür)') || '') : ''; await api(`/admin/agencies/${id}`, { status: v, ...(rejectReason ? { rejectReason } : {}) }); }
+        if (act === 'kyc') { const note = v === 'REJECTED' ? (prompt('Səbəb (istifadəçiyə görünür)') || '') : ''; await api(`/admin/kyc/${id}`, { status: v, note }); }
+        if (act === 'draw') { if (!confirm('Qaliblər indi seçilsin?')) return; const r = await api(`/admin/raffles/${id}/draw`, {}); toast(`${r.winners.length} qalib seçildi`); }
         if (act === 'endlive') { if (!confirm('Yayın bitirilsin?')) return; await api(`/admin/lives/${id}/end`, {}); }
         toast('Yadda saxlanıldı');
         counts = await api('/admin/stats');
         render();
+      } catch (err) { if (err.message !== 'AUTH') toast(`Xəta: ${err.message}`, false); }
+    });
+    $('#view').addEventListener('submit', async (e) => {
+      if (e.target.id !== 'rfForm') return;
+      e.preventDefault();
+      const f = new FormData(e.target);
+      try {
+        await api('/admin/raffles', { title: f.get('title'), description: f.get('description') || '', prizeCoins: Number(f.get('prizeCoins')), winners: Number(f.get('winners') || 1), endsAt: new Date(f.get('endsAt')).toISOString() });
+        toast('Çəkiliş yaradıldı'); render();
       } catch (err) { if (err.message !== 'AUTH') toast(`Xəta: ${err.message}`, false); }
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'uq') render(); });
