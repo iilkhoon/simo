@@ -13,6 +13,7 @@ import { emitToRoom } from '../realtime/hub.js';
 import { notify } from '../services/notify.js';
 import { loadViewer } from '../services/discovery.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { recordEvents } from '../services/taste.js';
 
 export default async function liveRoutes(app: FastifyInstance) {
   app.get('/live', { preHandler: requireAuth }, async (req) => {
@@ -68,6 +69,7 @@ export default async function liveRoutes(app: FastifyInstance) {
     if (!room) throw err.notFound();
     const blocked = await prisma.block.findFirst({ where: { blockerId: room.hostId, blockedId: me } });
     if (blocked) throw err.forbidden('BLOCKED');
+    if (room.hostId !== me) void recordEvents(me, [{ kind: 'live_watch', targetId: room.hostId, meta: { roomId: id, type: room.type } }]).catch(() => {});
     const user = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } });
     if (room.status === 'LIVE') await ensureRoomState(id);
     const state = getRoom(id);

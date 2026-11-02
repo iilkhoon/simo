@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
-import { rewardReceiver, spend } from '../services/wallet.js';
+import { rewardReceiver, spend, spendDiamonds } from '../services/wallet.js';
 import { emitToRoom, emitToUser } from '../realtime/hub.js';
 import { getOrCreateConversation } from './chat.js';
 import { notify } from '../services/notify.js';
@@ -36,9 +36,13 @@ export default async function giftRoutes(app: FastifyInstance) {
     if (blocked) throw err.forbidden('BLOCKED');
 
     const coins = gift.price * b.count;
+    const almaz = gift.currency === 'DIAMOND';
     let conversationId: string | undefined;
     const result = await prisma.$transaction(async (tx) => {
-      const { balance, paid } = await spend(tx, me, coins, 'GIFT_SENT', gift.id, `${gift.id}x${b.count}`);
+      // Almaz hədiyyəsi: göndərənin Almazından (alınmış birinci); hamısı real pul olduğu üçün tam dəyər "ödənişli" sayılır
+      const { balance, paid } = almaz
+        ? (await spendDiamonds(tx, me, coins, 'GIFT_SENT', gift.id), { balance: null as number | null, paid: coins })
+        : await spend(tx, me, coins, 'GIFT_SENT', gift.id, `${gift.id}x${b.count}`);
       const gt = await tx.giftTransaction.create({
         data: { giftId: gift.id, senderId: me, receiverId: b.receiverId, count: b.count, coins, diamonds: 0, context: b.context, contextId: b.contextId },
       });
@@ -56,7 +60,7 @@ export default async function giftRoutes(app: FastifyInstance) {
     const sender = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { id: true, name: true, avatarUrl: true, totalSpent: true, vipTier: true } });
     const event = {
       id: result.gtId,
-      gift: { id: gift.id, tier: gift.tier, price: gift.price, nameAz: gift.nameAz, nameRu: gift.nameRu, nameEn: gift.nameEn },
+      gift: { id: gift.id, tier: gift.tier, price: gift.price, currency: gift.currency, nameAz: gift.nameAz, nameRu: gift.nameRu, nameEn: gift.nameEn },
       count: b.count,
       coins,
       sender: { id: sender.id, name: sender.name, avatarUrl: sender.avatarUrl, wealthLevel: levelFromXp(sender.totalSpent), vipTier: sender.vipTier },

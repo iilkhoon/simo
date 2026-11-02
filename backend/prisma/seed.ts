@@ -27,6 +27,22 @@ const GIFTS: [string, string, string, string, number, GiftTier, string][] = [
   ['love_planet', 'Sevgi planeti', 'Планета любви', 'Love planet', 29999, 'LUXURY', 'romantic'],
 ];
 
+// Yalnız Almaz ilə: [id, ad AZ, RU, EN, qiymət (daxili vahid: 10 = 1 Almaz), tier]
+const ALMAZ_GIFTS: [string, string, string, string, number, GiftTier][] = [
+  ['diamond_heart', 'Almaz ürək', 'Бриллиантовое сердце', 'Diamond heart', 1000, 'BIG'],
+  ['diamond_ring', 'Brilyant üzük', 'Кольцо с бриллиантом', 'Diamond ring', 5000, 'LUXURY'],
+  ['silk_carpet', 'İpək xalça', 'Шёлковый ковёр', 'Silk carpet', 10000, 'LUXURY'],
+  ['diamond_crown', 'Almaz tac', 'Бриллиантовая корона', 'Diamond crown', 30000, 'LUXURY'],
+  ['private_jet', 'Şəxsi təyyarə', 'Частный самолёт', 'Private jet', 100000, 'LUXURY'],
+];
+
+// Almaz paketləri: [id, daxili vahid (10 = 1 Almaz), qiymət (qəpik)] — Nar-dan bahalı premium məhsul
+const ALMAZ_PACKAGES: [string, number, number][] = [
+  ['almaz_100', 1000, 1299],
+  ['almaz_500', 5000, 5999],
+  ['almaz_2000', 20000, 22999],
+];
+
 // [id, coins, bonusCoins, qiymət (qəpik), populyar] — bonus böyük paketlərdə artır, amma 1 coin ≥ 1.08 qəpik qalır (bax: docs/ECONOMY.md)
 const PACKAGES: [string, number, number, number, boolean][] = [
   ['coins_100', 100, 0, 199, false],
@@ -54,7 +70,22 @@ async function main() {
       update: { coins, bonusCoins, priceQepik, popular, sort: i },
     });
   }
-  console.log(`✓ ${GIFTS.length} hədiyyə, ${PACKAGES.length} paket`);
+  for (const [i, [id, nameAz, nameRu, nameEn, price, tier]] of ALMAZ_GIFTS.entries()) {
+    await prisma.gift.upsert({
+      where: { id },
+      create: { id, nameAz, nameRu, nameEn, price, tier, category: 'almaz', currency: 'DIAMOND', sort: 100 + i },
+      update: { nameAz, nameRu, nameEn, price, tier, category: 'almaz', currency: 'DIAMOND', sort: 100 + i },
+    });
+  }
+  for (const [i, [id, units, priceQepik]] of ALMAZ_PACKAGES.entries()) {
+    const productId = `az.simo.${id.replace('_', '.')}`;
+    await prisma.coinPackage.upsert({
+      where: { id },
+      create: { id, coins: units, priceQepik, sort: 100 + i, appleProductId: productId, googleProductId: productId, currency: 'DIAMOND' },
+      update: { coins: units, priceQepik, sort: 100 + i, currency: 'DIAMOND' },
+    });
+  }
+  console.log(`✓ ${GIFTS.length + ALMAZ_GIFTS.length} hədiyyə, ${PACKAGES.length + ALMAZ_PACKAGES.length} paket`);
 
   if (process.env.SEED_DEMO === 'true') {
     if (process.env.NODE_ENV === 'production') throw new Error('Demo seed istehsalda qadağandır');

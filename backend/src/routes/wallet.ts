@@ -6,6 +6,8 @@ import { requireAuth, uid } from '../lib/auth.js';
 import { ECONOMY, NOBLE_PLANS, VIP_PLANS, activeNoble, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
 import { EARN_TYPES, creditCoins, spendCoins, spendDiamonds } from '../services/wallet.js';
 import { presentMe } from './users.js';
+import { vipDiscount } from '../services/smart.js';
+import { optionalUid } from '../lib/auth.js';
 
 /** Son N gündə qazanılan (hələ çıxarıla bilməyən) Ləl */
 export async function heldDiamonds(userId: string): Promise<number> {
@@ -23,16 +25,21 @@ export default async function walletRoutes(app: FastifyInstance) {
   app.get('/wallet', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const [user, history, packages] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, promoCoins: true, diamonds: true, firstRechargeDone: true, hostStatus: true } }),
+      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, promoCoins: true, diamonds: true, diamondsBought: true, firstRechargeDone: true, hostStatus: true } }),
       prisma.walletTransaction.findMany({ where: { userId: me }, orderBy: { createdAt: 'desc' }, take: 100 }),
       prisma.coinPackage.findMany({ where: { active: true }, orderBy: { sort: 'asc' } }),
     ]);
+    const held = await heldDiamonds(me);
     return {
       ...user,
       history,
-      packages,
-      held: await heldDiamonds(me),
+      packages: packages.filter((p) => p.currency === 'COIN'),
+      almazPackages: packages.filter((p) => p.currency === 'DIAMOND'),
+      held,
+      /** Nağdlaşa bilən Almaz (daxili vahid): qazanılmış − gözləmədə */
+      withdrawable: Math.max(0, user.diamonds - user.diamondsBought - held),
       rates: {
+        almazUnit: ECONOMY.almazUnit,
         diamondsPerCoin: ECONOMY.diamondsPerCoin,
         diamondsPerAzn: ECONOMY.diamondsPerAzn,
         qepikPerDiamond: 100 / ECONOMY.diamondsPerAzn,
@@ -76,12 +83,14 @@ export default async function walletRoutes(app: FastifyInstance) {
     if (recent >= ECONOMY.withdrawPerWeek) throw err.badRequest('WITHDRAW_WEEKLY_LIMIT');
     // Son 7 günün qazancı gözləmədədir
     const held = await heldDiamonds(me);
-    if (b.diamonds > Math.max(0, user.diamonds - held)) throw err.badRequest('WITHDRAW_HELD', { available: Math.max(0, user.diamonds - held), held });
+    // Nağdlaşan: qazanılmış Almaz (alınmış Almaz çıxmır) − son 7 günün gözləmədəki qazancı
+    const earned = Math.max(0, user.diamonds - user.diamondsBought);
+    if (b.diamonds > Math.max(0, earned - held)) throw err.badRequest('WITHDRAW_HELD', { available: Math.max(0, earned - held), held });
     const w = await prisma.$transaction(async (tx) => {
       const row = await tx.withdrawal.create({
         data: { userId: me, diamonds: b.diamonds, amountQepik: withdrawQepik(b.diamonds).net, method: b.method, account: b.account, note: `fee:${withdrawQepik(b.diamonds).fee}` },
       });
-      await spendDiamonds(tx, me, b.diamonds, 'WITHDRAW', row.id);
+      await spendDiamonds(tx, me, b.diamonds, 'WITHDRAW', row.id, true);
       return row;
     });
     return { withdrawal: w };
@@ -92,16 +101,26 @@ export default async function walletRoutes(app: FastifyInstance) {
     return { items };
   });
 
-  app.get('/vip/plans', async () => ({ plans: Object.values(VIP_PLANS) }));
+  app.get('/vip/plans', async (req) => {
+    // Daxil olmuş istifadəçiyə fərdi endirim də göstərilir
+    let pct = 0;
+    const who = optionalUid(req);
+    if (who) pct = (await vipDiscount(who))?.pct ?? 0;
+    return { plans: Object.values(VIP_PLANS).map((p) => ({ ...p, discountPct: pct, finalPrice: pct ? Math.round(p.priceCoins * (1 - pct / 100)) : p.priceCoins })) };
+  });
 
   app.post('/vip/buy', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const b = z.object({ tier: z.enum(['SILVER', 'GOLD', 'DIAMOND']) }).parse(req.body);
     const plan = VIP_PLANS[b.tier];
+    // Fərdi endirim (alqoritmin təklifi): VIP_TRIAL / VIP_RENEW
+    const disc = await vipDiscount(me);
+    const price = disc ? Math.round(plan.priceCoins * (1 - disc.pct / 100)) : plan.priceCoins;
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUniqueOrThrow({ where: { id: me } });
       const current = activeVip(user);
-      await spendCoins(tx, me, plan.priceCoins, 'VIP_PURCHASE', plan.tier);
+      await spendCoins(tx, me, price, 'VIP_PURCHASE', plan.tier, disc ? `offer:${disc.pct}%` : '');
+      if (disc) await tx.offer.update({ where: { id: disc.id }, data: { usedAt: new Date() } });
       // Eyni səviyyə uzadılır; yüksəltmədə yeni müddət bu gündən başlayır
       const base = current && vipRank(current.tier) === vipRank(plan.tier) && user.vipUntil ? user.vipUntil : new Date();
       const tier = current && vipRank(current.tier) > vipRank(plan.tier) ? current.tier : plan.tier;

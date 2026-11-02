@@ -17,6 +17,7 @@ type PublicSource = Pick<
   | 'lookingFor' | 'verified' | 'hostStatus' | 'totalSpent' | 'totalEarned' | 'vipTier' | 'vipUntil' | 'online'
   | 'lastSeenAt' | 'videoCallPrice' | 'voiceCallPrice' | 'lat' | 'lng' | 'incognito'
   | 'nobleTier' | 'nobleUntil' | 'privatePrice' | 'freeChat' | 'msgPrice' | 'createdAt'
+  | 'kycStatus' | 'acceptVideo' | 'acceptVoice' | 'callHours' | 'presence' | 'profileExtra'
 > & { photos?: Photo[] };
 
 export const publicUserSelect = {
@@ -25,6 +26,7 @@ export const publicUserSelect = {
   totalEarned: true, vipTier: true, vipUntil: true, online: true, lastSeenAt: true, videoCallPrice: true,
   voiceCallPrice: true, lat: true, lng: true, incognito: true,
   nobleTier: true, nobleUntil: true, privatePrice: true, freeChat: true, msgPrice: true, createdAt: true,
+  kycStatus: true, acceptVideo: true, acceptVoice: true, callHours: true, presence: true, profileExtra: true,
 } as const;
 
 export function presentUser(u: PublicSource, viewer?: { lat: number | null; lng: number | null }) {
@@ -48,7 +50,10 @@ export function presentUser(u: PublicSource, viewer?: { lat: number | null; lng:
     interests: u.interests,
     languages: u.languages,
     lookingFor: u.lookingFor,
-    verified: u.verified,
+    /** Mavi nişan "Təsdiqlənmiş profil" — VIP ilə satılır */
+    verified: !!vip,
+    /** Ayrıca nişan: şəxsiyyət sənədi ilə təsdiqlənib (KYC) */
+    idVerified: u.kycStatus === 'APPROVED' || u.verified,
     isHost: u.hostStatus === 'APPROVED',
     wealthLevel: levelFromXp(u.totalSpent),
     charmLevel: levelFromXp(u.totalEarned),
@@ -63,7 +68,35 @@ export function presentUser(u: PublicSource, viewer?: { lat: number | null; lng:
     freeChat: u.freeChat,
     msgPrice: u.msgPrice,
     joinedAt: u.createdAt,
+    presence: presenceOf(u, hidden),
+    acceptVideo: u.acceptVideo && callWindowOpen(u.callHours),
+    acceptVoice: u.acceptVoice && callWindowOpen(u.callHours),
+    callHours: u.callHours as CallHours | null,
+    extra: (u.profileExtra ?? {}) as Record<string, unknown>,
   };
 }
 
 export type PublicUser = ReturnType<typeof presentUser>;
+
+export type CallHours = { from: string; to: string; days?: number[] };
+
+/** Zəng saatları (Bakı vaxtı, UTC+4) — indi açıqdırmı? Gecəni keçən aralıqlar (22:00–02:00) da dəstəklənir. */
+export function callWindowOpen(h: unknown, now = new Date()): boolean {
+  const ch = h as CallHours | null;
+  if (!ch || !ch.from || !ch.to) return true;
+  const baku = new Date(now.getTime() + 4 * 3600_000);
+  const day = baku.getUTCDay() === 0 ? 7 : baku.getUTCDay();
+  if (ch.days?.length && !ch.days.includes(day)) return false;
+  const m = baku.getUTCHours() * 60 + baku.getUTCMinutes();
+  const toMin = (s: string) => { const [a, b] = s.split(':').map(Number); return (a || 0) * 60 + (b || 0); };
+  const f = toMin(ch.from), t = toMin(ch.to);
+  return f <= t ? m >= f && m < t : m >= f || m < t;
+}
+
+/** Görünən status: BUSY / AWAY istifadəçi seçimidir; ACTIVE və AUTO — real onlayn vəziyyətə görə */
+export function presenceOf(u: { presence: string; online: boolean }, hidden = false): 'ONLINE' | 'OFFLINE' | 'BUSY' | 'AWAY' {
+  if (hidden) return 'OFFLINE';
+  if (u.presence === 'BUSY') return 'BUSY';
+  if (u.presence === 'AWAY') return 'AWAY';
+  return u.online ? 'ONLINE' : 'OFFLINE';
+}

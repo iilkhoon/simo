@@ -6,12 +6,14 @@
  *    məsafə (eksponensial azalma) · indi onlayn · son aktivlik · ortaq maraqlar · eyni məqsəd ·
  *    ortaq dil · yaş yaxınlığı · təsdiqlənmiş profil · cazibə səviyyəsi · "səni artıq bəyənib" (uyğunluq şansı) ·
  *    yeni istifadəçi (soyuq start) · VIP gücləndirmə · kiçik təsadüfilik (təzəlik üçün).
- * 3) Nəticə xala görə sıralanır.
+ * 3) Şəxsi alqoritm (taste.ts): istifadəçinin davranışından öyrənilmiş zövqə uyğunluq + kollektiv tövsiyə.
+ * 4) Nəticə xala görə sıralanır.
  */
 import { prisma } from '../db.js';
 import { activeVip, ageFrom, levelFromXp } from '../economy.js';
 import { distanceKm, presentUser, publicUserSelect } from '../lib/present.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { getTaste, tasteBoost, type Taste } from './taste.js';
 
 export interface Viewer {
   id: string;
@@ -85,8 +87,8 @@ function seededJitter(seed: string): number {
 
 type Candidate = Prisma.UserGetPayload<{ select: typeof publicUserSelect & { photos: true; createdAt: true } }>;
 
-export function scoreCandidate(v: Viewer, c: Candidate, likedMe: boolean, seed: string): number {
-  let s = 0;
+export function scoreCandidate(v: Viewer, c: Candidate, likedMe: boolean, seed: string, taste?: Taste): number {
+  let s = taste ? tasteBoost(taste, c) : 0;
   if (v.lat != null && v.lng != null && c.lat != null && c.lng != null) {
     const d = distanceKm(v.lat, v.lng, c.lat, c.lng);
     s += 30 * Math.exp(-d / 25);
@@ -104,7 +106,8 @@ export function scoreCandidate(v: Viewer, c: Candidate, likedMe: boolean, seed: 
   const age = ageFrom(c.birthDate) ?? 25;
   s -= 0.5 * Math.abs(age - (v.ageMin + v.ageMax) / 2);
 
-  if (c.verified) s += 8;
+  if (c.verified || c.kycStatus === 'APPROVED') s += 8;
+  if (c.presence === 'BUSY' || c.presence === 'AWAY') s -= 10;
   if (c.hostStatus === 'APPROVED') s += 6;
   s += Math.min(10, levelFromXp(c.totalEarned));
   if (likedMe) s += 20;
@@ -132,8 +135,9 @@ export async function discoverFeed(viewerId: string, limit = 20, cursorSeed = ''
   });
   const likedMe = new Set(likedMeRows.map((r) => r.fromId));
   const seed = viewerId + cursorSeed + new Date().toISOString().slice(0, 13);
+  const taste = await getTaste(viewerId).catch(() => undefined);
   return pool
-    .map((c) => ({ c, score: scoreCandidate(v, c, likedMe.has(c.id), seed) }))
+    .map((c) => ({ c, score: scoreCandidate(v, c, likedMe.has(c.id), seed, taste) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ c }) => presentUser(c, v));
@@ -150,8 +154,9 @@ export async function dailyPicks(viewerId: string) {
     take: 200,
   });
   const day = new Date().toISOString().slice(0, 10);
+  const taste = await getTaste(viewerId).catch(() => undefined);
   return pool
-    .map((c) => ({ c, score: scoreCandidate(v, c, false, viewerId + day) + (c.verified ? 10 : 0) }))
+    .map((c) => ({ c, score: scoreCandidate(v, c, false, viewerId + day, taste) + (c.verified ? 10 : 0) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 10)
     .map(({ c }) => presentUser(c, v));

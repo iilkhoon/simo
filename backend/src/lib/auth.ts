@@ -66,3 +66,10 @@ export function uid(req: FastifyRequest): string {
   if (!req.user) throw err.unauthorized();
   return req.user.id;
 }
+
+/** Token varsa istifadəçi id-si, yoxdursa null (açıq endpoint-lər üçün) */
+export function optionalUid(req: FastifyRequest): string | null {
+  const h = req.headers.authorization;
+  if (!h?.startsWith('Bearer ')) return null;
+  try { return verifyAccess(h.slice(7)).id; } catch { return null; }
+}

@@ -16,7 +16,31 @@ const TITLES: Record<string, Record<string, string>> = {
   pk: { az: 'PK döyüşünə dəvət ⚔️', ru: 'Приглашение на PK ⚔️', en: 'PK battle invite ⚔️' },
   guest: { az: 'Yayına dəvət', ru: 'Приглашение в эфир', en: 'Live invite' },
   kyc: { az: 'Şəxsiyyət təsdiqi', ru: 'Верификация', en: 'Verification' },
+  visit_digest: { az: 'Profilinə {{n}} nəfər baxdı 👀', ru: 'Твой профиль посмотрели {{n}} чел. 👀', en: '{{n}} people viewed your profile 👀' },
+  like_digest: { az: '{{n}} nəfər səni bəyəndi 💗', ru: 'Ты понравился {{n}} людям 💗', en: '{{n}} people liked you 💗' },
+  offer: { az: 'Sənə özəl təklif bitmək üzrədir ⏳', ru: 'Твоё персональное предложение скоро закончится ⏳', en: 'Your personal offer ends soon ⏳' },
+  picks: { az: 'Sənə uyğun {{n}} yeni profil var ✨', ru: 'Для тебя {{n}} новых анкет ✨', en: '{{n}} new profiles picked for you ✨' },
+  order: { az: 'Xidmətinə yeni sifariş 🛍', ru: 'Новый заказ на услугу 🛍', en: 'New service order 🛍' },
+  order_update: { az: 'Sifarişin yeniləndi', ru: 'Заказ обновлён', en: 'Your order was updated' },
+  vip: { az: 'VIP statusun', ru: 'Твой VIP', en: 'Your VIP' },
+  comment: { az: 'Postuna şərh yazdılar 💬', ru: 'Новый комментарий 💬', en: 'New comment 💬' },
+  post_live: { az: 'Planlanmış postun paylaşıldı ✅', ru: 'Запланированный пост опубликован ✅', en: 'Your scheduled post is live ✅' },
 };
+
+const BODIES: Record<string, Record<string, string>> = {
+  visit_digest: { az: 'Kim olduğunu gör — bəlkə sənin tipindir', ru: 'Посмотри, кто это — вдруг твой тип', en: 'See who — maybe your type' },
+  like_digest: { az: 'Qarşılıqlı bəyən və söhbətə başla', ru: 'Ответь взаимностью и начни общение', en: 'Like back and start chatting' },
+  offer: { az: 'Bonus Nar səni gözləyir — yalnız bir neçə saat', ru: 'Бонусные Нар ждут — всего несколько часов', en: 'Bonus Nar waiting — only a few hours left' },
+  picks: { az: 'Zövqünə görə seçdik, bax', ru: 'Подобрали по твоему вкусу', en: 'Picked to your taste' },
+};
+
+/** Bildiriş növü → istifadəçinin bağlaya biləcəyi kateqoriya */
+const PREF: Record<string, string> = {
+  message: 'messages', call: 'calls', like: 'likes', match: 'likes', like_digest: 'likes', follow: 'follows', visit: 'visits', visit_digest: 'visits',
+  subscription: 'subscriptions', live: 'lives', offer: 'offers', picks: 'smart', vip: 'offers', comment: 'messages',
+};
+
+const fill = (s: string, d: Record<string, unknown>) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => String(d[k] ?? ''));
 
 /** Expo Push API — iOS (APNs) və Android (FCM) üçün vahid */
 async function sendPush(token: string, title: string, body: string, data: Record<string, unknown>) {
@@ -35,7 +59,7 @@ async function sendPush(token: string, title: string, body: string, data: Record
 export async function notify(
   userId: string,
   type: keyof typeof TITLES,
-  opts: { actorId?: string; body?: string; data?: Record<string, unknown>; store?: boolean; pushIfOnline?: boolean } = {},
+  opts: { actorId?: string; body?: string; data?: Record<string, unknown>; store?: boolean; pushIfOnline?: boolean; push?: boolean } = {},
 ) {
   const data = opts.data ?? {};
   if (opts.store !== false) {
@@ -44,9 +68,12 @@ export async function notify(
     });
     emitToUser(userId, 'notification', { id: n.id, type, actorId: opts.actorId, data, createdAt: n.createdAt });
   }
+  if (opts.push === false) return;
   if (isOnline(userId) && !opts.pushIfOnline) return;
-  const u = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true, locale: true } });
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true, locale: true, notifPrefs: true } });
   if (!u?.pushToken) return;
+  const prefs = (u.notifPrefs ?? {}) as Record<string, boolean>;
+  if (PREF[type] && prefs[PREF[type]] === false) return;
   const loc = ['az', 'ru', 'en'].includes(u.locale) ? u.locale : 'az';
-  await sendPush(u.pushToken, TITLES[type][loc], opts.body ?? '', { type, ...data });
+  await sendPush(u.pushToken, fill(TITLES[type][loc], data), opts.body ?? fill(BODIES[type]?.[loc] ?? '', data), { type, ...data });
 }

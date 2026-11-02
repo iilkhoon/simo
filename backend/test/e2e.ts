@@ -380,6 +380,96 @@ async function main() {
       assert.equal((await api('GET', '/me', man)).data.coins, before + 70, '1300+100 Nar-ın 5%-i (promo) — hər alışda');
     });
 
+    await step('Onboarding opsional sahələri və alqoritm: hadisələr, zövq profili', async () => {
+      const r = await api('PATCH', '/me', man, { extra: { heightCm: 182, comm: ['VIDEO', 'TEXT'], activeTimes: ['EVENING'] }, notifPrefs: { visits: false } });
+      assert.equal(r.status, 200, JSON.stringify(r.data));
+      assert.equal(r.data.extra.heightCm, 182);
+      assert.equal(r.data.notifPrefs.visits, false);
+      assert.equal((await api('POST', '/events', man, { events: [{ kind: 'screen', meta: { name: 'videos' } }, { kind: 'profile_view', targetId: girlId, meta: { ms: 12000 } }] })).status, 200);
+      const t = await api('GET', '/me/taste', man);
+      assert.equal(t.status, 200);
+      assert.ok(t.data.signals >= 1, 'bəyənmə/baxış siqnalları sayılır');
+    });
+
+    let buyer = '', buyerId = '';
+    await step('Yeni alıcı hesabı (əvvəlki blok testlərindən asılı olmasın)', async () => {
+      const r = await api('POST', '/auth/email/register', undefined, { email: `buyer${stamp}@test.az`, password: 'secret123' });
+      buyer = r.data.accessToken;
+      const ob = await api('PUT', '/me/onboarding', buyer, { name: 'Alıcı', gender: 'MALE', birthDate: '1992-02-02', avatarUrl: 'https://x.az/b.jpg' });
+      buyerId = ob.data.id;
+      await api('POST', '/payments/dev/purchase', buyer, { packageId: 'coins_1300' });
+    });
+
+    await step('Post: heşteq ≤5, heşteq axtarışı, şərhləri bağlama, demo (teaser) və planlanmış post', async () => {
+      const six = await api('POST', '/videos', girl, { url: 'https://x.az/p.jpg', mediaType: 'PHOTO', caption: '#a #b #c #d #e #f' });
+      assert.equal(six.data.error, 'HASHTAG_LIMIT');
+      const ok = await api('POST', '/videos', girl, { url: 'https://x.az/p.jpg', mediaType: 'PHOTO', caption: 'Bakı axşamı', hashtags: ['simotest' + stamp], location: 'Bakı bulvarı', commentsOff: true });
+      assert.equal(ok.status, 200, JSON.stringify(ok.data));
+      const vid = ok.data.video.id;
+      const tags = await api('GET', `/hashtags/search?q=simotest${stamp}`, buyer);
+      assert.equal(tags.data.items[0]?.tag, 'simotest' + stamp);
+      assert.equal((await api('GET', `/videos/hashtag/simotest${stamp}`, buyer)).data.items.length, 1);
+      assert.equal((await api('POST', `/videos/${vid}/comments`, buyer, { text: 'Gözəl!' })).data.error, 'COMMENTS_OFF');
+      await api('PATCH', `/videos/${vid}`, girl, { commentsOff: false });
+      const c = await api('POST', `/videos/${vid}/comments`, buyer, { text: 'Gözəl!' });
+      assert.equal(c.status, 200);
+      assert.equal((await api('DELETE', `/videos/${vid}/comments/${c.data.comment.id}`, girl)).status, 200, 'post sahibi şərhi silə bilər');
+      const sch = await api('POST', '/videos', girl, { url: 'https://x.az/s.jpg', mediaType: 'PHOTO', scheduledAt: new Date(Date.now() + 3600_000).toISOString() });
+      assert.equal(sch.data.video.status, 'SCHEDULED');
+      const feed = await api('GET', '/videos/feed?limit=30', buyer);
+      assert.ok(!feed.data.items.some((v: { id: string }) => v.id === sch.data.video.id), 'planlanmış post lentdə görünmür');
+    });
+
+    await step('Zəng ayarları: yalnız görüntülü, zəng saatları, məşğul statusu', async () => {
+      await api('PATCH', '/me', girl, { acceptVoice: false });
+      assert.equal((await api('POST', '/calls', buyer, { calleeId: girlId, type: 'VOICE' })).data.error, 'VOICE_CALLS_OFF');
+      await api('PATCH', '/me', girl, { presence: 'BUSY' });
+      assert.equal((await api('POST', '/calls', buyer, { calleeId: girlId, type: 'VIDEO' })).data.error, 'USER_BUSY');
+      const prof = await api('GET', `/users/${girlId}`, buyer);
+      assert.equal(prof.data.user?.presence ?? prof.data.presence, 'BUSY');
+      await api('PATCH', '/me', girl, { presence: 'AUTO', acceptVoice: true, callHours: null });
+    });
+
+    await step('Almaz: paket alışı, yalnız Almaz hədiyyəsi, alınmış Almaz nağdlaşmır', async () => {
+      const buy = await api('POST', '/payments/dev/purchase', buyer, { packageId: 'almaz_100' });
+      assert.equal(buy.status, 200, JSON.stringify(buy.data));
+      const w = await api('GET', '/wallet', buyer);
+      assert.ok(w.data.diamondsBought >= 1000, 'alınmış Almaz ayrıca sayılır');
+      const girlBefore = (await api('GET', '/me', girl)).data.diamonds;
+      const g = await api('POST', '/gifts/send', buyer, { giftId: 'diamond_heart', receiverId: girlId, context: 'PROFILE' });
+      assert.equal(g.status, 200, JSON.stringify(g.data));
+      const girlAfter = (await api('GET', '/me', girl)).data.diamonds;
+      assert.ok(girlAfter > girlBefore, 'Almaz hədiyyəsindən host qazanır');
+      const wd = await api('POST', '/wallet/withdraw', buyer, { diamonds: 5000, method: 'CARD', account: '4169000000000000' });
+      assert.notEqual(wd.status, 200, 'alınmış Almaz çıxarışa düşmür');
+    });
+
+    await step('Xidmət satışı: escrow, imtinada qaytarma, tamamlananda qazanc', async () => {
+      await prisma.user.update({ where: { id: girlId }, data: { kycStatus: 'APPROVED' } });
+      const svc = await api('POST', '/services', girl, { kind: 'VIDEO_CALL', title: '15 dəq. ingilis dili', price: 200, durationMin: 15 });
+      assert.equal(svc.status, 200, JSON.stringify(svc.data));
+      const before = (await api('GET', '/me', buyer)).data.coins;
+      const o1 = await api('POST', `/services/${svc.data.item.id}/order`, buyer, { note: 'Sabah 20:00' });
+      assert.equal(o1.status, 200, JSON.stringify(o1.data));
+      assert.equal((await api('GET', '/me', buyer)).data.coins, before - 200, 'Nar tutuldu');
+      await api('POST', `/orders/${o1.data.order.id}/decline`, girl);
+      assert.equal((await api('GET', '/me', buyer)).data.coins, before, 'imtinada tam qaytarıldı');
+      const o2 = await api('POST', `/services/${svc.data.item.id}/order`, buyer, {});
+      const dBefore = (await api('GET', '/me', girl)).data.diamonds;
+      await api('POST', `/orders/${o2.data.order.id}/accept`, girl);
+      assert.equal((await api('POST', `/orders/${o2.data.order.id}/complete`, girl)).status, 200);
+      assert.ok((await api('GET', '/me', girl)).data.diamonds >= dBefore, 'tamamlananda qazanc yazılır');
+      assert.equal((await api('GET', '/orders?as=seller', girl)).data.items[0].status, 'DONE');
+    });
+
+    await step('Fərdi təklif: paketə bonus ödənişdə tətbiq olunur', async () => {
+      await prisma.offer.create({ data: { userId: buyerId, kind: 'LOW_BALANCE', packageId: 'coins_300', bonusPct: 20, expiresAt: new Date(Date.now() + 3600_000) } });
+      const before = (await api('GET', '/me', buyer)).data.coins;
+      await api('POST', '/payments/dev/purchase', buyer, { packageId: 'coins_300' });
+      assert.equal((await api('GET', '/me', buyer)).data.coins, before + 310 + 62, '310 Nar + 20% təklif bonusu');
+      assert.equal((await api('GET', '/me/offers', buyer)).data.items.filter((o: { kind: string }) => o.kind === 'LOW_BALANCE').length, 0, 'təklif istifadə olundu');
+    });
+
     await step('Hesabın silinməsi', async () => {
       const t = await registerPhone(`070${stamp}`);
       assert.equal((await api('DELETE', '/me', t)).status, 200);

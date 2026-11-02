@@ -124,6 +124,22 @@ model User {
   nobleUntil         DateTime?
   /// Private content: aylıq abunə qiyməti (Nar). null — bağlıdır
   privatePrice       Int?
+  /// Onboarding-in opsional cavabları: boy, təhsil, iş, vərdişlər, ünsiyyət üslubu, aktiv saatlar və s.
+  profileExtra       Json       @default("{}")
+  /// Zəng qəbulu: görüntülü / səsli ayrıca bağlana bilər
+  acceptVideo        Boolean    @default(true)
+  acceptVoice        Boolean    @default(true)
+  /// Zəng saatları: {"from":"10:00","to":"23:00","days":[1,2,3,4,5,6,7]} (Bakı vaxtı). null — həmişə
+  callHours          Json?
+  /// Status: AUTO (onlayn/oflayn), ACTIVE (aktivəm), BUSY (məşğulam), AWAY (uzaqdayam)
+  presence           String     @default("AUTO")
+  /// Bildiriş üstünlükləri: {"messages":true,"follows":true,"visits":true,"offers":true,...}
+  notifPrefs         Json       @default("{}")
+  /// Ağıllı bildirişlər: gündəlik say (spam olmasın)
+  smartPushDate      String?
+  smartPushCount     Int        @default(0)
+  /// Almaz balansının (diamonds) alınmış hissəsi: yalnız Almaz hədiyyələrinə xərclənir, nağdlaşmır
+  diamondsBought     Int        @default(0)
   banned             Boolean    @default(false)
   deletedAt          DateTime?
   createdAt          DateTime   @default(now())
@@ -141,6 +157,7 @@ model User {
   liveRooms          LiveRoom[]
   verifications      Verification[]
   stories            Story[]
+  services           Service[]
 
   @@index([gender, onboarded, lastSeenAt])
   @@index([lat, lng])
@@ -307,6 +324,8 @@ model Gift {
   category String   @default("popular")
   sort     Int      @default(0)
   active   Boolean  @default(true)
+  /// COIN — Nar ilə; DIAMOND — yalnız Almaz ilə alınan lüks hədiyyələr (qiymət qəpik dəyərində)
+  currency Currency @default(COIN)
 }
 
 model GiftTransaction {
@@ -356,6 +375,8 @@ model CoinPackage {
   popular         Boolean @default(false)
   sort            Int     @default(0)
   active          Boolean @default(true)
+  /// COIN — Nar paketi; DIAMOND — Almaz paketi (coins sahəsi qəpik dəyəridir)
+  currency        Currency @default(COIN)
 }
 
 enum PaymentProvider {
@@ -463,6 +484,7 @@ enum MediaType {
 enum VideoStatus {
   ACTIVE
   REMOVED
+  SCHEDULED
 }
 
 model Video {
@@ -472,6 +494,15 @@ model Video {
   thumbnailUrl  String?
   mediaType     MediaType   @default(VIDEO)
   isPrivate     Boolean     @default(false)
+  /// Xüsusi postun demosu: hamı bulanıq önizləməni görür, tam versiya abunəçilər üçün.
+  /// false və isPrivate — post yalnız abunəçilərə görünür (lentdə çıxmır)
+  teaser        Boolean     @default(false)
+  /// Planlanmış paylaşım vaxtı (status SCHEDULED)
+  scheduledAt   DateTime?
+  location      String      @default("")
+  commentsOff   Boolean     @default(false)
+  /// Demo üçün serverdə bulanıqlaşdırılmış önizləmə (orijinal URL kilidli postda heç vaxt göndərilmir)
+  previewUrl    String?
   durationSec   Int         @default(0)
   savesCount    Int         @default(0)
   sharesCount   Int         @default(0)
@@ -488,6 +519,7 @@ model Video {
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
+  @@index([hashtags], type: Gin)
 }
 
 model VideoLike {
@@ -711,4 +743,90 @@ model RaffleEntry {
   raffle    Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
 
   @@id([raffleId, userId])
+}
+
+/// Davranış hadisələri — alqoritm buradan öyrənir (baxılan ekranlar, profillər, postlar, axtarışlar)
+model UserEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String
+  targetId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([kind, createdAt])
+}
+
+/// Hesablanmış zövq profili (keş): maraq çəkiləri, yaş/şəhər üstünlükləri, xərcləmə davranışı
+model UserTaste {
+  userId    String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Fərdi təklif: paket bonusu, VIP endirimi və s. Ödənişdə avtomatik tətbiq olunur
+model Offer {
+  id          String    @id @default(cuid())
+  userId      String
+  kind        String
+  packageId   String?
+  bonusPct    Int       @default(0)
+  discountPct Int       @default(0)
+  data        Json?
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+enum ServiceKind {
+  VIDEO_CALL
+  VOICE_CALL
+  CHAT
+  CUSTOM
+}
+
+/// İstifadəçinin satdığı xidmət (məs. "30 dəq. ingilis dili danışığı", "fərdi video təbrik")
+model Service {
+  id          String      @id @default(cuid())
+  userId      String
+  kind        ServiceKind @default(CUSTOM)
+  title       String
+  description String      @default("")
+  price       Int
+  durationMin Int         @default(0)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      ServiceOrder[]
+
+  @@index([userId, active])
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  DONE
+  CANCELLED
+  DECLINED
+}
+
+/// Sifariş: Nar alıcıdan tutulur (escrow); satıcı "tamamlandı" deyəndə qazanc yazılır, imtinada geri qaytarılır
+model ServiceOrder {
+  id        String      @id @default(cuid())
+  serviceId String
+  buyerId   String
+  sellerId  String
+  price     Int
+  paid      Int         @default(0)
+  note      String      @default("")
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  service   Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId, status])
+  @@index([buyerId, createdAt])
 }

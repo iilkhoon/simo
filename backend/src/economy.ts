@@ -31,7 +31,12 @@ export const ECONOMY = {
   /** Dəvət edən: dəvət olunanın HƏR alışından 5% promo Nar */
   referralShare: 0.05,
   referralMax: 500,
-  /** Ləl → Nar mübadiləsi: 1:1 (pul tətbiqdə qalır və yenidən 70/30 bölünür) */
+  /**
+   * Almaz — qazanc və premium valyuta. 1 Almaz = 0.10 ₼ = 10 Nar dəyərində (Nar-dan 10 dəfə bahalı).
+   * Daxildə balans qəpik dəyəri ilə saxlanır (dəqiqlik itməsin): 10 vahid = 1 Almaz. Ekranda vahid/10 göstərilir.
+   * Almaz → Nar mübadiləsi: 1 Almaz = 10 Nar (pul tətbiqdə qalır və yenidən 70/30 bölünür)
+   */
+  almazUnit: 10,
   diamondsPerCoin: 1,
   diamondsPerAzn: 100,
   minWithdrawDiamonds: 5000,
@@ -64,7 +69,7 @@ export const AGENCY_TIERS = [
   { tier: 2, name: 'Gümüş', minMonthly: 100_000, share: 0.16 },
   { tier: 3, name: 'Qızıl', minMonthly: 500_000, share: 0.17 },
   { tier: 4, name: 'Platin', minMonthly: 2_000_000, share: 0.18 },
-  { tier: 5, name: 'Almaz', minMonthly: 10_000_000, share: 0.2 },
+  { tier: 5, name: 'Brilyant', minMonthly: 10_000_000, share: 0.2 },
 ] as const;
 
 export function agencyTier(monthlyDiamonds: number) {
@@ -86,7 +91,7 @@ export function maxMsgPriceForLevel(level: number): number {
   return m;
 }
 
-/** Almazın (Ləl) nağd dəyəri (qəpik), çıxarış haqqı çıxılmaqla */
+/** Almazın nağd dəyəri (qəpik), çıxarış haqqı çıxılmaqla */
 export function withdrawQepik(diamonds: number): { gross: number; fee: number; net: number } {
   const gross = Math.floor((diamonds * 100) / ECONOMY.diamondsPerAzn);
   const fee = Math.ceil(gross * ECONOMY.withdrawFeeRate);

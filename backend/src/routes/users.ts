@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
@@ -43,6 +44,12 @@ export async function presentMe(userId: string) {
     vip,
     incognito: u.incognito,
     locale: u.locale,
+    diamondsBought: u.diamondsBought,
+    notifPrefs: u.notifPrefs,
+    presenceSetting: u.presence,
+    callHoursSetting: u.callHours,
+    acceptVideoSetting: u.acceptVideo,
+    acceptVoiceSetting: u.acceptVoice,
     firstRechargeDone: u.firstRechargeDone,
     referralCode: u.referralCode,
     agency: u.agency,
@@ -69,6 +76,30 @@ export async function presentMe(userId: string) {
   };
 }
 
+/** Onboarding-in opsional cavabları (hamısı istəyə görə) — profildə göstərilir və alqoritmə gedir */
+export const extraSchema = z.object({
+  heightCm: z.number().int().min(130).max(230).optional(),
+  education: z.enum(['SCHOOL', 'COLLEGE', 'BACHELOR', 'MASTER', 'PHD']).optional(),
+  job: z.string().trim().max(40).optional(),
+  smoking: z.enum(['NO', 'SOMETIMES', 'YES']).optional(),
+  drinking: z.enum(['NO', 'SOMETIMES', 'YES']).optional(),
+  kids: z.enum(['NONE', 'HAVE', 'WANT', 'NOT_WANT']).optional(),
+  personality: z.enum(['INTROVERT', 'AMBIVERT', 'EXTROVERT']).optional(),
+  comm: z.array(z.enum(['TEXT', 'VOICE', 'VIDEO', 'LIVE'])).max(4).optional(),
+  activeTimes: z.array(z.enum(['MORNING', 'DAY', 'EVENING', 'NIGHT'])).max(4).optional(),
+  dateIdeas: z.array(z.string().max(20)).max(6).optional(),
+  music: z.array(z.string().max(20)).max(6).optional(),
+  wantsToEarn: z.boolean().optional(),
+}).strict();
+
+const notifPrefsSchema = z.object({
+  messages: z.boolean().optional(), calls: z.boolean().optional(), likes: z.boolean().optional(), follows: z.boolean().optional(),
+  visits: z.boolean().optional(), subscriptions: z.boolean().optional(), lives: z.boolean().optional(), offers: z.boolean().optional(),
+  smart: z.boolean().optional(),
+}).strict();
+
+const callHoursSchema = z.object({ from: z.string().regex(/^\d{2}:\d{2}$/), to: z.string().regex(/^\d{2}:\d{2}$/), days: z.array(z.number().int().min(1).max(7)).max(7).optional() });
+
 const onboardingSchema = z.object({
   name: z.string().trim().min(2).max(30),
   gender: z.enum(['MALE', 'FEMALE']),
@@ -81,10 +112,14 @@ const onboardingSchema = z.object({
   bio: z.string().max(300).default(''),
   avatarUrl: z.string().url(),
   photos: z.array(z.string().url()).max(6).default([]),
+  ageMin: z.number().int().min(18).max(80).optional(),
+  ageMax: z.number().int().min(18).max(99).optional(),
+  extra: extraSchema.default({}),
+  notifPrefs: notifPrefsSchema.optional(),
 });
 
 const patchSchema = onboardingSchema
-  .omit({ gender: true, birthDate: true, avatarUrl: true, photos: true })
+  .omit({ gender: true, birthDate: true, avatarUrl: true, photos: true, extra: true, notifPrefs: true })
   .partial()
   .extend({
     avatarUrl: z.string().url().optional(),
@@ -93,6 +128,12 @@ const patchSchema = onboardingSchema
     maxDistanceKm: z.number().int().min(1).max(5000).optional(),
     incognito: z.boolean().optional(),
     locale: z.enum(['az', 'ru', 'en']).optional(),
+    extra: extraSchema.partial().optional(),
+    acceptVideo: z.boolean().optional(),
+    acceptVoice: z.boolean().optional(),
+    callHours: callHoursSchema.nullable().optional(),
+    presence: z.enum(['AUTO', 'ACTIVE', 'BUSY', 'AWAY']).optional(),
+    notifPrefs: notifPrefsSchema.optional(),
   });
 
 export default async function userRoutes(app: FastifyInstance) {
@@ -115,8 +156,10 @@ export default async function userRoutes(app: FastifyInstance) {
           interestedIn: b.interestedIn === undefined ? (b.gender === 'MALE' ? 'FEMALE' : 'MALE') : b.interestedIn,
           lookingFor: b.lookingFor, interests: b.interests.filter((i) => INTERESTS.includes(i)),
           languages: b.languages, city: b.city, bio: b.bio, avatarUrl: b.avatarUrl, onboarded: true,
-          ageMin: b.gender === 'MALE' ? 18 : Math.max(18, age - 3),
-          ageMax: b.gender === 'MALE' ? Math.max(30, age + 5) : Math.min(99, age + 12),
+          ageMin: b.ageMin ?? (b.gender === 'MALE' ? 18 : Math.max(18, age - 3)),
+          ageMax: b.ageMax ?? (b.gender === 'MALE' ? Math.max(30, age + 5) : Math.min(99, age + 12)),
+          profileExtra: b.extra as object,
+          ...(b.notifPrefs ? { notifPrefs: b.notifPrefs as object } : {}),
         },
       });
       if (b.photos.length) {
@@ -145,7 +188,16 @@ export default async function userRoutes(app: FastifyInstance) {
         await prisma.user.update({ where: { id }, data: { filterWeek: wk, filterUsed: used + 1 } });
       }
     }
-    await prisma.user.update({ where: { id }, data: b });
+    const { extra, callHours, notifPrefs, ...rest } = b;
+    await prisma.user.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(extra ? { profileExtra: { ...((cur.profileExtra ?? {}) as object), ...extra } } : {}),
+        ...(callHours !== undefined ? { callHours: callHours === null ? Prisma.DbNull : (callHours as object) } : {}),
+        ...(notifPrefs ? { notifPrefs: { ...((cur.notifPrefs ?? {}) as object), ...notifPrefs } } : {}),
+      },
+    });
     return presentMe(id);
   });
 
@@ -249,7 +301,8 @@ export default async function userRoutes(app: FastifyInstance) {
           update: { createdAt: new Date() },
         });
         if (!prev || Date.now() - prev.createdAt.getTime() > 6 * 3600_000) {
-          void notify(id, 'visit', { actorId: me }).catch(() => {});
+          // Push göndərilmir — ağıllı xülasə ("5 nəfər profilinə baxdı") gedir
+          void notify(id, 'visit', { actorId: me, push: false }).catch(() => {});
         }
       }
     }

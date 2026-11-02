@@ -10,6 +10,7 @@ import { presentUser, publicUserSelect } from '../lib/present.js';
 import { notify } from '../services/notify.js';
 import { emitToUser } from '../realtime/hub.js';
 import { getOrCreateConversation } from './chat.js';
+import { recordEvents } from '../services/taste.js';
 
 export default async function discoveryRoutes(app: FastifyInstance) {
   app.get('/discover', { preHandler: requireAuth }, async (req) => {
@@ -33,7 +34,11 @@ export default async function discoveryRoutes(app: FastifyInstance) {
     const today = todayKey();
     if (b.action === 'LIKE' && !vip) {
       const used = user.dailyLikesDate === today ? user.dailyLikesUsed : 0;
-      if (used >= ECONOMY.freeDailyLikes) throw err.badRequest('LIKE_LIMIT');
+      if (used >= ECONOMY.freeDailyLikes) {
+        // Alqoritm üçün siqnal: limitə tez-tez çatan istifadəçiyə VIP endirimi təklif olunur
+        void recordEvents(me, [{ kind: 'like_limit' }]).catch(() => {});
+        throw err.badRequest('LIKE_LIMIT');
+      }
       await prisma.user.update({ where: { id: me }, data: { dailyLikesDate: today, dailyLikesUsed: used + 1 } });
     }
     if (b.action === 'SUPERLIKE') {

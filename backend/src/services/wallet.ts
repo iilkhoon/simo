@@ -44,10 +44,17 @@ export async function creditCoins(tx: Tx, userId: string, amount: number, type: 
   return u.coins;
 }
 
-export async function spendDiamonds(tx: Tx, userId: string, amount: number, type: string, refId?: string) {
+/**
+ * Almaz xərcləyir. `earnedOnly` — yalnız qazanılmış Almaz (çıxarış): alınmış hissəyə toxunulmur.
+ * Əks halda (hədiyyə, mübadilə) alınmış Almaz birinci xərclənir.
+ */
+export async function spendDiamonds(tx: Tx, userId: string, amount: number, type: string, refId?: string, earnedOnly = false) {
+  const before = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { diamondsBought: true, diamonds: true } });
+  if (earnedOnly && before.diamonds - before.diamondsBought < amount) throw err.badRequest('INSUFFICIENT_DIAMONDS');
+  const fromBought = earnedOnly ? 0 : Math.min(Math.max(0, before.diamondsBought), amount);
   const res = await tx.user.updateMany({
-    where: { id: userId, diamonds: { gte: amount } },
-    data: { diamonds: { decrement: amount } },
+    where: { id: userId, diamonds: { gte: amount }, diamondsBought: { gte: fromBought } },
+    data: { diamonds: { decrement: amount }, diamondsBought: { decrement: fromBought } },
   });
   if (res.count === 0) throw err.badRequest('INSUFFICIENT_DIAMONDS');
   const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { diamonds: true } });
@@ -56,7 +63,7 @@ export async function spendDiamonds(tx: Tx, userId: string, amount: number, type
   });
 }
 
-/** Agentliyin son 30 gündəki hostlarının ümumi qazancı (Ləl) — səviyyəni təyin edir */
+/** Agentliyin son 30 gündəki hostlarının ümumi qazancı (Almaz, daxili vahid) — səviyyəni təyin edir */
 export async function agencyMonthly(tx: Tx, agencyId: string): Promise<number> {
   const since = new Date(Date.now() - 30 * 86400_000);
   const members = await tx.user.findMany({ where: { agencyId }, select: { id: true } });
@@ -68,12 +75,12 @@ export async function agencyMonthly(tx: Tx, agencyId: string): Promise<number> {
   return r._sum.amount ?? 0;
 }
 
-export const EARN_TYPES = ['GIFT_RECEIVED', 'MESSAGE_EARNED', 'CALL_EARNED', 'SUBSCRIPTION_EARNED'];
+export const EARN_TYPES = ['GIFT_RECEIVED', 'MESSAGE_EARNED', 'CALL_EARNED', 'SUBSCRIPTION_EARNED', 'SERVICE_EARNED'];
 
 /**
- * Ödənişli Nar xərcləndikdə: Simo 70%, qalan 30% host ilə agentlik arasında bölünür
- * (agentlik payı səviyyəyə görə 15–20%). Qəbul edən aktiv agentlikdə deyilsə — Ləl yazılmır.
- * Qaytarır: hosta yazılan Ləl.
+ * Ödənişli Nar (və ya Almaz) xərcləndikdə: Simo 70%, qalan 30% host ilə agentlik arasında bölünür
+ * (agentlik payı səviyyəyə görə 15–20%). Qəbul edən aktiv agentlikdə deyilsə — Almaz yazılmır.
+ * Qaytarır: hosta yazılan Almaz (daxili vahidlə).
  */
 export async function rewardReceiver(tx: Tx, receiverId: string, paidCoins: number, type: string, refId?: string) {
   if (paidCoins <= 0) return 0;

@@ -25,6 +25,8 @@ import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/uploads.js';
 import hostRoutes from './routes/host.js';
 import socialRoutes from './routes/social.js';
+import smartRoutes from './routes/smart.js';
+import serviceRoutes from './routes/services.js';
 
 export async function buildApp() {
   const app = Fastify({ logger: { level: config.isProd ? 'info' : 'warn' }, bodyLimit: 2 * 1024 * 1024, trustProxy: true });
@@ -49,7 +51,7 @@ export async function buildApp() {
 
   app.get('/health', async () => ({ ok: true, name: 'simo-api', time: new Date() }));
 
-  for (const r of [authRoutes, userRoutes, discoveryRoutes, chatRoutes, giftRoutes, callRoutes, liveRoutes, videoRoutes, walletRoutes, paymentRoutes, agencyRoutes, adminRoutes, uploadRoutes, hostRoutes, socialRoutes]) {
+  for (const r of [authRoutes, userRoutes, discoveryRoutes, chatRoutes, giftRoutes, callRoutes, liveRoutes, videoRoutes, walletRoutes, paymentRoutes, agencyRoutes, adminRoutes, uploadRoutes, hostRoutes, socialRoutes, smartRoutes, serviceRoutes]) {
     await app.register(r);
   }
   return app;

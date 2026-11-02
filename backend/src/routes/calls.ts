@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
-import { presentUser, publicUserSelect } from '../lib/present.js';
+import { callWindowOpen, presentUser, publicUserSelect } from '../lib/present.js';
 import { ECONOMY, activeVip } from '../economy.js';
 import { rtcToken } from '../services/agora.js';
 import { emitToUser } from '../realtime/hub.js';
@@ -53,6 +53,11 @@ export default async function callRoutes(app: FastifyInstance) {
     if (blocked) throw err.forbidden('BLOCKED');
     const { price, caller, callee } = await callPrice(me, b.calleeId, b.type);
     if (callee.deletedAt || callee.banned) throw err.notFound('USER_NOT_FOUND');
+    // Qəbul edənin zəng ayarları: görüntülü/səsli ayrıca bağlana bilər, zəng saatları, "məşğulam" statusu
+    if (b.type === 'VIDEO' && !callee.acceptVideo) throw err.badRequest('VIDEO_CALLS_OFF');
+    if (b.type === 'VOICE' && !callee.acceptVoice) throw err.badRequest('VOICE_CALLS_OFF');
+    if (!callWindowOpen(callee.callHours)) throw err.badRequest('OUTSIDE_CALL_HOURS', { hours: callee.callHours });
+    if (callee.presence === 'BUSY') throw err.badRequest('USER_BUSY');
     if (caller.coins < price) throw err.insufficient(price);
     const busy = await prisma.call.findFirst({
       where: {
