@@ -41,8 +41,8 @@ Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
 - **İqtisadiyyat** (ətraflı: [docs/ECONOMY.md](docs/ECONOMY.md)):
   - İstifadəçi **Nar** xərcləyir. Ödənişli Nar-ın 70%-i Simo-da qalır, 30%-i host və agentlik arasında bölünür.
   - Agentlik payı səviyyəyə görə 15%-dən (Bürünc) 20%-dək (Almaz) artır. Qazanc yalnız aktiv agentliyin üzvü olan hostlara yazılır.
-  - Qazanc **Ləl**-dir: 100 Ləl = 1 ₼, minimum 5 000 Ləl, 3% haqq, həftədə 1 çıxarış, 7 gün gözləmə, KYC tələb olunur.
-  - Promo Nar birinci xərclənir və Ləl yaratmır — bonus fırıldağının qarşısını alır.
+  - Qazanc **Almaz**-dır (premium valyuta, 1 Almaz = 10 Nar): 10 Almaz = 1 ₼, minimum 500 Almaz (50 ₼), 3% haqq, həftədə 1 çıxarış, 7 gün gözləmə, KYC tələb olunur. Almaz paketlə də alınır (nağdlaşmır) və lüks Almaz hədiyyələrinə xərclənir.
+  - Promo Nar birinci xərclənir və Almaz yaratmır — bonus fırıldağının qarşısını alır.
 - **Bonuslar və limitlər:**
   - Qeydiyyatda 30 Nar, ilk yükləmədə 300 Nar-adək hədiyyə, 7 günlük gündəlik bonus (promo).
   - Dəvət edən şəxs dəvət etdiyi istifadəçinin **hər alışından** 5% alır (promo, ən çox 500).
@@ -170,3 +170,12 @@ npx eas-cli@latest build --profile huawei --platform android
 
 "Nar 2" dizayn sistemi: foto-birinci, yumşaq kartlar (iri radius, yumşaq kölgə) + oynaq brend qatı (düz rəng blokları, çat-qabarcığı başlıqlar, "Nari" nar maskotu). Yayın, zəng və video ekranları tünd premium rejimdədir. Şriftlər: Geologica və Onest.
 Brend rəngi nar qırmızısıdır (`#F2344F`). Ətraflı məlumat [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) faylındadır.
+
+## Yeniliklər (2026-11)
+
+- **Şəxsi alqoritm** (`backend/src/services/taste.ts`): bəyənmə, baxış (müddətlə), mesaj, hədiyyə, zəng, canlı yayın, ekran və axtarış siqnallarından zövq profili; kollektiv tövsiyə; kəşf və "Günün 10 seçimi" buna görə sıralanır.
+- **Fərdi təkliflər və ağıllı bildirişlər** (`smart.ts`): xərcləmə davranışına görə paket bonusu / VIP endirimi; "5 nəfər profilinə baxdı", "3 nəfər səni bəyəndi", təklif bitir, sənə uyğun yeni profillər — gündə ən çox 2, gecə yox.
+- **Onboarding 2.0**: 7 məcburi + 4 opsional addım (kimi görmək, yaş aralığı, boy, təhsil, iş, vərdişlər, ünsiyyət üslubu, aktiv saatlar, görüş/musiqi zövqü, bildirişlər).
+- **Postlar**: hamı / demo (serverdə bulanıqlaşdırılmış önizləmə) / tam xüsusi, planlama, məkan, ≤5 heşteq, heşteq axtarışı, şərhləri bağlama və silmə.
+- **Zənglər**: CallKit (iOS) və ConnectionService (Android) — sistem zəng ekranı; iOS PushKit VoIP (`mobile/plugins/withVoipPush.js`, `backend/src/services/apns.ts`, `.env`-də APNS_*), Android data-push fon tapşırığı. Zəng ayarları: yalnız görüntülü/səsli, zəng saatları, status (aktiv/məşğul/uzaqda).
+- **Xidmət satışı** (escrow), **iki nişan** (VIP mavi / KYC yaşıl), **Almaz hədiyyələri və paketləri**, iOS 27 üslubunda şüşə tab paneli, 3D Nar sikkəsi (three.js), yeni loqo və maskot.

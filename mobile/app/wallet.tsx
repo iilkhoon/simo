@@ -127,7 +127,7 @@ export default function Wallet() {
                 <View style={styles.offerBadge}><Text style={styles.offerPct}>{o.bonusPct ? `+${o.bonusPct}%` : `-${o.discountPct}%`}</Text></View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <T v="label" color={colors.coin}>{t('offers.title')} · {t('offers.endsIn', { t: h ? `${h}s ${m}d` : `${m}d` })}</T>
-                  <Text style={styles.offerTitle} numberOfLines={1}>{t(`offers.kinds.${o.kind}`, { defaultValue: t('offers.title') })}</Text>
+                  <Text style={styles.offerTitle} numberOfLines={2}>{t(`offers.kinds.${o.kind}`, { defaultValue: t('offers.title') })}</Text>
                   <T v="tiny" color={colors.nightMuted}>{o.package ? `${o.package.coins.toLocaleString('en-US')} Nar ${t('offers.extra', { n: o.package.bonus })} · ${azn(o.package.priceQepik)}` : t('offers.vipDisc', { n: o.discountPct })}</T>
                 </View>
                 <View style={styles.offerCta}>{buying && pkg && buying === pkg.id ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.offerCtaText}>{t('offers.take')}</Text>}</View>
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   offer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   offerBadge: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
   offerPct: { ...noPad, color: colors.ink, fontFamily: fonts.displayBlack, fontSize: 17, lineHeight: 21 },
-  offerTitle: { ...noPad, color: colors.white, fontFamily: fonts.display, fontSize: 16, lineHeight: 21 },
+  offerTitle: { ...noPad, color: colors.white, fontFamily: fonts.display, fontSize: 15, lineHeight: 19 },
   offerCta: { height: 38, minWidth: 64, paddingHorizontal: 14, borderRadius: 19, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
   offerCtaText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 13, lineHeight: 16 },
   almazInfo: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: colors.skySoft, borderRadius: radius.lg, padding: 14, marginTop: 14 },

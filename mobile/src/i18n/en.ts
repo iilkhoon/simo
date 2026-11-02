@@ -134,7 +134,7 @@ const en: Dict = {
       unlimitedLikes: 'Unlimited likes', seeVisitors: 'See who viewed you', seeLikes: 'See who liked you',
       incognito: 'Incognito mode', boost: '{{n}}× more visibility', entryEffect: 'Spectacular room entrance', badge: 'Exclusive VIP badge',
     },
-    tiers: { SILVER: 'Silver', GOLD: 'Gold', DIAMOND: 'Diamond' },
+    tiers: { SILVER: 'Silver', GOLD: 'Gold', DIAMOND: 'Brilliant' },
   },
   earnings: {
     available: 'Available', held: 'On hold ({{n}} days)', needAgency: 'Join an agency to start earning →', needKyc: 'Verify your identity to withdraw →', weekly: '1 withdrawal per week, new earnings held 7 days', kycRule: 'Identity verification required',

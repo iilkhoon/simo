@@ -13,7 +13,7 @@ import { useStore } from '@/store';
 import type { PublicUser } from '@/lib/types';
 import { TIER_COLORS, TierPill, type AgencyCard } from '../agencies';
 
-const TIERS = [['Bürünc', 0.15], ['Gümüş', 0.16], ['Qızıl', 0.17], ['Platin', 0.18], ['Almaz', 0.2]] as const;
+const TIERS = [['Bürünc', 0.15], ['Gümüş', 0.16], ['Qızıl', 0.17], ['Platin', 0.18], ['Brilyant', 0.2]] as const;
 
 /** Agentlik səhifəsi: şərtlər, səviyyə, top hostlar, müraciət */
 export default function AgencyDetail() {

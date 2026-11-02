@@ -344,7 +344,7 @@ export default function Videos() {
         <View style={{ width: 210 }}>
           <Tabs night value={tab} onChange={setTab} options={[{ key: 'following', label: t('videos.following') }, { key: 'foryou', label: t('videos.forYou') }]} />
         </View>
-        <IconBtn name="search" size={40} bg="rgba(255,255,255,0.16)" color={colors.white} style={styles.upload} onPress={() => router.push('/hashtag')} />
+        <IconBtn name="search" size={40} bg="rgba(15,13,12,0.45)" color={colors.white} style={styles.upload} onPress={() => router.push('/hashtag')} />
       </View>
       <GiftOverlay ref={overlay} />
       <Comments video={commentsFor} onClose={() => setCommentsFor(null)} onAdded={(d) => commentsFor && patch(commentsFor.id, { commentsCount: Math.max(0, commentsFor.commentsCount + d) })} />
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   views: { color: colors.nightMuted, fontSize: 12, fontFamily: fonts.semibold },
   topBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   upload: { position: 'absolute', right: 12 },
-  lockWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: 'rgba(15,13,12,0.35)', paddingHorizontal: 30 },
+  lockWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: 'rgba(15,13,12,0.35)', paddingLeft: 24, paddingRight: 84 },
   lockDisc: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
   lockTitle: { ...noPad, color: colors.white, fontFamily: fonts.display, fontSize: 17, lineHeight: 23, textAlign: 'center' },
   lockBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 48, paddingHorizontal: 20, borderRadius: 24, backgroundColor: colors.coin },

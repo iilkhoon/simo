@@ -3,6 +3,7 @@ import { Animated, Dimensions, Pressable, StyleSheet, Switch, Text, TextInput, V
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
+import { useLocalSearchParams } from 'expo-router';
 import { colors, fonts, noPad, radius, webNoOutline } from '@/theme';
 import { Box, Btn, Chip, IconBtn, Loader, PressBox, Screen, T, Tag } from '@/components/ui';
 import { Icon } from '@/components/Icon';
@@ -51,7 +52,9 @@ export default function Onboarding() {
   const [dir, setDir] = React.useState(1);
   const { t, i18n } = useTranslation();
   const { toast, setMe } = useStore();
-  const [step, setStep] = useState(0);
+  // Yalnız önizləmə build-ində (EXPO_PUBLIC_PREVIEW=1): ?step=N — ekran şəkilləri üçün
+  const preview = useLocalSearchParams<{ step?: string }>();
+  const [step, setStep] = useState(process.env.EXPO_PUBLIC_PREVIEW === '1' && preview.step ? Number(preview.step) : 0);
   React.useEffect(() => {
     setDir(step >= prevStep.current ? 1 : -1);
     prevStep.current = step;

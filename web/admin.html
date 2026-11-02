@@ -151,9 +151,9 @@
         const q = $('#uq') ? $('#uq').value : '';
         const { items } = await api(`/admin/users?q=${encodeURIComponent(q)}`);
         return `<h2 style="margin-bottom:18px">İstifadəçilər</h2><div class="toolbar"><input class="input" id="uq" placeholder="Ad, telefon, e-poçt və ya ID" value="${esc(q)}"><button class="btn sm dark" data-act="search">Axtar</button></div>` +
-          table(['İstifadəçi', 'Əlaqə', 'Nar / Ləl', 'Status', ''], items.map((u) => `<tr>
+          table(['İstifadəçi', 'Əlaqə', 'Nar / Almaz', 'Status', ''], items.map((u) => `<tr>
           <td>${userCell(u)}</td><td style="font-size:13px">${esc(u.phone || u.email || '')}</td>
-          <td>Nar ${fmt(u.coins)}<br>Ləl ${fmt(u.diamonds)}</td>
+          <td>Nar ${fmt(u.coins)}<br>Almaz ${fmt(Math.round(u.diamonds / 10))}</td>
           <td>${u.banned ? '<span class="st" style="background:var(--nar-soft)">BLOK</span> ' : ''}${u.hostStatus !== 'NONE' ? `<span class="st" style="background:var(--saffron-soft)">${esc(u.hostStatus)}</span> ` : ''}${u.verified ? '<span class="st" style="background:var(--xazar-soft)">✓</span>' : ''}${u.role === 'ADMIN' ? ' <span class="st">ADMIN</span>' : ''}</td>
           <td class="acts"><button class="mini ${u.banned ? 'ok' : 'no'}" data-act="ban" data-id="${u.id}" data-v="${!u.banned}">${u.banned ? 'Blokdan çıxar' : 'Blokla'}</button><button class="mini" data-act="verify" data-id="${u.id}" data-v="${!u.verified}">${u.verified ? 'Təsdiqi götür' : 'Təsdiqlə'}</button><button class="mini dk" data-act="grant" data-id="${u.id}">+ Nar</button></td></tr>`));
       },
@@ -161,7 +161,7 @@
         const { items } = await api('/admin/withdrawals');
         return `<h2 style="margin-bottom:18px">Pul çıxarışları</h2>` + table(['İstifadəçi', 'Məbləğ', 'Üsul / hesab', 'Status', 'Tarix', ''], items.map((w) => `<tr>
           <td>${userCell(w.user)}<div class="muted" style="font-size:12px">${esc(w.user.phone || '')}</div></td>
-          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">${fmt(w.diamonds)} Ləl</div></td>
+          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">${fmt(Math.round(w.diamonds / 10))} Almaz</div></td>
           <td>${esc(w.method)}<div style="font-size:13px">${esc(w.account)}</div></td><td><span class="st">${esc(w.status)}</span></td><td>${date(w.createdAt)}</td>
           <td class="acts">${w.status === 'PENDING' ? `<button class="mini" data-act="wd" data-id="${w.id}" data-v="APPROVED">Təsdiq</button>` : ''}<button class="mini ok" data-act="wd" data-id="${w.id}" data-v="PAID">Ödənildi</button><button class="mini no" data-act="wd" data-id="${w.id}" data-v="REJECTED">Rədd</button></td></tr>`));
       },
@@ -194,7 +194,7 @@
           <td style="font-size:13px">${esc(a.contactName || '')}<br>${esc(a.contactPhone || '')}</td>
           <td style="font-size:13px;max-width:220px">${esc(a.experience || '')}${a.expectedHosts ? `<div class="muted">Gözlənilən host: ${fmt(a.expectedHosts)}</div>` : ''}</td>
           <td>${fmt(a._count?.members)}</td>
-          <td><b>${esc(a.tierName)}</b> · ${Math.round(a.share * 100)}%<div class="muted" style="font-size:12px">30g: ${fmt(a.monthlyDiamonds)} Ləl</div></td>
+          <td><b>${esc(a.tierName)}</b> · ${Math.round(a.share * 100)}%<div class="muted" style="font-size:12px">30g: ${fmt(a.monthlyDiamonds)} Almaz</div></td>
           <td><span class="st" style="background:${stBg[a.status] || 'var(--card)'}">${esc(a.status)}</span>${a.rejectReason ? `<div class="muted" style="font-size:12px">${esc(a.rejectReason)}</div>` : ''}</td>
           <td class="acts">${a.status !== 'ACTIVE' ? `<button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Təsdiq et</button>` : ''}<button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">${a.status === 'PENDING' ? 'Rədd' : 'Dayandır'}</button></td></tr>`));
       },
@@ -210,7 +210,7 @@
             <input class="input" name="description" placeholder="Şərtlər (məs. paylaş və qatıl)" maxlength="500" style="grid-column:1/-1">
             <button class="btn sm dark" type="submit">Çəkiliş yarat</button>
           </form>
-          <p class="muted" style="margin-bottom:12px">İştirak pulsuzdur. Qaliblər təsadüfi seçilir, mükafat promo Nar kimi yazılır (Ləl yaratmır).</p>` +
+          <p class="muted" style="margin-bottom:12px">İştirak pulsuzdur. Qaliblər təsadüfi seçilir, mükafat promo Nar kimi yazılır (Almaz yaratmır).</p>` +
           table(['Çəkiliş', 'Mükafat', 'İştirakçı', 'Bitir', 'Status', ''], items.map((r) => `<tr>
           <td><b>${esc(r.title)}</b><div class="muted" style="font-size:12px;max-width:260px">${esc(r.description)}</div></td>
           <td>${fmt(r.prizeCoins)} Nar × ${fmt(r.winners)}</td><td>${fmt(r._count?.entries)}</td><td>${date(r.endsAt)}</td>

@@ -132,7 +132,7 @@ const az = {
       unlimitedLikes: 'Limitsiz bəyənmə', seeVisitors: 'Profilinə baxanları gör', seeLikes: 'Səni bəyənənləri gör',
       incognito: 'Görünməz rejim', boost: 'Kəşfdə {{n}}× çox görün', entryEffect: 'Canlı otaqlara möhtəşəm giriş effekti', badge: 'Xüsusi VIP nişanı',
     },
-    tiers: { SILVER: 'Gümüş', GOLD: 'Qızıl', DIAMOND: 'Almaz' } as Record<string, string>,
+    tiers: { SILVER: 'Gümüş', GOLD: 'Qızıl', DIAMOND: 'Brilyant' } as Record<string, string>,
   },
   earnings: {
     available: 'Çıxarıla bilər', held: 'Gözləmədə ({{n}} gün)', needAgency: 'Qazanmaq üçün agentliyə qoşul →', needKyc: 'Pul çıxarmaq üçün şəxsiyyətini təsdiqlə →', weekly: 'Həftədə 1 çıxarış, yeni qazanc 7 gün gözləyir', kycRule: 'Şəxsiyyət təsdiqi tələb olunur',

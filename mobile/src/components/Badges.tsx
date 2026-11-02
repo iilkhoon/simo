@@ -85,7 +85,8 @@ export function ProfileBadge({ b }: { b: { key: string; label?: string; value?: 
   const { t } = useTranslation();
   if (b.key === 'tenure') return <Pill bg={colors.lilac} fg={colors.ink} disc={palette.lilac} iconColor={colors.ink} icon="time" label={t('badges.tenure', { n: b.value })} />;
   if (b.key === 'cityTop' || b.key === 'countryTop') return <Pill bg={palette.saffron} fg={colors.ink} disc="#D98A00" iconColor={colors.white} icon="trophy" label={`${b.label} #${b.value}`} />;
-  if (b.key === 'verified') return <Pill bg={colors.skySoft} fg={colors.ink} disc={palette.xazar} icon="verified" iconColor={colors.white} label={t('badges.verified')} />;
+  // "verified" artıq iki ayrı nişanla göstərilir (TrustPills: VIP mavi + kimlik yaşıl)
+  if (b.key === 'verified') return null;
   return null;
 }
 

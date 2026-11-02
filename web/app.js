@@ -74,7 +74,7 @@
     el.innerHTML = row + row + row + row;
   }
 
-  // Kalkulyator (docs/ECONOMY.md): Bürünc agentlikdə host payı 15% (Ləl), 1 mesaj = 30 Nar, 1 dəq video = 80 Nar, 100 Ləl = 1 ₼, 3% çıxarış haqqı
+  // Kalkulyator (docs/ECONOMY.md): Bürünc agentlikdə host payı 15% (Almaz), 1 mesaj = 30 Nar, 1 dəq video = 80 Nar, 10 Almaz = 1 ₼, 3% çıxarış haqqı
   function calc() {
     const m = +($('#rMsg')?.value ?? 0);
     const n = +($('#rMin')?.value ?? 0);
