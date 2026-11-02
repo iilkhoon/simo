@@ -4,14 +4,15 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, tintFor } from '@/theme';
-import { Box, Btn, Card, Chip, GlassPill, IconBtn, Loader, PressBox, T } from '@/components/ui';
+import { colors, fonts, radius, tintFor } from '@/theme';
+import { Box, Btn, Card, Chip, GlassPill, IconBtn, Loader, PressBox, T, Tabs } from '@/components/ui';
+import { PostGrid, type Post } from '@/components/PostGrid';
 import { Icon } from '@/components/Icon';
 import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { ActionSheet } from '@/components/ActionSheet';
-import { HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
+import { HostBadge, LevelBadge, VerifiedBadge, VipBadge, NobleBadge, ProfileBadge } from '@/components/Badges';
 import { api } from '@/lib/api';
 import { compact, errorText, timeAgo } from '@/lib/format';
 import { startCall } from '@/lib/calls';
@@ -55,6 +56,32 @@ export default function UserProfile() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const [posts, setPosts] = useState<Post[] | null>(null);
+  const [badges, setBadges] = useState<{ key: string; label?: string; value?: number }[]>([]);
+  const [postTab, setPostTab] = useState<'posts' | 'private'>('posts');
+  const [subscribed, setSubscribed] = useState(false);
+  const [subBusy, setSubBusy] = useState(false);
+  const loadPosts = useCallback(() => {
+    void api<{ items: Post[] }>(`/videos/user/${id}`).then((r) => setPosts(r.items)).catch(() => setPosts([]));
+    void api<{ items: { key: string; label?: string; value?: number }[] }>(`/users/${id}/badges`).then((r) => setBadges(r.items)).catch(() => {});
+    void api<{ items: { creatorId: string }[] }>('/subscriptions').then((r) => setSubscribed(r.items.some((x) => x.creatorId === id))).catch(() => {});
+  }, [id]);
+  useEffect(loadPosts, [loadPosts]);
+  const shownPosts = (posts ?? []).filter((x) => (postTab === 'private' ? x.isPrivate : !x.isPrivate));
+
+  async function subscribe() {
+    setSubBusy(true);
+    try {
+      await api(`/subscriptions/${id}`, { body: {} });
+      toast(t('posts.subscribed'), 'success');
+      loadPosts();
+    } catch (e) {
+      toast(errorText(e), 'error');
+    } finally {
+      setSubBusy(false);
+    }
+  }
 
   if (!p) return <View style={{ flex: 1, backgroundColor: colors.bg }}><Loader full /></View>;
   const u = p.user;
@@ -125,9 +152,11 @@ export default function UserProfile() {
           </View>
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {u.isHost ? <HostBadge /> : null}
+            <NobleBadge tier={u.nobleTier} />
             <VipBadge tier={u.vipTier} />
             <LevelBadge kind="wealth" level={u.wealthLevel} />
             <LevelBadge kind="charm" level={u.charmLevel} />
+            {badges.map((b) => <ProfileBadge key={b.key} b={b} />)}
           </View>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <View style={styles.stat}><T v="num">{compact(p.followers)}</T><T v="tiny" color={colors.textMuted}>{t('common.followers')}</T></View>
@@ -181,19 +210,24 @@ export default function UserProfile() {
               </View>
             </Card>
           ) : null}
-          {p.videos.length ? (
-            <View style={{ gap: 10 }}>
-              <T v="label" color={colors.brand}>{t('profile.videos')}</T>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {p.videos.map((v) => (
-                  <View key={v.id} style={styles.videoCell}>
-                    {v.thumbnailUrl ? <Image source={{ uri: v.thumbnailUrl }} style={StyleSheet.absoluteFill} /> : <Icon name="play" size={28} color={colors.textMuted} />}
-                    <View style={styles.videoViews}><Text style={styles.videoViewsText}>▶ {compact(v.views)}</Text></View>
-                  </View>
-                ))}
+          {/* Postlar (Instagram tipli şəbəkə) və Private */}
+          <View style={{ marginTop: 4 }}>
+            {u.privatePrice ? (
+              <Tabs<'posts' | 'private'> value={postTab} onChange={setPostTab} options={[{ key: 'posts', label: t('posts.posts') }, { key: 'private', label: `🔒 ${t('posts.privateTab')}` }]} />
+            ) : <T v="label" color={colors.brand}>{t('posts.posts')}</T>}
+          </View>
+          {u.privatePrice && !isMe && postTab === 'private' ? (
+            <View style={styles.subCard}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <T v="bodyStrong" color={colors.white}>{subscribed ? t('posts.subscribed') : t('posts.subscribe', { price: u.privatePrice })}</T>
+                <T v="tiny" color={colors.nightMuted}>{t('posts.subscribeSub')}</T>
               </View>
+              {!subscribed ? <Btn full={false} size="sm" kind="coin" title="OK" loading={subBusy} onPress={subscribe} /> : <Icon name="checkmark" size={20} color={colors.highlight} />}
             </View>
           ) : null}
+          {posts === null ? null : shownPosts.length ? (
+            <PostGrid items={shownPosts} onLocked={() => { setPostTab('private'); toast(t('posts.locked'), 'info'); }} />
+          ) : <T v="small" color={colors.textMuted} center style={{ paddingVertical: 20 }}>{t('posts.empty')}</T>}
         </View>
       </ScrollView>
 
@@ -243,6 +277,7 @@ export default function UserProfile() {
 }
 
 const styles = StyleSheet.create({
+  subCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.night, borderRadius: radius.lg, padding: 14 },
   topBar: { flexDirection: 'row', alignItems: 'center' },
   dots: { position: 'absolute', top: 12, left: 14, right: 14, flexDirection: 'row', gap: 4 },
   dotBar: { flex: 1, height: 3.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.45)' },

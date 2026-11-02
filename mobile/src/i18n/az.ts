@@ -62,6 +62,8 @@ const az = {
   hostSettings: { title: 'Host parametrləri', msgPrice: 'Mesaj qiyməti (Nar)', msgPriceSub: 'Minimum {{min}} Nar. Maksimum qiymət şöhrət səviyyən artdıqca yüksəlir. Boş qoysan, agentliyin standart qiyməti işləyir.', agencyDefault: 'Agentlik standartı', freeChat: 'Mənə yazmaq pulsuzdur', freeChatSub: 'Açıq olsa, hamı sənə pulsuz yaza bilər (mesajlardan qazanc olmur).', private: 'Private content abunəsi', privateSub: 'Aylıq qiymət {{min}}–{{max}} Nar. Şöhrət səviyyəsi {{lv}}+ və şəxsiyyət təsdiqi tələb olunur. Abunəçilər private postlarını görür və sənə pulsuz yaza bilir.', privateOff: 'Bağlıdır', privateRules: 'Çılpaqlıq və açıq seksual məzmun qəti qadağandır — hesab bloklanır.' },
   raffles: { title: 'Çəkilişlər', enter: 'Pulsuz qoşul', entered: 'Qoşuldun ✓', ends: 'Bitir: {{t}}', prize: '{{n}} Nar', entries: '{{n}} iştirakçı', share: 'Paylaş — şansını artır', won: 'Qazandın! 🎉', empty: 'Hazırda çəkiliş yoxdur', rules: 'İştirak pulsuzdur. Qaliblər təsadüfi seçilir, mükafat hədiyyə Nar kimi yazılır.' },
   posts: { new: 'Yeni post', pickPhoto: 'Foto seç', maxLen: 'Maksimum {{n}} saniyə', tooLong: 'Video {{n}} saniyədən uzun ola bilməz', private: 'Private post', privateSub: 'Yalnız abunəçilərin görəcək', privateOff: 'Private üçün Host parametrlərində abunə qiyməti təyin et', noSaved: 'Hələ heç nə yadda saxlamamısan', likers: 'Bəyənənlər', seeLikers: '{{n}} nəfər bəyəndi — bax', posts: 'Postlar', privateTab: 'Private', subscribe: '{{price}} Nar / ay — abunə ol', subscribed: 'Abunəsən ✓', subscribeSub: 'Private foto və videolara giriş + pulsuz söhbət (30 gün)', locked: 'Bu post yalnız abunəçilər üçündür', empty: 'Hələ post yoxdur' },
+  livePanel: { title: 'Yayın paneli', viewers: 'İzləyici', gifts: 'Hədiyyə', giftsValue: 'Hədiyyələr (Nar)', earned: 'Qazanc (Ləl)', requests: 'Qoşulmaq istəyənlər', noRequests: 'Hələ sorğu yoxdur', audio: 'Səs', video: 'Video', top: 'Top dəstəkçilər', newRequest: 'Yeni qoşulma sorğusu', invited: '{{name}} səni yayına dəvət edir', join: 'Qoşul', requestSent: 'Sorğu göndərildi' },
+  pk: { invite: 'PK döyüşü', invited: '{{name}} səni PK döyüşünə çağırır ⚔️', rules: '5 dəqiqə. Ən çox hədiyyə toplayan qalib gəlir və bonus alır.', accept: 'Qəbul et', decline: 'İmtina', sent: 'PK dəvəti göndərildi', noLives: 'Hazırda başqa video yayın yoxdur', ended: 'Bitdi' },
   create: { title: 'Yarat', video: 'Video', photo: 'Foto', story: 'Story', live: 'Canlı yayın', voice: 'Səsli otaq', private: 'Private' },
   discover: {
     shared: '{{n}} ortaq maraq', activeNow: 'İndi aktiv',
@@ -72,6 +74,7 @@ const az = {
     filters: 'Filtrlər', onlineNow: 'İndi onlayn', checkinTitle: 'Gündəlik bonus', checkinCta: 'Götür',
   },
   live: {
+    seatCount: 'Oturacaq sayı',
     goLiveShort: 'Yayına çıx',
     quickVideo: 'Video tanışlıq', quickVideoSub: 'Təsadüfi biri ilə üz-üzə', quickVoice: 'Səsli tanışlıq', quickVoiceSub: 'Yalnız səs, tam rahat', listeners: '{{n}} dinləyici', videoHint: 'Kamera ilə canlı yayın', voiceHint: '8 nəfərlik səsli otaq', titleLabel: 'Başlıq', rules: 'Yayında çılpaqlıq, təhqir və spam qadağandır. Qaydaları pozan yayınlar bağlanır.',
     title: 'Canlı', popular: 'Populyar', new: 'Yeni', nearby: 'Yaxında', voice: 'Səsli otaqlar', following: 'İzlədiklərim',
@@ -88,6 +91,7 @@ const az = {
     uploading: 'Yüklənir… {{p}}%', uploaded: 'Video paylaşıldı!',
   },
   chat: {
+    hostFree: 'Bu host ilə söhbət pulsuzdur 💬', subscribedFree: 'Abunəsən — söhbət pulsuzdur ✨',
     tabChats: 'Söhbətlər', tabCalls: 'Zənglər', noCalls: 'Hələ zəng yoxdur', noCallsSub: 'Video tanışlıqla bir kliklə kimsə ilə üz-üzə danış', callBack: 'Geri zəng', quickGifts: 'Bir toxunuşla hədiyyə', icebreakers: ['Salam! 👋', 'Necəsən? 😊', 'Profilin çox xoşuma gəldi ✨', 'Bu gün nə edirsən?', 'Çay içək? ☕'], peekTitle: 'Söhbətə başla', sentGift: 'hədiyyə göndərdi',
     title: 'Mesajlar', empty: 'Hələ söhbət yoxdur', emptySub: 'Kəşf et bölməsində kimisə bəyən və ilk addımı at',
     placeholder: 'Mesaj yaz…', msgPrice: 'Mesaj: {{price}} Nar', firstFree: 'İlk mesaj pulsuzdur ✨',
@@ -104,7 +108,7 @@ const az = {
     rtcMissing: 'Zəng modulu bu versiyada aktiv deyil (development build lazımdır)',
     speaker: 'Dinamik', camera: 'Kamera', mic: 'Mikrofon',
   },
-  gifts: { title: 'Hədiyyələr', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks', pick: 'Hədiyyə seç' },
+  gifts: { title: 'Hədiyyələr', romantic: 'Romantik', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks', pick: 'Hədiyyə seç' },
   wallet: {
     usage1: 'Mesajlar', usage2: 'Zənglər', usage3: 'Hədiyyələr', secure: 'Ödənişlər App Store / Google Play və ya Epoint vasitəsilə təhlükəsiz həyata keçirilir', noHistory: 'Hələ əməliyyat yoxdur',
     promoPart: 'Bunun {{n}}-i hədiyyə Nar-dır (birinci xərclənir)',
@@ -193,6 +197,7 @@ const az = {
     types: { like: 'səni bəyəndi 💗', match: 'ilə uyğunluq! 💞', gift: 'sənə hədiyyə göndərdi 🎁', visit: 'profilinə baxdı 👀', follow: 'səni izləməyə başladı', live: 'canlı yayına başladı 🔴', message: 'sənə yazdı' } as Record<string, string>,
   },
   errors: {
+    MUTUAL_FOLLOW_REQUIRED: 'Şəkil göndərmək üçün bir-birinizi izləməlisiniz', KYC_REQUIRED: 'Əvvəlcə şəxsiyyətini təsdiqlə', HOST_REQUIREMENTS: 'Əvvəlcə host tapşırıqlarını tamamla', WITHDRAW_HELD: 'Son 7 günün qazancı hələ gözləmədədir', WITHDRAW_WEEKLY_LIMIT: 'Həftədə yalnız bir dəfə pul çıxarmaq olar', VIDEO_TOO_LONG: 'Video 1:30-dan uzun ola bilməz', PRIVATE_DISABLED: 'Private abunə aktiv deyil', LEVEL_REQUIRED: 'Şöhrət səviyyən kifayət etmir', KYC_PENDING: 'Təsdiq artıq yoxlanılır', GUESTS_FULL: 'Qonaq yerləri doludur', PK_BUSY: 'Yayın artıq PK döyüşündədir', TARGET_NOT_LIVE: 'Yayın artıq bitib', RAFFLE_CLOSED: 'Çəkiliş bitib',
     INSUFFICIENT_COINS: 'Nar balansı kifayət etmir', UNAUTHORIZED: 'Yenidən daxil olun', TOKEN_EXPIRED: 'Sessiya bitdi',
     BANNED: 'Hesabınız bloklanıb', INVALID_PHONE: 'Nömrə düzgün deyil', OTP_TOO_SOON: '1 dəqiqə gözləyin',
     OTP_INVALID: 'Kod yanlışdır və ya vaxtı bitib', EMAIL_TAKEN: 'Bu e-poçt artıq qeydiyyatdadır',

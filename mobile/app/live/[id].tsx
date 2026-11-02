@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Dimensions, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, Share } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +14,8 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { LevelBadge } from '@/components/Badges';
 import { GiftSheet } from '@/components/GiftSheet';
+import { GuestStrip, HostPanel, PkBar, type Guest, type PkState } from '@/components/LiveExtras';
+import { WEB_URL } from '@/config';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { Hearts, type HeartsHandle } from '@/components/Hearts';
 import { api } from '@/lib/api';
@@ -57,6 +59,12 @@ export default function LiveRoom() {
   const [beauty, setBeauty] = useState(true);
   const [muted, setMuted] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [pk, setPk] = useState<PkState | null>(null);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [panel, setPanel] = useState(false);
+  const [requests, setRequests] = useState(0);
+  const [giftTo, setGiftTo] = useState<PublicUser | null>(null);
+  const [requested, setRequested] = useState(false);
   const overlay = useRef<GiftOverlayHandle>(null);
   const hearts = useRef<HeartsHandle>(null);
   const likeBatch = useRef(0);
@@ -72,13 +80,15 @@ export default function LiveRoom() {
     });
     (async () => {
       try {
-        const r = await api<{ room: Room; isHost: boolean; isFollowing: boolean; rtc: RtcCreds | null; seats: Seat[]; topGifters: { user: PublicUser; coins: number }[] }>(`/live/${id}`);
+        const r = await api<{ room: Room; isHost: boolean; isFollowing: boolean; rtc: RtcCreds | null; seats: Seat[]; topGifters: { user: PublicUser; coins: number }[]; guests?: Guest[]; pk?: PkState | null }>(`/live/${id}`);
         if (!alive) return;
         setRoom(r.room);
         setIsHost(r.isHost);
         setFollowing(r.isFollowing);
         setSeats(r.seats);
         setTop(r.topGifters);
+        setGuests(r.guests ?? []);
+        setPk(r.pk ?? null);
         setViewers(r.room.viewerCount);
         if (r.room.status !== 'LIVE' || !r.rtc) {
           setEnded(true);
@@ -150,7 +160,47 @@ export default function LiveRoom() {
     s.on('live:seats', onSeats);
     s.on('live:ended', onEnded);
     s.on('live:kicked-seat', onKicked);
+    // Qonaqlar və PK
+    const onGuests = (p: { guests: Guest[] }) => setGuests(p.guests);
+    const onGuestReq = () => { setRequests((n) => n + 1); toast(t('livePanel.newRequest'), 'info'); };
+    const onGuestInvite = (p: { kind: 'AUDIO' | 'VIDEO'; host: PublicUser }) => {
+      Alert.alert(t('livePanel.invited', { name: p.host.name }), '', [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('livePanel.join'), onPress: () => void joinAsGuest() },
+      ]);
+    };
+    const onGuestJoined = async (p: { kind: 'AUDIO' | 'VIDEO'; rtc: RtcCreds }) => {
+      const ok = await rtc.requestAvPermissions(p.kind === 'VIDEO');
+      if (ok) rtc.setPublishing(p.rtc, true, p.kind === 'VIDEO');
+      setRequested(false);
+    };
+    const onGuestRemoved = () => { if (creds) rtc.setPublishing(creds, false); };
+    const onPk = (p: PkState) => setPk(p);
+    const onPkInvite = (p: { battleId: string; from: PublicUser }) => {
+      Alert.alert(t('pk.invited', { name: p.from.name }), t('pk.rules'), [
+        { text: t('pk.decline'), style: 'cancel', onPress: () => void api(`/pk/${p.battleId}/decline`, { body: {} }).catch(() => {}) },
+        { text: t('pk.accept'), onPress: () => void api(`/pk/${p.battleId}/accept`, { body: {} }).catch((e) => toast(errorText(e), 'error')) },
+      ]);
+    };
+    s.on('live:guests', onGuests);
+    s.on('live:guest-request', onGuestReq);
+    s.on('live:guest-invite', onGuestInvite);
+    s.on('live:guest-joined', onGuestJoined);
+    s.on('live:guest-removed', onGuestRemoved);
+    s.on('pk:start', onPk);
+    s.on('pk:score', onPk);
+    s.on('pk:end', onPk);
+    s.on('pk:invite', onPkInvite);
     return () => {
+      s.off('live:guests', onGuests);
+      s.off('live:guest-request', onGuestReq);
+      s.off('live:guest-invite', onGuestInvite);
+      s.off('live:guest-joined', onGuestJoined);
+      s.off('live:guest-removed', onGuestRemoved);
+      s.off('pk:start', onPk);
+      s.off('pk:score', onPk);
+      s.off('pk:end', onPk);
+      s.off('pk:invite', onPkInvite);
       s.off('live:viewers', onViewers);
       s.off('live:comment', onComment);
       s.off('live:gift', onGift);
@@ -173,6 +223,29 @@ export default function LiveRoom() {
     return () => clearInterval(i);
   }, [id]);
 
+  async function joinAsGuest() {
+    try {
+      const r = await api<{ rtc?: RtcCreds }>(`/live/${id}/guests/accept`, { body: {} });
+      if (r.rtc) {
+        const ok = await rtc.requestAvPermissions(false);
+        if (ok) rtc.setPublishing(r.rtc, true);
+      }
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  }
+
+  async function requestJoin() {
+    tap();
+    try {
+      await api(`/live/${id}/guests/request`, { body: {} });
+      setRequested(true);
+      toast(t('livePanel.requestSent'), 'success');
+    } catch (e) {
+      toast(errorText(e), 'error');
+    }
+  }
+
   function sendComment() {
     const v = text.trim();
     if (!v) return;
@@ -181,7 +254,14 @@ export default function LiveRoom() {
   }
 
   async function toggleSeat(seat: Seat) {
-    if (!room || isHost) return;
+    if (!room) return;
+    // Oturacaqdakı başqa istifadəçiyə toxunanda — ona hədiyyə
+    if (seat.user && seat.user.id !== me?.id) {
+      setGiftTo(seat.user);
+      setGiftOpen(true);
+      return;
+    }
+    if (isHost) return;
     try {
       if (seat.user?.id === me?.id) {
         const r = await api<{ rtc: RtcCreds }>(`/live/${id}/seat/leave`, { body: {} });
@@ -309,6 +389,8 @@ export default function LiveRoom() {
               <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
             </View>
           ))}
+          {isHost ? <IconBtn name="stats" size={36} sh={0} bg={colors.glass} color={colors.white} badge={requests} style={{ marginLeft: 8 }} onPress={() => setPanel(true)} /> : null}
+          <IconBtn name="share" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => void Share.share({ message: `${room.host.name} · ${room.title} — Simo ${WEB_URL}` })} />
           <IconBtn name="close" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
         </View>
       </SafeAreaView>
@@ -316,6 +398,7 @@ export default function LiveRoom() {
         <Tag label={voice ? 'VOICE' : 'LIVE'} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
         {room.title ? <GlassPill label={room.title} /> : null}
       </View>
+      {pk && !voice ? <View style={[styles.pkWrap, { top: insets.top + 96 }]}><PkBar pk={pk} /></View> : null}
 
       {voice ? (
         <View style={[styles.stage, { top: insets.top + 98 }]}>
@@ -380,6 +463,7 @@ export default function LiveRoom() {
             </>
           ) : (
             <>
+              {!voice ? <IconBtn name={requested ? 'time' : 'userAdd'} size={42} sh={2} bg={requested ? colors.highlight : colors.card} onPress={requested ? undefined : () => void requestJoin()} /> : null}
               <IconBtn name="heart" size={42} sh={2} color={colors.brand} onPress={() => { hearts.current?.burst(1); likeBatch.current += 1; }} />
               <IconBtn name="gift" size={48} sh={3} bg={colors.coin} onPress={() => setGiftOpen(true)} />
             </>
@@ -389,7 +473,9 @@ export default function LiveRoom() {
 
       <Hearts ref={hearts} />
       <GiftOverlay ref={overlay} />
-      {!isHost ? <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={room.hostId} receiverName={room.host.name} context="LIVE" contextId={room.id} /> : null}
+      {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} /> : null}
+      {isHost ? <HostPanel visible={panel} onClose={() => { setPanel(false); setRequests(0); }} roomId={room.id} video={room.type === 'VIDEO'} /> : null}
+      <GuestStrip guests={guests} canKick={isHost} onKick={(uid) => void api(`/live/${id}/guests/remove`, { body: { userId: uid } }).catch(() => {})} />
 
       <Modal visible={ended || !!summary} transparent animationType="fade">
         <View style={styles.endWrap}>
@@ -424,6 +510,7 @@ export default function LiveRoom() {
 const QUICK = ['rose', 'heart', 'kiss', 'pomegranate'];
 
 const styles = StyleSheet.create({
+  pkWrap: { position: 'absolute', left: 14, right: 14 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingTop: 6, gap: 8 },
   hostPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.glass, borderRadius: 24, padding: 3, paddingRight: 5, height: 46 },
   hostName: { color: colors.white, fontFamily: fonts.black, fontSize: 13 },

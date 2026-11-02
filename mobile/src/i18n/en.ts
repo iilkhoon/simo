@@ -64,6 +64,8 @@ const en: Dict = {
   hostSettings: { title: 'Host settings', msgPrice: 'Message price (Nar)', msgPriceSub: 'Minimum {{min}} Nar. The maximum grows with your fame level. Leave empty to use the agency price.', agencyDefault: 'Agency default', freeChat: 'Messaging me is free', freeChatSub: 'Anyone can message you for free (no message earnings).', private: 'Private subscription', privateSub: '{{min}}–{{max}} Nar per month. Requires fame level {{lv}}+ and verification.', privateOff: 'Off', privateRules: 'Nudity and explicit content are strictly forbidden — the account will be banned.' },
   raffles: { title: 'Raffles', enter: 'Join for free', entered: 'Joined ✓', ends: 'Ends: {{t}}', prize: '{{n}} Nar', entries: '{{n}} entries', share: 'Share', won: 'You won! 🎉', empty: 'No raffles right now', rules: 'Entry is free. Winners are picked at random; prizes are credited as bonus Nar.' },
   posts: { new: 'New post', pickPhoto: 'Pick a photo', maxLen: 'Max {{n}} seconds', tooLong: 'Video can be at most {{n}} seconds', private: 'Private post', privateSub: 'Only your subscribers will see it', privateOff: 'Set a subscription price in Host settings to post privately', noSaved: 'Nothing saved yet', likers: 'Likes', seeLikers: '{{n}} likes — see who', posts: 'Posts', privateTab: 'Private', subscribe: 'Subscribe · {{price}} Nar / mo', subscribed: 'Subscribed ✓', subscribeSub: 'Access to private photos & videos + free chat (30 days)', locked: 'Subscribers only', empty: 'No posts yet' },
+  livePanel: { title: 'Live panel', viewers: 'Viewers', gifts: 'Gifts', giftsValue: 'Gifts (Nar)', earned: 'Earned (Lal)', requests: 'Join requests', noRequests: 'No requests yet', audio: 'Audio', video: 'Video', top: 'Top supporters', newRequest: 'New join request', invited: '{{name}} invites you to the live', join: 'Join', requestSent: 'Request sent' },
+  pk: { invite: 'PK battle', invited: '{{name}} challenges you to PK ⚔️', rules: '5 minutes. Whoever collects more gifts wins a bonus.', accept: 'Accept', decline: 'Decline', sent: 'PK invite sent', noLives: 'No other video lives right now', ended: 'Ended' },
   create: { title: 'Create', video: 'Video', photo: 'Photo', story: 'Story', live: 'Go live', voice: 'Voice room', private: 'Private' },
   discover: {
     shared: '{{n}} shared interests', activeNow: 'Active now',
@@ -74,6 +76,7 @@ const en: Dict = {
     filters: 'Filters', onlineNow: 'Online now', checkinTitle: 'Daily bonus', checkinCta: 'Claim',
   },
   live: {
+    seatCount: 'Number of seats',
     goLiveShort: 'Go live',
     quickVideo: 'Video match', quickVideoSub: 'Face to face with someone new', quickVoice: 'Voice match', quickVoiceSub: 'Just voices, totally relaxed', listeners: '{{n}} listening', videoHint: 'Go live on camera', voiceHint: 'Voice room with 8 seats', titleLabel: 'Title', rules: 'Nudity, insults and spam are not allowed. Streams that break the rules are closed.',
     title: 'Live', popular: 'Popular', new: 'New', nearby: 'Nearby', voice: 'Voice rooms', following: 'Following',
@@ -90,6 +93,7 @@ const en: Dict = {
     uploading: 'Uploading… {{p}}%', uploaded: 'Video posted!',
   },
   chat: {
+    hostFree: 'Chatting with this host is free 💬', subscribedFree: 'You are subscribed — chat is free ✨',
     tabChats: 'Chats', tabCalls: 'Calls', noCalls: 'No calls yet', noCallsSub: 'Try Video match to talk face to face in one tap', callBack: 'Call back', quickGifts: 'One-tap gifts', icebreakers: ['Hi! 👋', 'How are you? 😊', 'Loved your profile ✨', 'What are you up to today?', 'Tea together? ☕'], peekTitle: 'Start the conversation', sentGift: 'sent a gift',
     title: 'Messages', empty: 'No chats yet', emptySub: 'Like someone in Discover and make the first move',
     placeholder: 'Message…', msgPrice: 'Message: {{price}} Nar', firstFree: 'First message is free ✨',
@@ -106,7 +110,7 @@ const en: Dict = {
     rtcMissing: 'Calling is not available in this build (development build required)',
     speaker: 'Speaker', camera: 'Camera', mic: 'Mic',
   },
-  gifts: { title: 'Gifts', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury', pick: 'Pick a gift' },
+  gifts: { title: 'Gifts', romantic: 'Romantic', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury', pick: 'Pick a gift' },
   wallet: {
     usage1: 'Messages', usage2: 'Calls', usage3: 'Gifts', secure: 'Payments are processed securely via App Store / Google Play or Epoint', noHistory: 'No transactions yet',
     promoPart: '{{n}} of them are bonus Nar (spent first)',
@@ -195,6 +199,7 @@ const en: Dict = {
     types: { like: 'liked you 💗', match: '— it’s a match! 💞', gift: 'sent you a gift 🎁', visit: 'viewed your profile 👀', follow: 'started following you', live: 'went live 🔴', message: 'messaged you' },
   },
   errors: {
+    MUTUAL_FOLLOW_REQUIRED: 'Follow each other to send photos', KYC_REQUIRED: 'Verify your identity first', HOST_REQUIREMENTS: 'Complete the host tasks first', WITHDRAW_HELD: 'Earnings from the last 7 days are still on hold', WITHDRAW_WEEKLY_LIMIT: 'You can withdraw once a week', VIDEO_TOO_LONG: 'Video can be at most 1:30', PRIVATE_DISABLED: 'Private subscription is off', LEVEL_REQUIRED: 'Your fame level is too low', KYC_PENDING: 'Verification already under review', GUESTS_FULL: 'Guest seats are full', PK_BUSY: 'This live is already in PK', TARGET_NOT_LIVE: 'This live has ended', RAFFLE_CLOSED: 'Raffle is closed',
     INSUFFICIENT_COINS: 'Not enough Nar', UNAUTHORIZED: 'Please log in again', TOKEN_EXPIRED: 'Session expired',
     BANNED: 'Your account is banned', INVALID_PHONE: 'Invalid phone number', OTP_TOO_SOON: 'Please wait 1 minute',
     OTP_INVALID: 'Wrong or expired code', EMAIL_TAKEN: 'This email is already registered',

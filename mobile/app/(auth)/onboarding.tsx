@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, webNoOutline } from '@/theme';
 import { Box, Btn, Chip, IconBtn, Loader, PressBox, Screen, T, Tag } from '@/components/ui';
 import { Icon } from '@/components/Icon';
+import { Mascot } from '@/components/Mascot';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { pickImage, syncLocation } from '@/lib/media';
@@ -14,12 +15,22 @@ import type { Me } from '@/lib/types';
 
 const INTERESTS = ['music', 'travel', 'cooking', 'sport', 'fitness', 'movies', 'books', 'art', 'dance', 'gaming', 'fashion', 'photo', 'nature', 'cars', 'tech', 'coffee', 'tea', 'pets', 'football', 'mugham', 'business', 'yoga', 'sea', 'mountains', 'karaoke', 'shopping', 'anime', 'poetry'];
 const LOOKING = ['RELATIONSHIP', 'FRIENDSHIP', 'CHAT', 'MARRIAGE'] as const;
+const POSES = ['wave', 'cute', 'think', 'shy', 'heart', 'love'] as const;
 const STEPS = 6;
 
 export default function Onboarding() {
+  const enterV = React.useRef(new Animated.Value(1)).current;
+  const prevStep = React.useRef(0);
+  const [dir, setDir] = React.useState(1);
   const { t, i18n } = useTranslation();
   const { toast, setMe } = useStore();
   const [step, setStep] = useState(0);
+  React.useEffect(() => {
+    setDir(step >= prevStep.current ? 1 : -1);
+    prevStep.current = step;
+    enterV.setValue(0);
+    Animated.spring(enterV, { toValue: 1, damping: 18, stiffness: 160, useNativeDriver: true }).start();
+  }, [step, enterV]);
   const [name, setName] = useState('');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | null>(null);
   const [day, setDay] = useState('');
@@ -76,11 +87,18 @@ export default function Onboarding() {
           <View key={i} style={[styles.progressBar, { backgroundColor: i <= step ? colors.brand : colors.card }]} />
         ))}
       </View>
-      {step > 0 ? (
-        <IconBtn name="back" size={40} style={{ marginVertical: 10 }} onPress={() => setStep(step - 1)} />
-      ) : <View style={{ height: 62 }} />}
+      <View style={styles.headRow}>
+        {step > 0 ? <IconBtn name="back" size={40} onPress={() => setStep(step - 1)} /> : <View style={{ width: 40 }} />}
+        <T v="label" color={colors.textMuted} style={{ flex: 1, textAlign: 'center' }}>{step + 1} / {STEPS}</T>
+        <Mascot key={step} pose={POSES[step % POSES.length]} size={64} />
+      </View>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+        <Animated.ScrollView
+          key={step}
+          style={{ opacity: enterV, transform: [{ translateX: enterV.interpolate({ inputRange: [0, 1], outputRange: [dir * 40, 0] }) }] }}
+          contentContainerStyle={{ gap: 16, paddingBottom: 20 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {step === 0 && (
             <>
               <T v="h1">{t('onboarding.nameTitle')}</T>
@@ -157,7 +175,7 @@ export default function Onboarding() {
               </Box>
             </>
           )}
-        </ScrollView>
+        </Animated.ScrollView>
         <Btn
           title={step === STEPS - 1 ? t('onboarding.finish') : t('common.next')}
           disabled={!canNext}
@@ -173,6 +191,7 @@ export default function Onboarding() {
 const PHOTO_W = (Dimensions.get('window').width - 32 - 20) / 3;
 
 const styles = StyleSheet.create({
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8, minHeight: 64 },
   progress: { flexDirection: 'row', gap: 5, marginTop: 8 },
   progressBar: { flex: 1, height: 8, borderRadius: 4 },
   bigInput: { minWidth: 0, ...webNoOutline, backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, fontSize: 22, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: 64 },

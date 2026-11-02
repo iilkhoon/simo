@@ -16,9 +16,45 @@ export interface GiftOverlayHandle {
  *  SMALL  → solda sürüşən stiker-banner + kombo sayğacı (×N "döyünür")
  *  BIG/LUXURY → mərkəzdə fırlanan "partlayış" stikeri üzərində böyük hədiyyə
  */
+const CONFETTI = ['#F2344F', '#FFC23D', '#D9F26B', '#8ED1FF', '#CDB8FF', '#FFFFFF', '#FF7A3D'];
+
+/** Hissəciklər: mərkəzdən hər tərəfə səpələnən konfetti və ürəklər (böyük hədiyyələr) */
+function Confetti({ seed, count = 26, radius = 190 }: { seed: number; count?: number; radius?: number }) {
+  const parts = useRef(Array.from({ length: count }, (_, i) => ({
+    v: new Animated.Value(0),
+    a: (Math.PI * 2 * i) / count + Math.random() * 0.4,
+    r: radius * (0.55 + Math.random() * 0.6),
+    c: CONFETTI[i % CONFETTI.length],
+    s: 6 + Math.random() * 8,
+    heart: i % 4 === 0,
+    rot: Math.random() * 360,
+  }))).current;
+  useEffect(() => {
+    parts.forEach((p) => p.v.setValue(0));
+    Animated.stagger(12, parts.map((p) => Animated.timing(p.v, { toValue: 1, duration: 1300 + Math.random() * 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }))).start();
+  }, [seed, parts]);
+  return (
+    <>
+      {parts.map((p, i) => (
+        <Animated.View key={i} style={{
+          position: 'absolute', opacity: p.v.interpolate({ inputRange: [0, 0.1, 0.75, 1], outputRange: [0, 1, 1, 0] }),
+          transform: [
+            { translateX: p.v.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(p.a) * p.r] }) },
+            { translateY: p.v.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(p.a) * p.r + 60] }) },
+            { rotate: p.v.interpolate({ inputRange: [0, 1], outputRange: [`${p.rot}deg`, `${p.rot + 260}deg`] }) },
+          ],
+        }}>
+          {p.heart ? <Text style={{ fontSize: p.s + 8, color: p.c }}>♥</Text> : <View style={{ width: p.s, height: p.s * 0.55, borderRadius: 2, backgroundColor: p.c }} />}
+        </Animated.View>
+      ))}
+    </>
+  );
+}
+
 export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_, ref) {
   const [banner, setBanner] = useState<GiftEvent | null>(null);
   const [big, setBig] = useState<GiftEvent | null>(null);
+  const [bigSeed, setBigSeed] = useState(0);
   const bigQueue = useRef<GiftEvent[]>([]);
   const bannerX = useRef(new Animated.Value(-340)).current;
   const comboScale = useRef(new Animated.Value(1)).current;
@@ -37,6 +73,7 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
     }
     playingBig.current = true;
     setBig(next);
+    setBigSeed(Date.now());
     bigScale.setValue(0.2);
     bigOpacity.setValue(0);
     spinV.setValue(0);
@@ -100,6 +137,8 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
           <Animated.View style={{ position: 'absolute', transform: [{ rotate: spin }] }}>
             <Burst size={lux ? 360 : 290} points={lux ? 18 : 14} color={lux ? colors.diamond : colors.coin} />
           </Animated.View>
+          <Confetti seed={bigSeed} count={lux ? 40 : 24} radius={lux ? 240 : 180} />
+          {lux ? <Animated.View style={[styles.flash, { opacity: bigOpacity.interpolate({ inputRange: [0, 1], outputRange: [0, 0.18] }) }]} /> : null}
           <Animated.View style={{ transform: [{ scale: bigScale }], alignItems: 'center', zIndex: 2 }}>
             <GiftIcon id={big.gift.id} size={lux ? 200 : 150} />
             <View style={styles.bigLabel}>
@@ -115,12 +154,12 @@ export const GiftOverlay = forwardRef<GiftOverlayHandle>(function GiftOverlay(_,
 
 const styles = StyleSheet.create({
   banner: { position: 'absolute', left: 10, top: '36%', flexDirection: 'row', alignItems: 'center' },
-  bannerShadow: { position: 'absolute', left: 3, top: 3, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.ink },
   bannerInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, paddingRight: 8, height: 50, width: 236, borderRadius: 26, backgroundColor: colors.card },
   bannerName: { color: colors.ink, fontFamily: fonts.black, fontSize: 13 },
   bannerSub: { color: colors.brand, fontFamily: fonts.bold, fontSize: 11 },
   combo: { color: colors.coin, fontSize: 34, fontFamily: fonts.display, marginLeft: 10, textShadowColor: 'rgba(0,0,0,0.18)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
   center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  flash: { ...StyleSheet.absoluteFill, backgroundColor: colors.coin },
   bigLabel: { marginTop: 10, backgroundColor: colors.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, alignItems: 'center', maxWidth: 260 },
   bigText: { color: colors.ink, fontSize: 16, fontFamily: fonts.displayBold },
   bigSub: { color: colors.brand, fontSize: 13, fontFamily: fonts.black },

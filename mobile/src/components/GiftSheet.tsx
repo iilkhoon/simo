@@ -16,7 +16,7 @@ import { sheetStyles } from './ActionSheet';
 import { Icon } from './Icon';
 
 const COUNTS = [1, 5, 10, 33, 99, 520];
-const CATS = ['popular', 'azerbaijan', 'luxury'] as const;
+const CATS = ['popular', 'romantic', 'azerbaijan', 'luxury'] as const;
 
 export function GiftSheet({ visible, onClose, receiverId, receiverName, context, contextId, onSent }: {
   visible: boolean; onClose: () => void; receiverId: string; receiverName?: string; context: 'CHAT' | 'LIVE' | 'VIDEO' | 'CALL' | 'PROFILE'; contextId?: string;

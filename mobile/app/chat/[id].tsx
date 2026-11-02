@@ -25,7 +25,7 @@ import type { GiftEvent, Message, PublicUser } from '@/lib/types';
 
 interface ConvInfo {
   id: string; user: PublicUser; otherLastReadAt: string; blocked: boolean;
-  pricing: { price: number; reason: 'FREE' | 'FIRST_FREE' | 'VIP_FREE' | 'PAID'; freeLeft: number };
+  pricing: { price: number; reason: 'FREE' | 'FIRST_FREE' | 'VIP_FREE' | 'PAID' | 'HOST_FREE' | 'SUBSCRIBED'; freeLeft: number; hellosLeft?: number };
 }
 
 type Row = { kind: 'msg'; m: Message; first: boolean; last: boolean } | { kind: 'day'; id: string; label: string };
@@ -249,6 +249,8 @@ export default function Chat() {
   const paid = info.pricing.reason === 'PAID';
   const hint =
     info.pricing.reason === 'FIRST_FREE' ? t('chat.firstFree')
+      : info.pricing.reason === 'HOST_FREE' ? t('chat.hostFree')
+      : info.pricing.reason === 'SUBSCRIBED' ? t('chat.subscribedFree')
       : info.pricing.reason === 'VIP_FREE' ? t('chat.vipFree', { n: info.pricing.freeLeft })
         : paid ? t('chat.msgPrice', { price: info.pricing.price }) : null;
   const icebreakers = (t('chat.icebreakers', { returnObjects: true }) as unknown as string[]) ?? [];

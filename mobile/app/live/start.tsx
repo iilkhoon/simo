@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/theme';
-import { Btn, Header, Input, PressBox, Screen, T } from '@/components/ui';
+import { Btn, Header, Input, PressBox, Screen, T, Tabs } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -14,7 +14,9 @@ import { useStore } from '@/store';
 export default function StartLive() {
   const { t } = useTranslation();
   const { me, toast } = useStore();
-  const [type, setType] = useState<'VIDEO' | 'VOICE'>('VIDEO');
+  const params = useLocalSearchParams<{ type?: 'VIDEO' | 'VOICE' }>();
+  const [type, setType] = useState<'VIDEO' | 'VOICE'>(params.type === 'VOICE' ? 'VOICE' : 'VIDEO');
+  const [seats, setSeats] = useState<'4' | '8' | '12'>('8');
   const [title, setTitle] = useState('');
   const [cover, setCover] = useState<string | null>(me?.avatarUrl ?? null);
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ export default function StartLive() {
   async function start() {
     setLoading(true);
     try {
-      const r = await api<{ room: { id: string } }>('/live', { body: { type, title: title.trim(), coverUrl: cover ?? undefined } });
+      const r = await api<{ room: { id: string } }>('/live', { body: { type, title: title.trim(), coverUrl: cover ?? undefined, seatCount: Number(seats) } });
       router.replace({ pathname: '/live/[id]', params: { id: r.room.id } });
     } catch (e) {
       toast(errorText(e), 'error');
@@ -51,6 +53,12 @@ export default function StartLive() {
           {cover ? <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Icon name="image" size={34} color={colors.textMuted} />}
           <View style={styles.coverEdit}><Icon name="camera" size={16} color={colors.ink} /></View>
         </PressBox>
+        {type === 'VOICE' ? (
+          <View style={{ gap: 6 }}>
+            <T v="label" color={colors.textMuted}>{t('live.seatCount')}</T>
+            <Tabs<'4' | '8' | '12'> value={seats} onChange={setSeats} options={[{ key: '4', label: '4' }, { key: '8', label: '8' }, { key: '12', label: '12' }]} />
+          </View>
+        ) : null}
         <Input value={title} onChangeText={setTitle} label={t('live.titleLabel')} placeholder={t('live.titlePlaceholder')} maxLength={60} />
         <View style={styles.tips}>
           <Icon name="shield" size={18} color={colors.ink} />
