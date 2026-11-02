@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad, palette, vipColor } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { CoinIcon, DiamondIcon } from './GiftIcon';
+import { fmtAlmaz } from '../lib/economy';
 
 /**
  * Nişanlar — vahid dizayn: hündürlük 22, tam yumru həb, solda tünd dairədə emblem, sağda mətn.
@@ -49,8 +50,29 @@ export function NobleBadge({ tier }: { tier?: string | null }) {
   return <Pill bg={c.bg} disc={c.disc} fg={c.fg} icon="crown" iconColor={tier === 'SAH' ? '#FFC23D' : colors.white} label={t(`noble.tiers.${tier}`)} />;
 }
 
+/** Mavi nişan — "Təsdiqlənmiş profil" (VIP ilə satılır) */
 export function VerifiedBadge({ size = 16, color = colors.diamond }: { size?: number; color?: string }) {
   return <Icon name="verified" size={size} color={color} />;
+}
+
+/** Yaşıl nişan — şəxsiyyət sənədi ilə təsdiqlənmiş kimlik (KYC). Mavi nişandan ayrıdır və satılmır */
+export function IdBadge({ size = 16 }: { size?: number }) {
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.online, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name="shield" size={size * 0.62} color={colors.white} />
+    </View>
+  );
+}
+
+/** Profildə: hər iki nişan mətnlə */
+export function TrustPills({ vip, id }: { vip?: boolean; id?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {vip ? <Pill bg={colors.skySoft} fg={colors.ink} disc={colors.diamond} icon="verified" label={t('trust.vipVerified')} /> : null}
+      {id ? <Pill bg={colors.onlineSoft} fg={colors.ink} disc={colors.online} icon="shield" label={t('trust.idVerified')} /> : null}
+    </>
+  );
 }
 
 export function HostBadge() {
@@ -82,11 +104,12 @@ export function CoinAmount({ n, size = 16, color = colors.ink }: { n: number | s
   );
 }
 
-export function DiamondAmount({ n, size = 16, color = colors.ink }: { n: number | string; size?: number; color?: string }) {
+/** Almaz miqdarı: `n` — serverin daxili vahidi (10 = 1 Almaz), burada Almaz kimi göstərilir */
+export function DiamondAmount({ n, size = 16, color = colors.ink }: { n: number; size?: number; color?: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <DiamondIcon size={size} />
-      <Text style={{ ...noPad, color, fontFamily: fonts.black, fontSize: size * 0.9, lineHeight: Math.round(size * 1.1) }}>{n}</Text>
+      <Text style={{ ...noPad, color, fontFamily: fonts.black, fontSize: size * 0.9, lineHeight: Math.round(size * 1.1) }}>{fmtAlmaz(n)}</Text>
     </View>
   );
 }

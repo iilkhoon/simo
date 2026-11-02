@@ -29,7 +29,22 @@ export interface PublicUser {
   freeChat?: boolean;
   msgPrice?: number | null;
   joinedAt?: string;
+  /** Şəxsiyyət sənədi ilə təsdiqlənib (KYC) — ayrıca yaşıl nişan. `verified` — VIP ilə gələn mavi nişan */
+  idVerified?: boolean;
+  presence?: 'ONLINE' | 'OFFLINE' | 'BUSY' | 'AWAY';
+  /** Hazırda görüntülü/səsli zəng qəbul edirmi (ayarlar + zəng saatları) */
+  acceptVideo?: boolean;
+  acceptVoice?: boolean;
+  callHours?: CallHours | null;
+  extra?: ProfileExtra;
 }
+
+export interface CallHours { from: string; to: string; days?: number[] }
+export interface ProfileExtra {
+  heightCm?: number; education?: string; job?: string; smoking?: string; drinking?: string; kids?: string;
+  personality?: string; comm?: string[]; activeTimes?: string[]; dateIdeas?: string[]; music?: string[]; wantsToEarn?: boolean;
+}
+export type NotifPrefs = Partial<Record<'messages' | 'calls' | 'likes' | 'follows' | 'visits' | 'subscriptions' | 'lives' | 'offers' | 'smart', boolean>>;
 
 export interface VipPlan {
   tier: Exclude<VipTier, 'NONE'>;
@@ -57,7 +72,15 @@ export interface Me extends PublicUser {
   role: 'USER' | 'ADMIN';
   hostStatus: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   coins: number;
+  /** Almaz balansı (daxili vahid, 10 = 1 Almaz) */
   diamonds: number;
+  /** Alınmış Almaz — yalnız Almaz hədiyyələrinə, nağdlaşmır */
+  diamondsBought?: number;
+  notifPrefs?: NotifPrefs;
+  presenceSetting?: 'AUTO' | 'ACTIVE' | 'BUSY' | 'AWAY';
+  callHoursSetting?: CallHours | null;
+  acceptVideoSetting?: boolean;
+  acceptVoiceSetting?: boolean;
   vipUntil: string | null;
   vip: VipPlan | null;
   incognito: boolean;

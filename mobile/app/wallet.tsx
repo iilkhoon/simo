@@ -1,5 +1,6 @@
 import { firstBonus } from '@/lib/economy';
 import React, { useCallback, useEffect, useState } from 'react';
+import { fmtAlmaz } from '@/lib/economy';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad, radius } from '@/theme';
@@ -143,7 +144,7 @@ export default function Wallet() {
               <T v="bodyStrong" numberOfLines={1}>{t(`wallet.types.${h.type}`, { defaultValue: h.type })}</T>
               <T v="tiny" color={colors.textDim}>{timeAgo(h.createdAt)}</T>
             </View>
-            <Text style={[styles.histAmt, { color: h.amount > 0 ? colors.online : colors.ink }]}>{h.amount > 0 ? '+' : ''}{h.amount}</Text>
+            <Text style={[styles.histAmt, { color: h.amount > 0 ? colors.online : colors.ink }]}>{h.amount > 0 ? '+' : ''}{h.currency === 'DIAMOND' ? fmtAlmaz(h.amount) : h.amount}</Text>
             {h.currency === 'COIN' ? <CoinIcon size={16} /> : <DiamondIcon size={16} />}
           </View>
         ))}

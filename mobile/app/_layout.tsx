@@ -1,6 +1,7 @@
 import '@/i18n';
 import React, { useEffect } from 'react';
-import { Stack, router, useSegments } from 'expo-router';
+import { Stack, router, usePathname, useSegments } from 'expo-router';
+import { trackScreen } from '@/lib/track';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -113,6 +114,9 @@ export default function RootLayout() {
   const authed = useStore((s) => s.authed);
   useRealtime(authed);
   useAuthGate();
+  // Alqoritm üçün: hansı ekranlara baxılır
+  const pathname = usePathname();
+  useEffect(() => { if (authed && pathname) trackScreen(pathname); }, [authed, pathname]);
   if (!fontsReady) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>

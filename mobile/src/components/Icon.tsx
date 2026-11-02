@@ -8,7 +8,7 @@ const MAP = {
   call: 'call', videocam: 'videocam', videocamOff: 'videocam-off', mic: 'mic', micOff: 'mic-off', send: 'send',
   image: 'image', camera: 'camera', flip: 'camera-reverse', location: 'location', settings: 'settings-outline',
   wallet: 'wallet', diamond: 'diamond', crown: 'ribbon', trophy: 'trophy', eye: 'eye', bell: 'notifications',
-  people: 'people', business: 'business', add: 'add', addCircle: 'add-circle', checkmark: 'checkmark',
+  people: 'people', business: 'business', add: 'add', remove: 'remove', addCircle: 'add-circle', checkmark: 'checkmark',
   verified: 'checkmark-circle', shield: 'shield-checkmark', flag: 'flag', ban: 'ban', share: 'share-social',
   copy: 'copy-outline', logout: 'log-out-outline', trash: 'trash-outline', language: 'language', filter: 'options',
   sparkles: 'sparkles', calendar: 'calendar', more: 'ellipsis-horizontal', speaker: 'volume-high', speakerOff: 'volume-mute',

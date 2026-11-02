@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { fmtAlmaz } from '@/lib/economy';
 import { Alert, Dimensions, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, Share } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
@@ -487,7 +488,7 @@ export default function LiveRoom() {
                 {([
                   [t('live.duration'), duration(summary.durationSec), colors.card],
                   [t('live.peak'), String(summary.peakViewers), colors.brandSoft],
-                  [t('live.earned'), `💎 ${summary.diamonds}`, colors.diamondSoft],
+                  [t('live.earned'), `💎 ${fmtAlmaz(summary.diamonds)}`, colors.diamondSoft],
                   [t('live.likes'), compact(summary.likes), colors.coinSoft],
                 ] as const).map(([k, v, bg]) => (
                   <Box key={k} r={16} sh={0} bg={bg} style={{ width: '47%' }} inner={styles.stat}>

@@ -86,7 +86,7 @@ export default function MeTab() {
         </PressBox>
         <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
           <T v="label">{t('common.diamonds')}</T>
-          <DiamondAmount n={me.diamonds.toLocaleString('en-US')} size={24} />
+          <DiamondAmount n={me.diamonds} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
         </PressBox>
       </View>

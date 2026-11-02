@@ -1,8 +1,9 @@
 /** Backend `src/economy.ts` ilə eyni nisbətlər (göstərmək üçün; hesablamanı server edir) */
 export const ECON = {
-  /** Ləl → Nar mübadiləsi 1:1 */
+  /** Almaz: 1 Almaz = 0.10 ₼ = 10 Nar. Server balansı daxili vahidlə verir: 10 vahid = 1 Almaz */
+  almazUnit: 10,
   diamondsPerCoin: 1,
-  /** 100 Ləl = 1 ₼ */
+  /** 100 vahid (10 Almaz) = 1 ₼ */
   diamondsPerAzn: 100,
   minWithdrawDiamonds: 5000,
   withdrawFeeRate: 0.03,
@@ -19,7 +20,15 @@ export const ECON = {
   maxVideoSec: 90,
 };
 
-/** Ləlin nağd dəyəri (₼), xidmət haqqı çıxılmaqla */
+/** Daxili vahid → Almaz (ekranda göstərmək üçün): 125 → "12.5", 5000 → "500" */
+export function fmtAlmaz(units: number): string {
+  const a = units / ECON.almazUnit;
+  return a.toLocaleString('en-US', { maximumFractionDigits: 1 });
+}
+/** İstifadəçinin yazdığı Almaz → daxili vahid */
+export const almazToUnits = (almaz: number) => Math.round(almaz * ECON.almazUnit);
+
+/** Almazın nağd dəyəri (₼, daxili vahiddən), xidmət haqqı çıxılmaqla */
 export function diamondsToAzn(d: number, afterFee = true): number {
   const gross = Math.floor((d * 100) / ECON.diamondsPerAzn);
   const net = afterFee ? gross - Math.ceil(gross * ECON.withdrawFeeRate) : gross;

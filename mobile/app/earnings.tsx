@@ -1,4 +1,4 @@
-import { ECON, diamondsToAzn } from '@/lib/economy';
+import { ECON, almazToUnits, diamondsToAzn, fmtAlmaz } from '@/lib/economy';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -27,10 +27,10 @@ export default function Earnings() {
   const [video, setVideo] = useState(String(me?.videoCallPrice ?? 60));
   const [voice, setVoice] = useState(String(me?.voiceCallPrice ?? 30));
 
-  const [wallet, setWallet] = useState<{ held: number } | null>(null);
+  const [wallet, setWallet] = useState<{ held: number; withdrawable: number } | null>(null);
   const load = useCallback(() => {
     void api<{ items: W[] }>('/wallet/withdrawals').then((r) => setList(r.items)).catch(() => {});
-    void api<{ held: number }>('/wallet').then(setWallet).catch(() => {});
+    void api<{ held: number; withdrawable: number }>('/wallet').then(setWallet).catch(() => {});
   }, []);
   useEffect(load, [load]);
   if (!me) return null;
@@ -39,7 +39,7 @@ export default function Earnings() {
   async function withdraw() {
     setBusy(true);
     try {
-      await api('/wallet/withdraw', { body: { diamonds: Number(amount), method, account } });
+      await api('/wallet/withdraw', { body: { diamonds: almazToUnits(Number(amount)), method, account } });
       toast(t('earnings.sent'), 'success');
       setAmount('');
       setMe(await api<Me>('/me'));
@@ -53,7 +53,7 @@ export default function Earnings() {
 
   async function doExchange() {
     try {
-      setMe(await api<Me>('/wallet/exchange', { body: { diamonds: Number(exchange) } }));
+      setMe(await api<Me>('/wallet/exchange', { body: { diamonds: almazToUnits(Number(exchange)) } }));
       setExchange('');
       toast('✓', 'success');
     } catch (e) {
@@ -71,28 +71,30 @@ export default function Earnings() {
   }
 
   const held = wallet?.held ?? 0;
-  const available = Math.max(0, me.diamonds - held);
+  // Nağdlaşan: qazanılmış Almaz − gözləmədə (alınmış Almaz çıxmır) — daxili vahid
+  const available = wallet?.withdrawable ?? Math.max(0, me.diamonds - held);
+  const minAlmaz = ECON.minWithdrawDiamonds / ECON.almazUnit;
   const kycOk = me.kycStatus === 'APPROVED';
   const inAgency = !!me.agency || !!me.ownedAgency;
 
   return (
     <Screen scroll>
       <Header title={t('earnings.title')} />
-      {/* Ləl kartı: tünd premium, qırmızı yaqut */}
+      {/* Almaz kartı: tünd premium */}
       <View style={styles.hero}>
         <View style={styles.heroGlow} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <DiamondIcon size={56} />
           <View style={{ flex: 1 }}>
             <T v="label" color={colors.nightMuted}>{t('earnings.diamonds')}</T>
-            <Text style={styles.heroNum} numberOfLines={1}>{me.diamonds.toLocaleString('en-US')}</Text>
+            <Text style={styles.heroNum} numberOfLines={1}>{fmtAlmaz(me.diamonds)}</Text>
           </View>
           <View style={styles.cash}><Text style={styles.cashText}>≈ {diamondsToAzn(me.diamonds, false).toFixed(2)} ₼</Text></View>
         </View>
         <View style={styles.split}>
-          <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.available')}</T><Text style={styles.splitNum}>{available.toLocaleString('en-US')}</Text></View>
+          <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.available')}</T><Text style={styles.splitNum}>{fmtAlmaz(available)}</Text></View>
           <View style={styles.splitDivider} />
-          <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.held', { n: ECON.withdrawHoldDays })}</T><Text style={styles.splitNum}>{held.toLocaleString('en-US')}</Text></View>
+          <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.held', { n: ECON.withdrawHoldDays })}</T><Text style={styles.splitNum}>{fmtAlmaz(held)}</Text></View>
         </View>
       </View>
 
@@ -132,27 +134,27 @@ export default function Earnings() {
 
       <Card style={styles.block}>
         <Text style={font.h3}>{t('earnings.exchange')}</Text>
-        <Text style={font.small}>{t('earnings.exchangeSub', { rate: ECON.diamondsPerCoin })}</Text>
+        <Text style={font.small}>{t('earnings.exchangeSub', { rate: ECON.almazUnit })}</Text>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
-          <View style={{ flex: 1 }}><Input value={exchange} onChangeText={(v) => setExchange(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="100" /></View>
-          <Btn full={false} size="lg" kind="coin" iconRight={<CoinIcon size={18} />} title={`${Math.floor(Number(exchange || 0) / ECON.diamondsPerCoin)}`} onPress={doExchange} />
+          <View style={{ flex: 1 }}><Input value={exchange} onChangeText={(v) => setExchange(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="10" /></View>
+          <Btn full={false} size="lg" kind="coin" iconRight={<CoinIcon size={18} />} title={`${almazToUnits(Number(exchange || 0))}`} onPress={doExchange} />
         </View>
       </Card>
 
       <Card style={styles.block}>
         <Text style={font.h3}>{t('earnings.withdraw')}</Text>
         <View style={styles.rules}>
-          {[t('earnings.min', { n: ECON.minWithdrawDiamonds }), `${ECON.diamondsPerAzn} ${t('common.diamonds')} = 1 ₼`, t('earnings.fee', { n: ECON.withdrawFeeRate * 100 }), t('earnings.weekly'), t('earnings.kycRule')].map((r) => (
+          {[t('earnings.min', { n: minAlmaz }), `${ECON.diamondsPerAzn / ECON.almazUnit} ${t('common.diamonds')} = 1 ₼`, t('earnings.fee', { n: ECON.withdrawFeeRate * 100 }), t('earnings.weekly'), t('earnings.kycRule')].map((r) => (
             <View key={r} style={styles.rule}><Icon name="checkmark" size={13} color={colors.online} /><T v="tiny" color={colors.textMuted}>{r}</T></View>
           ))}
         </View>
-        <Input label={t('earnings.amount')} value={amount} onChangeText={(v) => setAmount(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder={String(ECON.minWithdrawDiamonds)} />
+        <Input label={t('earnings.amount')} value={amount} onChangeText={(v) => setAmount(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder={String(minAlmaz)} />
         <T v="label" color={colors.textMuted}>{t('earnings.method')}</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {METHODS.filter((m) => m !== 'AGENCY' || me.agency).map((m) => <Chip key={m} label={t(`earnings.methods.${m}`)} active={method === m} onPress={() => setMethod(m)} />)}
         </View>
         <Input label={t('earnings.account')} value={account} onChangeText={setAccount} placeholder="4169 •••• •••• ••••" />
-        <Btn title={`${t('earnings.withdraw')}${amount ? ` · ${diamondsToAzn(Number(amount)).toFixed(2)} ₼` : ''}`} loading={busy} disabled={!kycOk || Number(amount) < ECON.minWithdrawDiamonds || account.length < 4 || Number(amount) > available} onPress={withdraw} />
+        <Btn title={`${t('earnings.withdraw')}${amount ? ` · ${diamondsToAzn(almazToUnits(Number(amount))).toFixed(2)} ₼` : ''}`} loading={busy} disabled={!kycOk || Number(amount) < minAlmaz || account.length < 4 || almazToUnits(Number(amount)) > available} onPress={withdraw} />
       </Card>
 
       {list.length ? (
@@ -163,7 +165,7 @@ export default function Earnings() {
               <View key={w.id} style={styles.row}>
                 <View style={{ flex: 1 }}>
                   <Text style={font.body}>{(w.amountQepik / 100).toFixed(2)} ₼ · {t(`earnings.methods.${w.method}`)}</Text>
-                  <Text style={font.tiny}>{timeAgo(w.createdAt)} · {w.diamonds} {t('common.diamonds')}</Text>
+                  <Text style={font.tiny}>{timeAgo(w.createdAt)} · {fmtAlmaz(w.diamonds)} {t('common.diamonds')}</Text>
                 </View>
                 <Tag label={t(`earnings.status.${w.status}`)} bg={w.status === 'PAID' ? colors.onlineSoft : w.status === 'REJECTED' ? colors.brandSoft : colors.coinSoft} />
               </View>

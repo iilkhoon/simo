@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { fmtAlmaz } from '@/lib/economy';
 import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -107,7 +108,7 @@ export function HostPanel({ visible, onClose, roomId, video }: { visible: boolea
           </View>
           <View style={styles.earned}>
             <View style={styles.earnedItem}><CoinIcon size={22} /><Text style={styles.earnedNum}>{compact(s?.giftsCoins ?? 0)}</Text><T v="tiny" color={colors.nightMuted}>{t('livePanel.giftsValue')}</T></View>
-            <View style={styles.earnedItem}><DiamondIcon size={22} /><Text style={styles.earnedNum}>{compact(s?.diamonds ?? 0)}</Text><T v="tiny" color={colors.nightMuted}>{t('livePanel.earned')}</T></View>
+            <View style={styles.earnedItem}><DiamondIcon size={22} /><Text style={styles.earnedNum}>{fmtAlmaz(s?.diamonds ?? 0)}</Text><T v="tiny" color={colors.nightMuted}>{t('livePanel.earned')}</T></View>
           </View>
           {video ? (
             <View style={{ gap: 8 }}>
