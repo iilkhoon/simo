@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coin yüklə — Simo</title>
+  <meta name="theme-color" content="#F2344F">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .pk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+    .pk { cursor: pointer; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; color: var(--ink); font: inherit; }
+    .pk.sel { background: var(--saffron-soft); box-shadow: var(--sh-lg); outline: 3px solid var(--nar); outline-offset: 2px; }
+    .pk img { width: 34px; height: 34px; }
+    .pk b { font: 800 22px var(--display); letter-spacing: -0.04em; }
+    .pk small { color: var(--nar); font-weight: 700; min-height: 18px; }
+    .pk span { margin-top: 6px; font-weight: 800; }
+    .row { display: flex; gap: 10px; }
+    .row .input { flex: 1; }
+    @media (max-width: 480px) { .pk-list { grid-template-columns: 1fr 1fr; gap: 10px; } .pk b { font-size: 18px; } }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="logo" href="index.html"><img src="assets/logo.svg" alt="">simo</a>
+      <div class="grow"></div>
+      <div class="langs"><button data-lang="az">AZ</button><button data-lang="ru">RU</button><button data-lang="en">EN</button></div>
+    </div>
+  </header>
+  <main class="page">
+    <div class="narrow">
+      <a href="index.html" class="muted" data-i18n="tp.back">← Ana səhifə</a>
+      <h1 style="margin-top:14px;font-size:clamp(30px,6vw,48px)" data-i18n="tp.title">Coin yüklə</h1>
+      <p class="muted" style="margin-top:10px;font-size:17px" data-i18n="tp.sub">Simo ID-ni daxil et (Profil → ID) və paketi seç. Ödəniş Epoint vasitəsilə bank kartı ilə.</p>
+
+      <div id="status"></div>
+
+      <label class="field"><span data-i18n="tp.id">Simo ID</span>
+        <div class="row">
+          <input class="input" id="sid" inputmode="numeric" autocomplete="off" placeholder="123456" maxlength="10">
+          <button class="btn dark" id="find" data-i18n="tp.find">Tap</button>
+        </div>
+      </label>
+      <div id="who"></div>
+
+      <div id="pkWrap" class="hidden">
+        <h3 style="margin-top:28px" data-i18n="tp.pick">Paket seç</h3>
+        <div class="pk-list" id="pks"></div>
+        <button class="btn" id="pay" style="width:100%;margin-top:22px" disabled><span data-i18n="tp.pay">Ödə</span>&nbsp;<span id="sum"></span></button>
+        <p class="muted" style="margin-top:14px;font-size:13px" data-i18n="tp.secure">Ödəniş Epoint tərəfindən emal olunur. Kart məlumatları Simo-ya ötürülmür.</p>
+      </div>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script>
+  (function () {
+    const API = window.SIMO_API;
+    const t = (k, v) => window.SimoI18n.t(k, v);
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let user = null, pkgs = [], sel = null;
+
+    const q = new URLSearchParams(location.search);
+    function showStatus() {
+      const s = q.get('status');
+      if (s) $('#status').innerHTML = `<div class="notice ${s === 'success' ? 'ok' : 'err'}">${esc(t(s === 'success' ? 'tp.success' : 'tp.error'))}</div>`;
+    }
+
+    function renderPkgs() {
+      $('#pks').innerHTML = pkgs.map((p) => `
+        <button type="button" class="box pk ${sel === p.id ? 'sel' : ''}" data-id="${esc(p.id)}">
+          <img src="assets/coin.svg" alt="">
+          <b>${(p.coins + p.bonusCoins).toLocaleString('en-US')}</b>
+          <small>${p.bonusCoins ? esc(t('js.bonus', { n: p.bonusCoins })) : ''}</small>
+          <span>${(p.priceQepik / 100).toFixed(2)} ₼</span>
+        </button>`).join('');
+      const p = pkgs.find((x) => x.id === sel);
+      $('#sum').textContent = p ? `· ${(p.priceQepik / 100).toFixed(2)} ₼` : '';
+      $('#pay').disabled = !p || !user;
+    }
+
+    async function find() {
+      const id = $('#sid').value.replace(/\D/g, '');
+      if (!id) return;
+      $('#who').innerHTML = '';
+      user = null;
+      try {
+        const r = await fetch(`${API}/public/users/${id}`);
+        if (!r.ok) throw new Error();
+        user = await r.json();
+        $('#who').innerHTML = `<div class="box user-card"><div class="av" style="${user.avatarUrl ? `background-image:url('${esc(user.avatarUrl)}')` : ''}"></div><div><b style="font-size:18px">${esc(user.name)}</b><div class="muted">ID: ${esc(user.shortId)}</div></div></div>`;
+        $('#pkWrap').classList.remove('hidden');
+        if (!pkgs.length) {
+          const d = await fetch(`${API}/wallet/packages`).then((x) => x.json());
+          pkgs = d.items || [];
+          sel = (pkgs.find((x) => x.popular) || pkgs[0] || {}).id || null;
+        }
+        renderPkgs();
+      } catch (e) {
+        $('#who').innerHTML = `<div class="notice err">${esc(t('tp.notFound'))}</div>`;
+        $('#pkWrap').classList.add('hidden');
+      }
+    }
+
+    async function pay() {
+      if (!user || !sel) return;
+      $('#pay').disabled = true;
+      try {
+        const r = await fetch(`${API}/payments/epoint/web-checkout`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shortId: user.shortId, packageId: sel, language: window.SimoI18n.lang }),
+        });
+        const d = await r.json();
+        if (!r.ok || !d.redirectUrl) throw new Error(d.code || 'error');
+        location.href = d.redirectUrl;
+      } catch (e) {
+        $('#status').innerHTML = `<div class="notice err">${esc(t('tp.error'))}</div>`;
+        $('#pay').disabled = false;
+      }
+    }
+
+    $('#find').addEventListener('click', find);
+    $('#sid').addEventListener('keydown', (e) => { if (e.key === 'Enter') find(); });
+    $('#pks').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) { sel = b.dataset.id; renderPkgs(); } });
+    $('#pay').addEventListener('click', pay);
+    document.addEventListener('simo:lang', () => { showStatus(); if (pkgs.length) renderPkgs(); });
+    const pre = q.get('id');
+    if (pre) { $('#sid').value = pre; find(); }
+  })();
+  </script>
+</body>
+</html>

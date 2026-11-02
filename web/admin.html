@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Simo Admin</title>
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .shell { display: grid; grid-template-columns: 230px 1fr; gap: 24px; padding: 24px 0 60px; }
+    .side { display: grid; gap: 8px; align-content: start; position: sticky; top: 98px; }
+    .side button { text-align: left; height: 46px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 14px; background: var(--card); font: 700 15px var(--body); color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .side button.on { background: var(--ink); color: var(--paper); }
+    .side .n { min-width: 24px; height: 22px; border-radius: 11px; background: var(--nar); color: #fff; font-size: 12px; display: grid; place-items: center; padding: 0 6px; border: 1.5px solid var(--ink); }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .kpi { padding: 18px; }
+    .kpi b { display: block; font: 800 30px var(--display); letter-spacing: -0.04em; }
+    .kpi span { color: var(--ink2); font-size: 13px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); }
+    .tbl { border: 2px solid var(--ink); border-radius: 18px; overflow: auto; box-shadow: var(--sh); }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1.5px solid rgba(23,18,15,.12); font-size: 14px; vertical-align: middle; }
+    th { font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); background: var(--paper2); }
+    tr:last-child td { border-bottom: 0; }
+    .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mini { height: 32px; padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; font: 700 12px var(--body); cursor: pointer; background: var(--card); color: var(--ink); }
+    .mini.ok { background: var(--mint); color: #fff; }
+    .mini.no { background: var(--nar); color: #fff; }
+    .mini.dk { background: var(--ink); color: var(--paper); }
+    .ph { width: 64px; height: 80px; border-radius: 10px; border: 2px solid var(--ink); object-fit: cover; background: var(--lime); }
+    .av { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; background: var(--lime); }
+    .st { display: inline-block; padding: 2px 8px; border: 1.5px solid var(--ink); border-radius: 6px; font: 800 11px var(--body); }
+    .login { max-width: 420px; margin: 70px auto; padding: 28px; }
+    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar .input { max-width: 340px; height: 46px; font-size: 15px; }
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 99; }
+    @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } .side { position: static; grid-template-columns: repeat(2, 1fr); } .kpis { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="logo" href="index.html"><img src="assets/logo.svg" alt="">simo</a>
+      <span class="tag" style="background:var(--ink);color:var(--paper)">ADMIN</span>
+      <div class="grow"></div>
+      <button class="btn sm light hidden" id="logout">Çıxış</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <form class="box login hidden" id="loginForm">
+      <h2 style="font-size:28px">Admin girişi</h2>
+      <label class="field"><span>E-poçt</span><input class="input" id="em" type="email" autocomplete="username" required></label>
+      <label class="field"><span>Şifrə</span><input class="input" id="pw" type="password" autocomplete="current-password" required></label>
+      <button class="btn" style="width:100%;margin-top:20px">Daxil ol</button>
+      <div id="loginErr"></div>
+    </form>
+
+    <div class="shell hidden" id="app">
+      <aside class="side" id="side"></aside>
+      <main id="view"></main>
+    </div>
+  </div>
+  <div id="toast"></div>
+
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    const API = window.SIMO_API;
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+    const date = (d) => (d ? new Date(d).toLocaleString('az-AZ') : '');
+    let token = null;
+    try { token = sessionStorage.getItem('simo.admin'); } catch (e) { /* ignore */ }
+    let tab = 'stats', counts = {};
+
+    function toast(msg, ok = true) {
+      $('#toast').innerHTML = `<div class="notice ${ok ? 'ok' : 'err'}" style="box-shadow:var(--sh)">${esc(msg)}</div>`;
+      setTimeout(() => ($('#toast').innerHTML = ''), 2600);
+    }
+
+    async function api(path, body) {
+      const r = await fetch(API + path, {
+        method: body ? 'POST' : 'GET',
+        headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (r.status === 401 || r.status === 403) { logout(); throw new Error('AUTH'); }
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.code || 'ERROR');
+      return d;
+    }
+
+    function logout() {
+      token = null;
+      try { sessionStorage.removeItem('simo.admin'); } catch (e) { /* ignore */ }
+      $('#app').classList.add('hidden'); $('#logout').classList.add('hidden'); $('#loginForm').classList.remove('hidden');
+    }
+
+    $('#loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('#loginErr').innerHTML = '';
+      try {
+        const r = await fetch(`${API}/auth/email/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('#em').value, password: $('#pw').value }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error();
+        token = d.accessToken;
+        await api('/admin/stats');
+        try { sessionStorage.setItem('simo.admin', token); } catch (err) { /* ignore */ }
+        start();
+      } catch (err) {
+        token = null;
+        $('#loginForm').classList.remove('hidden');
+        $('#loginErr').innerHTML = '<div class="notice err">Giriş alınmadı və ya admin hüququ yoxdur</div>';
+      }
+    });
+    $('#logout').addEventListener('click', logout);
+
+    const TABS = [
+      ['stats', 'Statistika'], ['hosts', 'Host müraciətləri', 'pendingHosts'], ['users', 'İstifadəçilər'],
+      ['withdrawals', 'Pul çıxarışları', 'pendingWithdrawals'], ['reports', 'Şikayətlər', 'openReports'],
+      ['agencies', 'Agentliklər', 'pendingAgencies'], ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'],
+    ];
+    function side() {
+      $('#side').innerHTML = TABS.map(([k, l, c]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}${c && counts[c] ? `<span class="n">${counts[c]}</span>` : ''}</button>`).join('');
+    }
+    $('#side').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
+
+    const table = (head, rows) => `<div class="tbl"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('') || `<tr><td colspan="${head.length}" class="muted">Boşdur</td></tr>`}</tbody></table></div>`;
+    const userCell = (u) => `<div style="display:flex;gap:10px;align-items:center">${u.avatarUrl ? `<img class="av" src="${esc(u.avatarUrl)}" alt="">` : '<span class="av"></span>'}<div><b>${esc(u.name || '—')}</b><div class="muted" style="font-size:12px">ID ${esc(u.shortId)}</div></div></div>`;
+
+    const VIEWS = {
+      async stats() {
+        const s = await api('/admin/stats');
+        counts = s; side();
+        const k = [['İstifadəçi', fmt(s.users)], ['Yeni (24s)', fmt(s.newUsers)], ['Onlayn', fmt(s.online)], ['Hostlar', fmt(s.hosts)], ['Canlı yayın', fmt(s.lives)], ['Gəlir (24s)', `${s.revenueDayAzn.toFixed(2)} ₼`], ['Gəlir (30g)', `${s.revenueMonthAzn.toFixed(2)} ₼`], ['Gözləyən çıxarış', fmt(s.pendingWithdrawals)]];
+        const bg = ['var(--card)', 'var(--lime)', 'var(--mint-soft)', 'var(--saffron-soft)', 'var(--nar-soft)', 'var(--xazar-soft)', 'var(--saffron)', 'var(--lilac)'];
+        return `<h2 style="margin-bottom:18px">Statistika</h2><div class="kpis">${k.map(([l, v], i) => `<div class="box kpi" style="background:${bg[i]}"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+      },
+      async hosts() {
+        const { items } = await api('/admin/users?hostStatus=PENDING');
+        return `<h2 style="margin-bottom:18px">Host müraciətləri</h2>` + table(['İstifadəçi', 'Profil foto', 'Selfi', 'Tarix', ''], items.map((u) => `<tr>
+          <td>${userCell(u)}</td><td>${u.avatarUrl ? `<img class="ph" src="${esc(u.avatarUrl)}" alt="">` : ''}</td>
+          <td>${u.verificationUrl ? `<a href="${esc(u.verificationUrl)}" target="_blank" rel="noopener"><img class="ph" src="${esc(u.verificationUrl)}" alt=""></a>` : '—'}</td>
+          <td>${date(u.createdAt)}</td>
+          <td class="acts"><button class="mini ok" data-act="host" data-id="${u.id}" data-v="APPROVED">Təsdiq</button><button class="mini no" data-act="host" data-id="${u.id}" data-v="REJECTED">Rədd</button></td></tr>`));
+      },
+      async users() {
+        const q = $('#uq') ? $('#uq').value : '';
+        const { items } = await api(`/admin/users?q=${encodeURIComponent(q)}`);
+        return `<h2 style="margin-bottom:18px">İstifadəçilər</h2><div class="toolbar"><input class="input" id="uq" placeholder="Ad, telefon, e-poçt və ya ID" value="${esc(q)}"><button class="btn sm dark" data-act="search">Axtar</button></div>` +
+          table(['İstifadəçi', 'Əlaqə', 'Coin / Almaz', 'Status', ''], items.map((u) => `<tr>
+          <td>${userCell(u)}</td><td style="font-size:13px">${esc(u.phone || u.email || '')}</td>
+          <td>🪙 ${fmt(u.coins)}<br>💎 ${fmt(u.diamonds)}</td>
+          <td>${u.banned ? '<span class="st" style="background:var(--nar-soft)">BLOK</span> ' : ''}${u.hostStatus !== 'NONE' ? `<span class="st" style="background:var(--saffron-soft)">${esc(u.hostStatus)}</span> ` : ''}${u.verified ? '<span class="st" style="background:var(--xazar-soft)">✓</span>' : ''}${u.role === 'ADMIN' ? ' <span class="st">ADMIN</span>' : ''}</td>
+          <td class="acts"><button class="mini ${u.banned ? 'ok' : 'no'}" data-act="ban" data-id="${u.id}" data-v="${!u.banned}">${u.banned ? 'Blokdan çıxar' : 'Blokla'}</button><button class="mini" data-act="verify" data-id="${u.id}" data-v="${!u.verified}">${u.verified ? 'Təsdiqi götür' : 'Təsdiqlə'}</button><button class="mini dk" data-act="grant" data-id="${u.id}">+ Coin</button></td></tr>`));
+      },
+      async withdrawals() {
+        const { items } = await api('/admin/withdrawals');
+        return `<h2 style="margin-bottom:18px">Pul çıxarışları</h2>` + table(['İstifadəçi', 'Məbləğ', 'Üsul / hesab', 'Status', 'Tarix', ''], items.map((w) => `<tr>
+          <td>${userCell(w.user)}<div class="muted" style="font-size:12px">${esc(w.user.phone || '')}</div></td>
+          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">💎 ${fmt(w.diamonds)}</div></td>
+          <td>${esc(w.method)}<div style="font-size:13px">${esc(w.account)}</div></td><td><span class="st">${esc(w.status)}</span></td><td>${date(w.createdAt)}</td>
+          <td class="acts">${w.status === 'PENDING' ? `<button class="mini" data-act="wd" data-id="${w.id}" data-v="APPROVED">Təsdiq</button>` : ''}<button class="mini ok" data-act="wd" data-id="${w.id}" data-v="PAID">Ödənildi</button><button class="mini no" data-act="wd" data-id="${w.id}" data-v="REJECTED">Rədd</button></td></tr>`));
+      },
+      async reports() {
+        const { items } = await api('/admin/reports');
+        return `<h2 style="margin-bottom:18px">Şikayətlər</h2>` + table(['Hədəf', 'Səbəb', 'Qeyd', 'Tarix', ''], items.map((r) => `<tr>
+          <td><span class="st">${esc(r.targetType)}</span><div class="muted" style="font-size:12px">${esc(r.targetUserId)}</div></td><td><b>${esc(r.reason)}</b></td><td style="max-width:260px">${esc(r.details || '')}</td><td>${date(r.createdAt)}</td>
+          <td class="acts"><button class="mini ok" data-act="rep" data-id="${r.id}" data-v="RESOLVED">Həll et</button><button class="mini no" data-act="repban" data-id="${r.id}">Həll et + blokla</button><button class="mini" data-act="rep" data-id="${r.id}" data-v="DISMISSED">Rədd</button></td></tr>`));
+      },
+      async agencies() {
+        const { items } = await api('/admin/agencies');
+        return `<h2 style="margin-bottom:18px">Agentliklər</h2>` + table(['Agentlik', 'Sahib', 'Üzv', 'Komissiya', 'Status', ''], items.map((a) => `<tr>
+          <td><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${esc(a.code)}</div></td><td>${esc(a.owner?.name)} · ${esc(a.owner?.shortId)}</td><td>${fmt(a._count?.members)}</td><td>${Math.round(a.commissionRate * 100)}%</td><td><span class="st">${esc(a.status)}</span></td>
+          <td class="acts"><button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Aktiv et</button><button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">Dayandır</button></td></tr>`));
+      },
+      async payments() {
+        const { items } = await api('/admin/payments');
+        return `<h2 style="margin-bottom:18px">Ödənişlər</h2>` + table(['İstifadəçi', 'Paket', 'Məbləğ', 'Provayder', 'Status', 'Tarix'], items.map((p) => `<tr>
+          <td>${esc(p.user?.name)} · ${esc(p.user?.shortId)}</td><td>${esc(p.packageId)}</td><td>${(p.amountQepik / 100).toFixed(2)} ₼</td><td>${esc(p.provider)}</td><td><span class="st" style="background:${p.status === 'PAID' ? 'var(--mint-soft)' : p.status === 'FAILED' ? 'var(--nar-soft)' : 'var(--card)'}">${esc(p.status)}</span></td><td>${date(p.createdAt)}</td></tr>`));
+      },
+      async lives() {
+        const { items } = await api('/admin/lives');
+        return `<h2 style="margin-bottom:18px">Canlı yayınlar</h2>` + table(['Host', 'Başlıq', 'Növ', 'İzləyici', 'Başlayıb', ''], items.map((l) => `<tr>
+          <td>${esc(l.host?.name)} · ${esc(l.host?.shortId)}</td><td>${esc(l.title)}</td><td>${esc(l.type)}</td><td>${fmt(l.viewerCount)}</td><td>${date(l.startedAt)}</td>
+          <td><button class="mini no" data-act="endlive" data-id="${l.id}">Bitir</button></td></tr>`));
+      },
+    };
+
+    async function render() {
+      side();
+      $('#view').innerHTML = '<div class="muted">Yüklənir…</div>';
+      try { $('#view').innerHTML = await VIEWS[tab](); } catch (e) { if (e.message !== 'AUTH') $('#view').innerHTML = `<div class="notice err">Xəta: ${esc(e.message)}</div>`; }
+    }
+
+    $('#view').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const { act, id, v } = b.dataset;
+      try {
+        if (act === 'search') return render();
+        if (act === 'host') await api(`/admin/users/${id}`, { hostStatus: v });
+        if (act === 'ban') { if (!confirm('Əminsiniz?')) return; await api(`/admin/users/${id}`, { banned: v === 'true' }); }
+        if (act === 'verify') await api(`/admin/users/${id}`, { verified: v === 'true' });
+        if (act === 'grant') { const n = parseInt(prompt('Neçə coin?') || '', 10); if (!(n > 0)) return; await api(`/admin/users/${id}`, { grantCoins: n }); }
+        if (act === 'wd') { const note = v === 'REJECTED' ? (prompt('Səbəb (istifadəçiyə görünür)') || '') : ''; await api(`/admin/withdrawals/${id}`, { status: v, note }); }
+        if (act === 'rep') await api(`/admin/reports/${id}`, { status: v });
+        if (act === 'repban') { if (!confirm('İstifadəçi bloklansın?')) return; await api(`/admin/reports/${id}`, { status: 'RESOLVED', banUser: true }); }
+        if (act === 'ag') await api(`/admin/agencies/${id}`, { status: v });
+        if (act === 'endlive') { if (!confirm('Yayın bitirilsin?')) return; await api(`/admin/lives/${id}/end`, {}); }
+        toast('Yadda saxlanıldı');
+        counts = await api('/admin/stats');
+        render();
+      } catch (err) { if (err.message !== 'AUTH') toast(`Xəta: ${err.message}`, false); }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'uq') render(); });
+
+    async function start() {
+      $('#loginForm').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#logout').classList.remove('hidden');
+      try { counts = await api('/admin/stats'); } catch (e) { return; }
+      render();
+    }
+    if (token) start(); else logout();
+  })();
+  </script>
+</body>
+</html>

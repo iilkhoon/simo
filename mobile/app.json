@@ -6,8 +6,8 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#12071F",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F6F0E8",
     "primaryColor": "#FF4D8D",
     "description": "Simo — tanış ol, danış, sev. Görüntülü və səsli söhbət, canlı yayınlar, videolar.",
     "ios": {
@@ -34,7 +34,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#12071F"
+        "backgroundColor": "#F6F0E8"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -53,7 +53,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#12071F"
+      "backgroundColor": "#F6F0E8"
     },
     "plugins": [
       "expo-router",
@@ -62,10 +62,10 @@
       "expo-web-browser",
       "expo-font",
       "expo-iap",
-      ["expo-splash-screen", { "image": "./assets/splash.png", "imageWidth": 200, "backgroundColor": "#12071F" }],
+      ["expo-splash-screen", { "image": "./assets/splash.png", "imageWidth": 200, "backgroundColor": "#F6F0E8" }],
       ["expo-image-picker", { "photosPermission": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.", "cameraPermission": "Selfi və profil şəkli üçün kamera lazımdır." }],
       ["expo-location", { "locationWhenInUsePermission": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik." }],
-      ["expo-notifications", { "color": "#FF4D8D", "icon": "./assets/notification-icon.png" }],
+      ["expo-notifications", { "color": "#F2344F", "icon": "./assets/notification-icon.png" }],
       ["expo-video", { "supportsBackgroundPlayback": false, "supportsPictureInPicture": false }],
       ["expo-build-properties", { "android": { "minSdkVersion": 24 }, "ios": { "deploymentTarget": "16.4" } }]
     ],

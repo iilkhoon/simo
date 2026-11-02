@@ -106,7 +106,7 @@ export default async function paymentRoutes(app: FastifyInstance) {
     const target = `simo://payment-result?status=${encodeURIComponent(q.status)}&order=${encodeURIComponent(q.order)}`;
     return reply
       .type('text/html')
-      .send(`<!doctype html><meta name="viewport" content="width=device-width"><body style="background:#14081f;color:#fff;font-family:sans-serif;text-align:center;padding-top:30vh"><p>Simo…</p><script>location.href=${JSON.stringify(target)}</script><a style="color:#ff5e8e" href="${target}">Simo</a></body>`);
+      .send(`<!doctype html><meta name="viewport" content="width=device-width"><body style="background:#F6F0E8;color:#17120F;font-family:sans-serif;text-align:center;padding-top:30vh"><p style="font-weight:800;font-size:22px">Simo…</p><script>location.href=${JSON.stringify(target)}</script><a style="display:inline-block;margin-top:12px;padding:12px 22px;border:2px solid #17120F;border-radius:999px;background:#F2344F;color:#fff;font-weight:700;text-decoration:none;box-shadow:3px 3px 0 #17120F" href="${target}">Simo</a></body>`);
   });
 
   app.get('/payments/:id/status', { preHandler: requireAuth }, async (req) => {

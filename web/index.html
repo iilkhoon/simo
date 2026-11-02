@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simo — Tanış ol. Danış. Sev.</title>
+  <meta name="description" content="Simo — Azərbaycanın tanışlıq, video zəng və canlı yayın tətbiqi. Video tanışlıq, səsli otaqlar, hədiyyələr, VIP.">
+  <meta name="theme-color" content="#F2344F">
+  <meta property="og:title" content="Simo — Tanış ol. Danış. Sev.">
+  <meta property="og:description" content="Video tanışlıq, səsli otaqlar, canlı yayın və hədiyyələr — hamısı bir tətbiqdə.">
+  <meta property="og:image" content="assets/app-icon.png">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/app-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="logo" href="#"><img src="assets/logo.svg" alt="">simo</a>
+      <nav id="menu">
+        <a href="#features" data-i18n="nav.features">İmkanlar</a>
+        <a href="#gifts" data-i18n="nav.gifts">Hədiyyələr</a>
+        <a href="#coins" data-i18n="nav.coins">Coin</a>
+        <a href="#hosts" data-i18n="nav.hosts">Hostlar</a>
+        <a href="#faq" data-i18n="nav.faq">Suallar</a>
+      </nav>
+      <div class="grow"></div>
+      <div class="langs" id="langs">
+        <button data-lang="az">AZ</button><button data-lang="ru">RU</button><button data-lang="en">EN</button>
+      </div>
+      <a class="btn sm" href="#download" data-i18n="nav.download">Yüklə</a>
+      <button class="burger" id="burger" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="tag" data-i18n="hero.kicker">🇦🇿 Azərbaycan üçün yaradıldı</span>
+        <h1 style="margin-top:18px"><span data-i18n="hero.t1">Tanış ol.</span><br><em data-i18n="hero.t2">Danış.</em> <span data-i18n="hero.t3">Sev.</span></h1>
+        <p class="lead" data-i18n="hero.lead">Bir toxunuşla təsadüfi video tanışlıq, səsli otaqlarda söhbət, canlı yayınlar və hədiyyələr. Yaxınlığındakı insanlarla real əlaqə qur.</p>
+        <div class="ctas">
+          <a class="btn" href="#download" data-i18n="hero.cta">Pulsuz yüklə</a>
+          <a class="btn light" href="#hosts" data-i18n="hero.cta2">Host ol, qazan</a>
+        </div>
+        <div class="stats">
+          <div class="box stat"><b>1:1</b><span data-i18n="hero.s1">video tanışlıq</span></div>
+          <div class="box stat" style="background:var(--saffron-soft)"><b>18+</b><span data-i18n="hero.s2">hədiyyə növü</span></div>
+          <div class="box stat" style="background:var(--xazar-soft)"><b>3</b><span data-i18n="hero.s3">dil: AZ · RU · EN</span></div>
+        </div>
+      </div>
+      <div class="phones" aria-hidden="true">
+        <div class="float f1"><img src="assets/gifts/rose.svg" alt=""></div>
+        <div class="float f2"><img src="assets/gifts/pomegranate.svg" alt=""></div>
+        <div class="float f3"><img src="assets/gifts/crown.svg" alt=""></div>
+        <div class="phone p1">
+          <div class="scr">
+            <div class="mini-quick"><div class="v">📹<br>Video<br>tanışlıq</div><div class="a">🎙<br>Səsli<br>tanışlıq</div></div>
+            <div class="mini-card"><span class="tag mini-live">● LIVE</span><div class="who">Axşam söhbəti ☕</div></div>
+            <div class="bubble th">Salam! Necəsən? 😊</div>
+            <div class="bubble me">Yaxşıyam, sən? 🌸</div>
+          </div>
+        </div>
+        <div class="phone p2">
+          <div class="scr">
+            <div class="host"><span class="dot"></span>Nigar · 1.2K</div>
+            <img class="bigift" src="assets/gifts/crown.svg" alt="">
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px">
+              <div class="cm"><b>Elvin</b> Gözəl səsin var 🎶</div>
+              <div class="cm g"><b>Murad</b> 🎁 Tac ×1</div>
+              <div class="cm"><b>Aysel</b> otağa daxil oldu</div>
+            </div>
+            <div class="gifts"><img src="assets/gifts/rose.svg" alt=""><img src="assets/gifts/heart.svg" alt=""><img src="assets/gifts/kiss.svg" alt=""><img src="assets/gifts/tea.svg" alt=""></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div><span class="label" data-i18n="f.label">İmkanlar</span><h2 data-i18n="f.title">Hər şey bir tətbiqdə</h2></div>
+        <p data-i18n="f.sub">Tanışlıq tətbiqi, canlı yayın platforması və messencerin ən yaxşı tərəfləri — sadə, təhlükəsiz və əyləncəli.</p>
+      </div>
+      <div class="features">
+        <div class="box feature big reveal"><div class="ic">📹</div><h3 data-i18n="f.1t">Təsadüfi video tanışlıq</h3><p class="muted" data-i18n="f.1d">Bir düymə — və artıq onlayn biri ilə üz-üzəsən. Bəyənmədin? "Növbəti" de. Səsli rejim də var: kamera olmadan, yalnız səs.</p></div>
+        <div class="box feature reveal"><div class="ic">🎙</div><h3 data-i18n="f.2t">Səsli otaqlar</h3><p class="muted" data-i18n="f.2d">8 nəfərlik otaqlarda karaoke, muğam, söhbət. Oturacağa keç və danış.</p></div>
+        <div class="box feature reveal"><div class="ic">🔴</div><h3 data-i18n="f.3t">Canlı yayın</h3><p class="muted" data-i18n="f.3d">Yayına çıx, izləyicilərlə danış, hədiyyələr qəbul et.</p></div>
+        <div class="box feature reveal"><div class="ic">💬</div><h3 data-i18n="f.4t">Çat və zənglər</h3><p class="muted" data-i18n="f.4d">Mesajlar, şəkillər, görüntülü və səsli zənglər — hamısı tətbiqin içində.</p></div>
+        <div class="box feature reveal"><div class="ic">📍</div><h3 data-i18n="f.5t">Yaxınlıqdakılar</h3><p class="muted" data-i18n="f.5d">Səndən bir neçə km uzaqlıqdakı insanları kəşf et.</p></div>
+        <div class="box feature reveal"><div class="ic">🎬</div><h3 data-i18n="f.6t">Qısa videolar</h3><p class="muted" data-i18n="f.6d">Lent kimi sürüşdür, bəyən, şərh yaz, sevdiyin yaradıcıya hədiyyə göndər.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gifts" class="band">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div><span class="label" data-i18n="g.label">Hədiyyələr</span><h2 data-i18n="g.title">Sözlə yox, hədiyyə ilə de</h2></div>
+        <p data-i18n="g.sub">Qızılgüldən Qız qalasına qədər — böyük hədiyyələr bütün otağa animasiya ilə göstərilir.</p>
+      </div>
+      <div class="gift-grid" id="giftGrid"></div>
+    </div>
+  </section>
+
+  <section id="coins">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div><span class="label" data-i18n="c.label">Simo Coin</span><h2 data-i18n="c.title">Coin paketləri</h2></div>
+        <p data-i18n="c.sub">Coin ilə mesaj yaz, zəng et, hədiyyə göndər və VIP al. Qiymətlər manatla.</p>
+      </div>
+      <div class="box x2 reveal"><i>×2</i><span data-i18n="c.x2">İlk yükləmədə istənilən paketin coinləri ikiqat!</span></div>
+      <div class="packages" id="packages"></div>
+      <p class="muted" style="margin-top:18px;font-size:14px"><span data-i18n="c.note">Huawei istifadəçiləri və saytdan ödəniş üçün:</span> <a href="topup.html" data-i18n="c.topup">Coin yüklə (Simo ID ilə) →</a></p>
+    </div>
+  </section>
+
+  <section id="vip" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div><span class="label" data-i18n="v.label">VIP</span><h2 data-i18n="v.title">Hamıdan öndə ol</h2></div>
+        <p data-i18n="v.sub">Pulsuz mesajlar, zəng endirimləri, səni bəyənənləri görmək və daha çoxu.</p>
+      </div>
+      <div class="vip">
+        <div class="box tier silver reveal"><h3 data-i18n="v.s">Gümüş</h3><div class="p">500 🪙</div><ul><li data-i18n="v.s1">Gündə 10 pulsuz mesaj</li><li data-i18n="v.s2">Zənglərə 5% endirim</li><li data-i18n="v.s3">Limitsiz bəyənmə</li></ul></div>
+        <div class="box tier gold reveal"><span class="tag" style="background:var(--nar);color:#fff;align-self:flex-start" data-i18n="v.best">Ən sərfəli</span><h3 data-i18n="v.g">Qızıl</h3><div class="p">1200 🪙</div><ul><li data-i18n="v.g1">Gündə 30 pulsuz mesaj</li><li data-i18n="v.g2">Zənglərə 10% endirim</li><li data-i18n="v.g3">Səni bəyənənləri gör</li><li data-i18n="v.g4">Görünməz rejim</li></ul></div>
+        <div class="box tier diamond reveal"><h3 data-i18n="v.d">Almaz</h3><div class="p">3000 🪙</div><ul><li data-i18n="v.d1">Gündə 100 pulsuz mesaj</li><li data-i18n="v.d2">Zənglərə 20% endirim</li><li data-i18n="v.d3">Otağa xüsusi giriş effekti</li><li data-i18n="v.d4">Kəşfdə 1.5× çox görün</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hosts" style="background:var(--nar-soft);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div><span class="label" data-i18n="h.label">Hostlar üçün</span><h2 data-i18n="h.title">Söhbət et — qazan</h2></div>
+        <p data-i18n="h.sub">Təsdiqlənmiş hostlar mesaj, zəng və hədiyyələrdən almaz qazanır və onu manata çevirir.</p>
+      </div>
+      <div class="hosts">
+        <div class="box calc reveal">
+          <h3 data-i18n="h.calc">Qazanc kalkulyatoru</h3>
+          <label><span data-i18n="h.msgs">Gündəlik mesajlar</span><span id="vMsg">40</span></label>
+          <input type="range" id="rMsg" min="0" max="300" value="40">
+          <label><span data-i18n="h.mins">Gündəlik zəng dəqiqələri</span><span id="vMin">30</span></label>
+          <input type="range" id="rMin" min="0" max="300" value="30">
+          <label><span data-i18n="h.gifts">Gündəlik hədiyyələr (coin)</span><span id="vGift">300</span></label>
+          <input type="range" id="rGift" min="0" max="5000" step="50" value="300">
+          <div class="out"><span data-i18n="h.month">Təxmini aylıq qazanc</span><b id="calcOut">0 ₼</b><small class="muted" data-i18n="h.disclaimer">Təxmini hesablamadır; real qazanc aktivlikdən asılıdır.</small></div>
+        </div>
+        <div class="steps">
+          <div class="box step reveal"><i>1</i><div><h3 data-i18n="h.s1t">Profil yarat</h3><p class="muted" data-i18n="h.s1d">Gözəl şəkillər əlavə et və profilini doldur.</p></div></div>
+          <div class="box step reveal"><i>2</i><div><h3 data-i18n="h.s2t">Selfi ilə təsdiqlən</h3><p class="muted" data-i18n="h.s2d">Real insan olduğunu təsdiqlə — saxta profillərə yer yoxdur.</p></div></div>
+          <div class="box step reveal"><i>3</i><div><h3 data-i18n="h.s3t">Söhbət et və qazan</h3><p class="muted" data-i18n="h.s3d">Gələn hər mesaj, zəng dəqiqəsi və hədiyyədən almaz yığılır.</p></div></div>
+          <div class="box step reveal"><i>4</i><div><h3 data-i18n="h.s4t">Nağdlaşdır</h3><p class="muted" data-i18n="h.s4d">100 almaz = 1 ₼. Bank kartı, m10 və ya eManat ilə çıxar.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="agency">
+    <div class="wrap agency">
+      <div class="reveal">
+        <span class="label" data-i18n="a.label">Agentliklər</span>
+        <h2 data-i18n="a.title">Komandanı qur, birlikdə qazanın</h2>
+        <p class="muted" style="margin-top:16px;font-size:17px" data-i18n="a.sub">Agentlik açın, hostları dəvət edin və onların qazancından əlavə komissiya alın. Komissiya platformanın payından ödənir — hostun qazancı azalmır.</p>
+      </div>
+      <div class="box reveal"><div class="ag-num">10%</div><p data-i18n="a.box">agentlik komissiyası — hər hostun almaz qazancından, əlavə olaraq.</p></div>
+    </div>
+  </section>
+
+  <section id="safety" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal"><div><span class="label" data-i18n="s.label">Təhlükəsizlik</span><h2 data-i18n="s.title">Rahat ünsiyyət üçün</h2></div></div>
+      <div class="safety">
+        <div class="box reveal"><span class="ic">✅</span><b data-i18n="s.1t">Təsdiqlənmiş hostlar</b><p class="muted" data-i18n="s.1d">Selfi yoxlaması ilə real insanlar.</p></div>
+        <div class="box reveal" style="background:var(--xazar-soft)"><span class="ic">🔒</span><b data-i18n="s.2t">Gizli məlumatlar</b><p class="muted" data-i18n="s.2d">Telefon nömrələri və linklər çatda avtomatik gizlədilir.</p></div>
+        <div class="box reveal" style="background:var(--saffron-soft)"><span class="ic">🚫</span><b data-i18n="s.3t">Blok və şikayət</b><p class="muted" data-i18n="s.3d">İstənilən istifadəçini bir toxunuşla blokla.</p></div>
+        <div class="box reveal" style="background:var(--mint-soft)"><span class="ic">🔞</span><b data-i18n="s.4t">Yalnız 18+</b><p class="muted" data-i18n="s.4d">Moderasiya 7/24 işləyir.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head reveal"><div><span class="label" data-i18n="q.label">Suallar</span><h2 data-i18n="q.title">Tez-tez verilən suallar</h2></div></div>
+      <div class="faq">
+        <details class="box"><summary data-i18n="q.1q">Simo pulsuzdur?</summary><p data-i18n="q.1a">Bəli. Qeydiyyat, kəşf, bəyənmə və uyğunluqlar pulsuzdur. Hostlara mesaj, ödənişli zəng və hədiyyələr üçün coin lazımdır.</p></details>
+        <details class="box"><summary data-i18n="q.2q">Coini necə alım?</summary><p data-i18n="q.2a">Tətbiqdə App Store və ya Google Play ilə. Huawei cihazlarında və saytda Epoint ilə bank kartı vasitəsilə ödəyə bilərsiniz.</p></details>
+        <details class="box"><summary data-i18n="q.3q">Host necə ola bilərəm?</summary><p data-i18n="q.3a">Profilində "Host ol və qazan" bölməsinə keç, selfi ilə təsdiqlən. Təsdiqdən sonra mesaj, zəng və hədiyyələrdən almaz qazanmağa başlayırsan.</p></details>
+        <details class="box"><summary data-i18n="q.4q">Qazancı necə nağdlaşdırım?</summary><p data-i18n="q.4a">Minimum 5000 almaz (50 ₼). Müraciət 1–3 iş günü ərzində bank kartına, m10 və ya eManat hesabına köçürülür.</p></details>
+        <details class="box"><summary data-i18n="q.5q">Video tanışlıq necə işləyir?</summary><p data-i18n="q.5a">"Video tanışlıq" düyməsini bas — sistem hazırda onlayn və boş olan birini tapır. Zəng et və ya "Növbəti" de. Ödəniş yalnız qarşı tərəf qəbul edəndən sonra başlayır.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="cta" style="padding-top:0">
+    <div class="wrap">
+      <div class="box">
+        <h2 data-i18n="d.title">Simo-nu indi yüklə</h2>
+        <p data-i18n="d.sub">Qeydiyyatda 50 coin hədiyyə və ilk yükləmədə ×2 bonus.</p>
+        <div class="stores">
+          <a class="store" href="#" data-store="ios"><svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.6-1-2.6-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg><span><small>App Store</small><b data-i18n="d.ios">iPhone üçün</b></span></a>
+          <a class="store" href="#" data-store="android"><svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.3.3-.4.7-.4 1.2v17c0 .5.1.9.4 1.2l9.5-9.7zM14.4 13.3l2.8 2.9-11.4 6.5zM17.2 7.8l-2.8 2.9L5.8 1.3zM18.6 8.6l3 1.7c.9.5.9 1.3 0 1.8l-3 1.7-3-3.1z"/></svg><span><small>Google Play</small><b data-i18n="d.android">Android üçün</b></span></a>
+          <a class="store" href="#" data-store="huawei"><svg viewBox="0 0 24 24"><path d="M12 3c-1.5 2-2 4.2-1.2 7.2L12 15l1.2-4.8C14 7.2 13.5 5 12 3zM4 8.5c.4 2.5 1.6 4.4 4.2 6l4 2.4-3.1-3.9C7.3 10.7 5.8 9.4 4 8.5zm16 0c-1.8.9-3.3 2.2-5.1 4.5l-3.1 3.9 4-2.4c2.6-1.6 3.8-3.5 4.2-6zM2.5 14.5c1.2 1.8 3 2.8 5.8 3l4.2.2-4.2-2c-2-.9-3.8-1.3-5.8-1.2zm19 0c-2-.1-3.8.3-5.8 1.2l-4.2 2 4.2-.2c2.8-.2 4.6-1.2 5.8-3z"/></svg><span><small>AppGallery</small><b data-i18n="d.huawei">Huawei üçün</b></span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <a class="logo" href="#"><img src="assets/logo.svg" alt="">simo</a>
+        <small>© <span id="year"></span> Simo · Bakı, Azərbaycan · support@simo.az</small>
+      </div>
+      <nav>
+        <a href="topup.html" data-i18n="ft.topup">Coin yüklə</a>
+        <a href="terms.html" data-i18n="ft.terms">İstifadə şərtləri</a>
+        <a href="privacy.html" data-i18n="ft.privacy">Məxfilik siyasəti</a>
+        <a href="mailto:support@simo.az" data-i18n="ft.support">Dəstək</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
