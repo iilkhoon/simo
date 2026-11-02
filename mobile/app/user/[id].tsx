@@ -12,7 +12,9 @@ import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { ActionSheet } from '@/components/ActionSheet';
-import { HostBadge, LevelBadge, VerifiedBadge, VipBadge, NobleBadge, ProfileBadge } from '@/components/Badges';
+import { HostBadge, IdBadge, LevelBadge, TrustPills, VerifiedBadge, VipBadge, NobleBadge, ProfileBadge } from '@/components/Badges';
+import { ProfileServices } from '@/components/Services';
+import { startView } from '@/lib/track';
 import { api } from '@/lib/api';
 import { compact, errorText, timeAgo } from '@/lib/format';
 import { startCall } from '@/lib/calls';
@@ -56,6 +58,8 @@ export default function UserProfile() {
   useEffect(() => {
     void load();
   }, [load]);
+  // Alqoritm üçün: profilə nə qədər baxıldı
+  useEffect(() => (isMe || !id ? undefined : startView('profile_view', id)), [id, isMe]);
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [badges, setBadges] = useState<{ key: string; label?: string; value?: number }[]>([]);
@@ -143,15 +147,17 @@ export default function UserProfile() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <T v="h1" style={{ flexShrink: 1 }}>{u.name}{u.age ? `, ${u.age}` : ''}</T>
               {u.verified ? <VerifiedBadge size={24} /> : null}
+              {u.idVerified ? <IdBadge size={22} /> : null}
             </View>
             <T v="small" color={colors.textMuted} style={{ marginTop: 2 }}>
               {t('common.id', { id: u.shortId })}
-              {!u.online && u.lastSeenAt ? ` · ${t('profile.lastSeen', { t: timeAgo(u.lastSeenAt) })}` : ''}
+              {u.presence === 'BUSY' || u.presence === 'AWAY' ? ` · ${t(`callSettings.short.${u.presence}`)}` : !u.online && u.lastSeenAt ? ` · ${t('profile.lastSeen', { t: timeAgo(u.lastSeenAt) })}` : ''}
               {u.city ? ` · ${u.city}` : ''}
             </T>
           </View>
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {u.isHost ? <HostBadge /> : null}
+            <TrustPills vip={u.verified} id={u.idVerified} />
             <NobleBadge tier={u.nobleTier} />
             <VipBadge tier={u.vipTier} />
             <LevelBadge kind="wealth" level={u.wealthLevel} />
@@ -195,6 +201,8 @@ export default function UserProfile() {
               ) : null}
             </View>
           </Card>
+          <AboutCard u={u} />
+          <ProfileServices userId={u.id} />
           {p.giftWall.length ? (
             <Card r={20} sh={3} bg={colors.coinSoft}>
               <View style={styles.section}>
@@ -235,14 +243,14 @@ export default function UserProfile() {
         <View style={[styles.bar, { paddingBottom: insets.bottom + 10 }]}>
           <IconBtn name="chat" size={52} sh={1} bg={colors.bgSunken} onPress={message} />
           <IconBtn name="gift" size={52} sh={1} bg={colors.coin} onPress={() => setGiftOpen(true)} />
-          <PressBox style={{ flex: 1 }} r={26} sh={0} bg={colors.diamond} onPress={() => void startCall(u.id, 'VOICE')} inner={styles.callBtn}>
+          <PressBox style={[{ flex: 1 }, u.acceptVoice === false && { opacity: 0.45 }]} r={26} sh={0} bg={colors.diamond} onPress={() => (u.acceptVoice === false ? toast(t('callSettings.voiceOff'), 'info') : void startCall(u.id, 'VOICE'))} inner={styles.callBtn}>
             <Icon name="call" size={19} color={colors.white} />
             <View style={styles.callCol}>
               <Text style={styles.callTitle} numberOfLines={1}>{t('match.voice')}</Text>
               {u.isHost ? <Text style={styles.callPrice} numberOfLines={1}>{u.voiceCallPrice}/{t('match.min')}</Text> : null}
             </View>
           </PressBox>
-          <PressBox style={{ flex: 1 }} r={26} sh={0} bg={colors.brand} onPress={() => void startCall(u.id, 'VIDEO')} inner={styles.callBtn}>
+          <PressBox style={[{ flex: 1 }, u.acceptVideo === false && { opacity: 0.45 }]} r={26} sh={0} bg={colors.brand} onPress={() => (u.acceptVideo === false ? toast(t('callSettings.videoOff'), 'info') : void startCall(u.id, 'VIDEO'))} inner={styles.callBtn}>
             <Icon name="videocam" size={20} color={colors.white} />
             <View style={styles.callCol}>
               <Text style={styles.callTitle} numberOfLines={1}>{t('match.video')}</Text>
@@ -276,7 +284,39 @@ export default function UserProfile() {
   );
 }
 
+/** Onboarding-in opsional cavabları: boy, təhsil, iş, vərdişlər, ünsiyyət üslubu, aktiv saatlar, görüş və musiqi */
+function AboutCard({ u }: { u: PublicUser }) {
+  const { t } = useTranslation();
+  const x = u.extra ?? {};
+  const facts: [string, string][] = [];
+  if (x.heightCm) facts.push(['📏', t('ob.heightVal', { n: x.heightCm })]);
+  if (x.education) facts.push(['🎓', t(`ob.educations.${x.education}`)]);
+  if (x.job) facts.push(['💼', x.job]);
+  if (x.smoking) facts.push(['🚬', `${t('ob.smoking')}: ${t(`ob.habits.${x.smoking}`)}`]);
+  if (x.drinking) facts.push(['🍷', `${t('ob.drinking')}: ${t(`ob.habits.${x.drinking}`)}`]);
+  if (x.kids) facts.push(['👶', `${t('ob.kids')}: ${t(`ob.kidsOpts.${x.kids}`)}`]);
+  if (x.personality) facts.push(['✨', t(`ob.personalities.${x.personality}`)]);
+  (x.comm ?? []).forEach((c) => facts.push(['💬', t(`ob.commOpts.${c}`)]));
+  (x.activeTimes ?? []).forEach((c) => facts.push(['🕒', t(`ob.times.${c}`)]));
+  (x.dateIdeas ?? []).forEach((c) => facts.push(['💞', t(`ob.ideas.${c}`)]));
+  (x.music ?? []).forEach((c) => facts.push(['🎵', t(`ob.musics.${c}`)]));
+  if (u.callHours) facts.push(['📞', t('callSettings.hoursInfo', { from: u.callHours.from, to: u.callHours.to })]);
+  if (!facts.length) return null;
+  return (
+    <Card r={20} sh={3}>
+      <View style={styles.section}>
+        <T v="label" color={colors.brand}>{t('profile2.more')}</T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {facts.map(([e, l], i) => <View key={i} style={styles.fact}><Text style={styles.factText}>{e} {l}</Text></View>)}
+        </View>
+      </View>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  fact: { height: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: colors.bgSunken, justifyContent: 'center' },
+  factText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.ink },
   subCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.night, borderRadius: radius.lg, padding: 14 },
   topBar: { flexDirection: 'row', alignItems: 'center' },
   dots: { position: 'absolute', top: 12, left: 14, right: 14, flexDirection: 'row', gap: 4 },

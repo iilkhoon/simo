@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTabSpace } from '@/components/Glass';
-import { Animated, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions, type ListViewToken } from 'react-native';
+import { Alert, Animated, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions, type ListViewToken } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
@@ -25,6 +25,18 @@ interface Video {
   id: string; url: string; thumbnailUrl: string | null; caption: string; views: number; likesCount: number;
   commentsCount: number; giftsCoins: number; createdAt: string; user: PublicUser; liked: boolean; following: boolean;
   mediaType?: 'VIDEO' | 'PHOTO'; saved?: boolean; savesCount?: number; sharesCount?: number;
+  /** Xüsusi post: kilidlidirsə url yoxdur; demo (teaser) üçün bulanıq önizləmə */
+  locked?: boolean; teaser?: boolean; previewUrl?: string | null; hashtags?: string[]; location?: string; commentsOff?: boolean; mine?: boolean;
+}
+
+/** Mətndə #heşteqlər toxunula bilən olur → heşteq səhifəsi */
+function RichCaption({ text, style }: { text: string; style: object }) {
+  const parts = text.split(/(#[\p{L}\d_]+)/gu);
+  return (
+    <Text style={style} numberOfLines={3}>
+      {parts.map((p, i) => (p.startsWith('#') ? <Text key={i} style={{ fontFamily: fonts.black, color: colors.coin }} onPress={() => router.push({ pathname: '/hashtag/[tag]', params: { tag: p.slice(1).toLowerCase() } })}>{p}</Text> : p))}
+    </Text>
+  );
 }
 
 /** İki dəfə toxunanda böyük ürək animasiyası */
@@ -67,44 +79,76 @@ function Player({ uri, active, height, onTap }: { uri: string; active: boolean; 
   );
 }
 
-function Comments({ video, onClose, onAdded }: { video: Video | null; onClose: () => void; onAdded: () => void }) {
+export function Comments({ video, onClose, onAdded }: { video: Video | null; onClose: () => void; onAdded: (delta: number) => void }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [items, setItems] = useState<{ id: string; text: string; createdAt: string; user: PublicUser | null }[]>([]);
+  const { me, toast } = useStore();
+  const [items, setItems] = useState<{ id: string; text: string; createdAt: string; userId?: string; user: PublicUser | null }[]>([]);
+  const [off, setOff] = useState(false);
   const [text, setText] = useState('');
+  const owner = !!video && video.user.id === me?.id;
   useEffect(() => {
     if (!video) return;
-    void api<{ items: typeof items }>(`/videos/${video.id}/comments`).then((r) => setItems(r.items)).catch(() => {});
+    setOff(!!video.commentsOff);
+    void api<{ items: typeof items; commentsOff: boolean }>(`/videos/${video.id}/comments`).then((r) => { setItems(r.items); setOff(r.commentsOff); }).catch(() => {});
   }, [video]);
   async function send() {
     if (!video || !text.trim()) return;
-    const r = await api<{ comment: (typeof items)[number] }>(`/videos/${video.id}/comments`, { body: { text } });
-    setItems((i) => [r.comment, ...i]);
-    setText('');
-    onAdded();
+    try {
+      const r = await api<{ comment: (typeof items)[number] }>(`/videos/${video.id}/comments`, { body: { text } });
+      setItems((i) => [r.comment, ...i]);
+      setText('');
+      onAdded(1);
+    } catch (e) { toast(errorText(e), 'error'); }
+  }
+  async function toggleOff() {
+    if (!video) return;
+    const next = !off;
+    setOff(next);
+    try { await api(`/videos/${video.id}`, { method: 'PATCH', body: { commentsOff: next } }); } catch (e) { setOff(!next); toast(errorText(e), 'error'); }
+  }
+  function remove(id: string) {
+    if (!video) return;
+    Alert.alert(t('comments2.delete'), '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('comments2.delete'), style: 'destructive', onPress: () => void api(`/videos/${video.id}/comments/${id}`, { method: 'DELETE' }).then(() => { setItems((i) => i.filter((c) => c.id !== id)); onAdded(-1); }).catch((e) => toast(errorText(e), 'error')) },
+    ]);
   }
   return (
     <Modal visible={!!video} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1 }} onPress={onClose} />
       <View style={[sheetStyles.sheet, styles.sheet, { paddingBottom: insets.bottom + 8 }]}>
         <View style={sheetStyles.grip} />
-        <Text style={styles.sheetTitle}>{t('videos.comments')} · {items.length}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[styles.sheetTitle, { flex: 1 }]}>{t('videos.comments')} · {items.length}</Text>
+          {owner ? (
+            <Pressable onPress={toggleOff} style={styles.offBtn}>
+              <Icon name={off ? 'lockOpen' : 'lock'} size={13} color={colors.ink} />
+              <Text style={styles.offText}>{off ? t('comments2.turnOn') : t('comments2.turnOff')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {off ? <View style={styles.offBanner}><Icon name="lock" size={14} color={colors.textMuted} /><Text style={styles.offBannerText}>{t('comments2.off')}</Text></View> : null}
+        {!items.length && !off ? <Text style={[styles.offBannerText, { textAlign: 'center', paddingVertical: 24 }]}>{t('comments2.empty')}</Text> : null}
         <FlatList
           data={items}
           keyExtractor={(c) => c.id}
           style={{ maxHeight: 380 }}
           renderItem={({ item }) => (
-            <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 8 }}>
+            <Pressable onLongPress={() => ((item.userId ?? item.user?.id) === me?.id || owner ? remove(item.id) : undefined)} delayLongPress={350} style={{ flexDirection: 'row', gap: 10, paddingVertical: 8 }}>
               <Avatar uri={item.user?.avatarUrl} name={item.user?.name} size={34} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.textMuted, fontSize: 12, fontFamily: fonts.semibold }}>{item.user?.name} · {timeAgo(item.createdAt)}</Text>
                 <Text style={{ color: colors.ink, marginTop: 2, fontFamily: fonts.regular, fontSize: 14.5 }}>{item.text}</Text>
               </View>
-            </View>
+              {(item.userId ?? item.user?.id) === me?.id || owner ? (
+                <Pressable onPress={() => remove(item.id)} hitSlop={10} style={{ paddingTop: 2 }}><Icon name="trash" size={15} color={colors.textDim} /></Pressable>
+              ) : null}
+            </Pressable>
           )}
         />
-        <View style={styles.inputRow}>
-          <TextInput value={text} onChangeText={setText} placeholder={t('videos.addComment')} placeholderTextColor={colors.textDim} style={styles.input} maxLength={300} />
+        <View style={[styles.inputRow, off && !owner && { opacity: 0.4 }]} pointerEvents={off && !owner ? 'none' : 'auto'}>
+          <TextInput value={text} onChangeText={setText} placeholder={off && !owner ? t('comments2.off') : t('comments2.placeholder')} placeholderTextColor={colors.textDim} style={styles.input} maxLength={300} />
           <Pressable onPress={send} style={styles.send}><Icon name="arrowUp" size={20} color={colors.white} /></Pressable>
         </View>
       </View>
@@ -238,7 +282,19 @@ export default function Videos() {
           renderItem={({ item, index }) => (
             <View style={{ height: H }}>
               <Pressable onPress={() => onDoubleTap(item)} style={{ height: H }}>
-                {item.mediaType === 'PHOTO' ? <Image source={{ uri: item.url }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Player uri={item.url} active={focused && index === active} height={H} onTap={() => onDoubleTap(item)} />}
+                {item.locked ? (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.night2 }]}>
+                    {item.previewUrl ? <Image source={{ uri: item.previewUrl }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={8} /> : null}
+                    <View style={styles.lockWrap}>
+                      <View style={styles.lockDisc}><Icon name="lock" size={30} color={colors.ink} /></View>
+                      <Text style={styles.lockTitle}>{t('post2.teaserLocked')}</Text>
+                      <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: item.user.id, tab: 'private' } })} style={styles.lockBtn}>
+                        <Icon name="star" size={16} color={colors.ink} />
+                        <Text style={styles.lockBtnText}>{t('posts.subscribe', { price: item.user.privatePrice ?? '' })}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : item.mediaType === 'PHOTO' ? <Image source={{ uri: item.url }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Player uri={item.url} active={focused && index === active} height={H} onTap={() => onDoubleTap(item)} />}
                 {index === active ? <BigHeart k={heartKey} /> : null}
               </Pressable>
               <View style={[styles.side, { bottom: tabSpace + 12 }]}>
@@ -277,7 +333,8 @@ export default function Videos() {
                   {item.user.verified ? <Icon name="verified" size={15} color={colors.diamond} /> : null}
                   <Text style={styles.views}>· ▶ {compact(item.views)}</Text>
                 </View>
-                {item.caption ? <Text style={styles.captionText} numberOfLines={3}>{item.caption}</Text> : null}
+                {item.caption ? <RichCaption text={item.caption} style={styles.captionText} /> : null}
+                {item.location ? <View style={styles.locRow}><Icon name="location" size={12} color={colors.nightMuted} /><Text style={styles.locText} numberOfLines={1}>{item.location}</Text></View> : null}
               </View>
             </View>
           )}
@@ -287,10 +344,10 @@ export default function Videos() {
         <View style={{ width: 210 }}>
           <Tabs night value={tab} onChange={setTab} options={[{ key: 'following', label: t('videos.following') }, { key: 'foryou', label: t('videos.forYou') }]} />
         </View>
-        <IconBtn name="add" size={40} bg={colors.brand} color={colors.white} style={styles.upload} onPress={() => router.push({ pathname: '/video/upload', params: { type: 'VIDEO' } })} />
+        <IconBtn name="search" size={40} bg="rgba(255,255,255,0.16)" color={colors.white} style={styles.upload} onPress={() => router.push('/hashtag')} />
       </View>
       <GiftOverlay ref={overlay} />
-      <Comments video={commentsFor} onClose={() => setCommentsFor(null)} onAdded={() => commentsFor && patch(commentsFor.id, { commentsCount: commentsFor.commentsCount + 1 })} />
+      <Comments video={commentsFor} onClose={() => setCommentsFor(null)} onAdded={(d) => commentsFor && patch(commentsFor.id, { commentsCount: Math.max(0, commentsFor.commentsCount + d) })} />
       {giftFor ? (
         <GiftSheet
           visible
@@ -324,6 +381,17 @@ const styles = StyleSheet.create({
   views: { color: colors.nightMuted, fontSize: 12, fontFamily: fonts.semibold },
   topBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   upload: { position: 'absolute', right: 12 },
+  lockWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: 'rgba(15,13,12,0.35)', paddingHorizontal: 30 },
+  lockDisc: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
+  lockTitle: { ...noPad, color: colors.white, fontFamily: fonts.display, fontSize: 17, lineHeight: 23, textAlign: 'center' },
+  lockBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 48, paddingHorizontal: 20, borderRadius: 24, backgroundColor: colors.coin },
+  lockBtnText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 14, lineHeight: 18 },
+  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
+  locText: { ...noPad, color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 12, lineHeight: 15, flexShrink: 1 },
+  offBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: colors.bgSunken },
+  offText: { ...noPad, color: colors.ink, fontFamily: fonts.bold, fontSize: 12, lineHeight: 15 },
+  offBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgSunken, borderRadius: 12, padding: 10, marginTop: 8 },
+  offBannerText: { ...noPad, color: colors.textMuted, fontFamily: fonts.semibold, fontSize: 13, lineHeight: 17 },
   sheet: { paddingTop: 10, paddingHorizontal: 16 },
   sheetTitle: { color: colors.ink, fontFamily: fonts.displayBold, fontSize: 16, textAlign: 'center', marginVertical: 8 },
   inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },

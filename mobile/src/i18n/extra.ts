@@ -79,6 +79,7 @@ const az = {
   },
   trust: { vipVerified: 'Təsdiqlənmiş profil', idVerified: 'Kimlik təsdiqlənib', vipInfo: 'Mavi nişan VIP ilə gəlir', idInfo: 'Yaşıl nişan sənədlə təsdiqdən keçənlərə verilir' },
   nearby2: { title: 'Yaxınlıqdakılar', subtitle: '{{n}} nəfər {{km}} km radiusda', onlineNow: 'İndi onlayn', empty: 'Yaxınlıqda hələ heç kim yoxdur', emptySub: 'Radiusu böyüt və ya bir az sonra yoxla', closest: 'Ən yaxın', here: 'Buradasan' },
+  calls2: { permTitle: 'Zənglər üçün icazə', permDesc: 'Simo zəngləri telefonun öz zəng ekranında göstərmək üçün icazə istəyir', channel: 'Simo zəngləri' },
   menu2: { services: 'Xidmətlərim', orders: 'Sifarişlər', callSettings: 'Zəng və status', notifSettings: 'Bildirişlər', taste: 'Alqoritm səni belə tanıyır' },
   profile2: { about: 'Haqqında', services: 'Xidmətlər', more: 'Ətraflı' },
   notifTypes: {
@@ -165,6 +166,7 @@ const ru: ExtraDict = {
   },
   trust: { vipVerified: 'Подтверждённый профиль', idVerified: 'Личность подтверждена', vipInfo: 'Синяя галочка входит в VIP', idInfo: 'Зелёный значок — для прошедших проверку документа' },
   nearby2: { title: 'Рядом', subtitle: '{{n}} чел. в радиусе {{km}} км', onlineNow: 'Сейчас онлайн', empty: 'Рядом пока никого', emptySub: 'Увеличь радиус или загляни позже', closest: 'Ближе всех', here: 'Ты здесь' },
+  calls2: { permTitle: 'Разрешение для звонков', permDesc: 'Simo просит разрешение показывать звонки на системном экране вызова', channel: 'Звонки Simo' },
   menu2: { services: 'Мои услуги', orders: 'Заказы', callSettings: 'Звонки и статус', notifSettings: 'Уведомления', taste: 'Как тебя знает алгоритм' },
   profile2: { about: 'О себе', services: 'Услуги', more: 'Подробнее' },
   notifTypes: {
@@ -248,6 +250,7 @@ const en: ExtraDict = {
   },
   trust: { vipVerified: 'Verified profile', idVerified: 'ID verified', vipInfo: 'The blue check comes with VIP', idInfo: 'The green badge is for people who verified an ID document' },
   nearby2: { title: 'Nearby', subtitle: '{{n}} people within {{km}} km', onlineNow: 'Online now', empty: 'Nobody nearby yet', emptySub: 'Increase the radius or check back later', closest: 'Closest', here: "You're here" },
+  calls2: { permTitle: 'Calls permission', permDesc: 'Simo wants to show calls on your phone\'s native call screen', channel: 'Simo calls' },
   menu2: { services: 'My services', orders: 'Orders', callSettings: 'Calls & status', notifSettings: 'Notifications', taste: 'How the algorithm sees you' },
   profile2: { about: 'About', services: 'Services', more: 'More' },
   notifTypes: {

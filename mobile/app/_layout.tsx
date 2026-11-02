@@ -2,6 +2,7 @@ import '@/i18n';
 import React, { useEffect } from 'react';
 import { Stack, router, usePathname, useSegments } from 'expo-router';
 import { trackScreen } from '@/lib/track';
+import { displayIncoming, endNative, registerCallPushTask, setupNativeCalls } from '@/lib/nativeCall';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -61,12 +62,15 @@ function useRealtime(authed: boolean) {
     };
     void refreshUnread();
     void registerPush();
+    void setupNativeCalls({ title: i18n.t('calls2.permTitle'), desc: i18n.t('calls2.permDesc'), cancel: i18n.t('common.cancel'), ok: 'OK', channel: i18n.t('calls2.channel') }).then(registerCallPushTask);
     void st().loadGifts();
     s.on('wallet:update', (p: { coins?: number }) => {
       if (typeof p.coins === 'number') st().patchMe({ coins: p.coins });
     });
-    s.on('call:incoming', (p: { call: Call; caller: PublicUser }) => st().setIncomingCall(p));
+    // Sistem zəng ekranı (CallKit / ConnectionService) göstərilə bilirsə — tətbiqdaxili modal açılmır
+    s.on('call:incoming', (p: { call: Call; caller: PublicUser }) => { if (!displayIncoming(p.call, p.caller)) st().setIncomingCall(p); });
     s.on('call:ended', (p: { callId: string }) => {
+      endNative(p.callId);
       if (st().incomingCall?.call.id === p.callId) st().setIncomingCall(null);
     });
     s.on('message:new', (m: Message) => {

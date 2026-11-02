@@ -127,6 +127,10 @@ export default function MeTab() {
         <MenuRow icon="business" label={t('me.agency')} tint={colors.lilac} value={me.agency?.name ?? me.ownedAgency?.name} onPress={() => router.push('/agency')} />
         <MenuRow icon="search" label={t('agency.browse')} tint={colors.skySoft} onPress={() => router.push('/agencies')} />
         <MenuRow icon="shield" label={t('kyc.title')} tint={colors.onlineSoft} value={t(`kyc.status.${me.kycStatus ?? 'NONE'}`)} onPress={() => router.push('/verify')} />
+        <MenuRow icon="cart" label={t('menu2.services')} tint={colors.highlight} onPress={() => router.push('/services')} />
+        <MenuRow icon="receipt" label={t('menu2.orders')} tint={colors.skySoft} onPress={() => router.push('/orders')} />
+        <MenuRow icon="call" label={t('menu2.callSettings')} tint={colors.brandSoft} value={t(`callSettings.presence.${me.presenceSetting ?? 'AUTO'}`)} onPress={() => router.push('/call-settings')} />
+        <MenuRow icon="bell" label={t('menu2.notifSettings')} tint={colors.lilac} onPress={() => router.push('/notif-settings')} />
         <MenuRow icon="bookmark" label={t('me.saved')} tint={colors.coinSoft} onPress={() => router.push('/saved')} />
         <MenuRow icon="video" label={t('me.myVideos')} tint={colors.brandSoft} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} />
         <MenuRow

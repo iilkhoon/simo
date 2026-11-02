@@ -22,8 +22,8 @@
         "NSLocationWhenInUseUsageDescription": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik.",
         "UIBackgroundModes": [
           "audio",
-          "voip",
-          "remote-notification"
+          "remote-notification",
+          "voip"
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -46,13 +46,20 @@
         "backgroundColor": "#F2344F"
       },
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BIND_TELECOM_CONNECTION_SERVICE",
         "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.CALL_PHONE",
+        "android.permission.CAMERA",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
+        "android.permission.MANAGE_OWN_CALLS",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_FULL_SCREEN_INTENT",
         "android.permission.VIBRATE",
         "com.android.vending.BILLING"
       ],
@@ -119,6 +126,13 @@
           "ios": {
             "deploymentTarget": "16.4"
           }
+        }
+      ],
+      "@config-plugins/react-native-callkeep",
+      [
+        "./plugins/withVoipPush",
+        {
+          "enabled": true
         }
       ]
     ],

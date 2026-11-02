@@ -7,7 +7,7 @@ import { callWindowOpen, presentUser, publicUserSelect } from '../lib/present.js
 import { ECONOMY, activeVip } from '../economy.js';
 import { rtcToken } from '../services/agora.js';
 import { emitToUser } from '../realtime/hub.js';
-import { notify } from '../services/notify.js';
+import { notify, pushIncomingCall } from '../services/notify.js';
 import { chargeMinute, clearRingTimeout, finishCall, scheduleRingTimeout } from '../services/calls.js';
 
 /** Hostun qiyməti köhnə (aşağı) dəyərdə qalıbsa, cari minimuma qaldırılır */
@@ -73,7 +73,10 @@ export default async function callRoutes(app: FastifyInstance) {
     const callerPublic = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { ...publicUserSelect, photos: true } });
     const payload = { call, caller: presentUser(callerPublic) };
     emitToUser(b.calleeId, 'call:incoming', payload);
-    void notify(b.calleeId, 'call', { actorId: me, store: false, pushIfOnline: false, body: `${caller.name} · ${b.type === 'VIDEO' ? '📹' : '📞'}`, data: { callId: call.id } }).catch(() => {});
+    // Sistem zəng ekranı (CallKit / ConnectionService); alınmasa — adi bildiriş
+    void pushIncomingCall(b.calleeId, { callId: call.id, type: b.type, callerName: caller.name, actorId: me })
+      .then((native) => (native ? undefined : notify(b.calleeId, 'call', { actorId: me, store: false, pushIfOnline: false, body: `${caller.name} · ${b.type === 'VIDEO' ? '📹' : '📞'}`, data: { callId: call.id } })))
+      .catch(() => {});
     const calleePublic = await prisma.user.findUniqueOrThrow({ where: { id: b.calleeId }, select: { ...publicUserSelect, photos: true } });
     return { call, peer: presentUser(calleePublic), rtc: rtcToken(call.channel, caller.shortId, true) };
   });

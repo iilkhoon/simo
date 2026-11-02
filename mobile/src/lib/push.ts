@@ -31,7 +31,7 @@ export async function registerPush() {
     if (status !== 'granted') return;
     const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
     const token = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
-    await api('/me/push-token', { method: 'PUT', body: { token } });
+    await api('/me/push-token', { method: 'PUT', body: { token, platform: Platform.OS === 'ios' ? 'ios' : 'android' } });
   } catch {
     /* push məcburi deyil */
   }

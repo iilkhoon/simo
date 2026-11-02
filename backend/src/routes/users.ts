@@ -221,8 +221,15 @@ export default async function userRoutes(app: FastifyInstance) {
   });
 
   app.put('/me/push-token', { preHandler: requireAuth }, async (req) => {
+    const b = z.object({ token: z.string().max(300), platform: z.enum(['ios', 'android']).optional() }).parse(req.body);
+    await prisma.user.update({ where: { id: uid(req) }, data: { pushToken: b.token, ...(b.platform ? { pushPlatform: b.platform } : {}) } });
+    return { ok: true };
+  });
+
+  /** iOS PushKit VoIP tokeni — gələn zəng tətbiq bağlı olanda da CallKit ekranında */
+  app.put('/me/voip-token', { preHandler: requireAuth }, async (req) => {
     const b = z.object({ token: z.string().max(300) }).parse(req.body);
-    await prisma.user.update({ where: { id: uid(req) }, data: { pushToken: b.token } });
+    await prisma.user.update({ where: { id: uid(req) }, data: { voipToken: b.token } });
     return { ok: true };
   });
 

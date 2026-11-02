@@ -1,4 +1,5 @@
 import { prisma } from '../db.js';
+import crypto from 'node:crypto';
 import { emitToUser, isOnline } from '../realtime/hub.js';
 
 const TITLES: Record<string, Record<string, string>> = {
@@ -43,7 +44,7 @@ const PREF: Record<string, string> = {
 const fill = (s: string, d: Record<string, unknown>) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => String(d[k] ?? ''));
 
 /** Expo Push API — iOS (APNs) və Android (FCM) üçün vahid */
-async function sendPush(token: string, title: string, body: string, data: Record<string, unknown>) {
+export async function sendPush(token: string, title: string, body: string, data: Record<string, unknown>) {
   if (!token.startsWith('ExponentPushToken')) return;
   try {
     await fetch('https://exp.host/--/api/v2/push/send', {
@@ -76,4 +77,31 @@ export async function notify(
   if (PREF[type] && prefs[PREF[type]] === false) return;
   const loc = ['az', 'ru', 'en'].includes(u.locale) ? u.locale : 'az';
   await sendPush(u.pushToken, fill(TITLES[type][loc], data), opts.body ?? fill(BODIES[type]?.[loc] ?? '', data), { type, ...data });
+}
+
+/**
+ * Gələn zəngi tətbiq bağlı olanda da sistem zəng ekranında göstərmək:
+ *  iOS — PushKit VoIP (APNs birbaşa) → CallKit;  Android — yüksək prioritetli data-push → ConnectionService (fon tapşırığı).
+ * Heç biri mümkün deyilsə — adi bildiriş. Qaytarır: native zəng push-u göndərildimi.
+ */
+export async function pushIncomingCall(userId: string, p: { callId: string; type: 'VIDEO' | 'VOICE'; callerName: string; actorId: string }) {
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { pushToken: true, pushPlatform: true, voipToken: true, notifPrefs: true } });
+  if (!u) return false;
+  if (((u.notifPrefs ?? {}) as Record<string, boolean>).calls === false) return false;
+  if (u.voipToken) {
+    const { sendVoip } = await import('./apns.js');
+    const uuid = crypto.randomUUID();
+    if (await sendVoip(u.voipToken, { uuid, callId: p.callId, callerName: p.callerName, hasVideo: p.type === 'VIDEO' })) return true;
+  }
+  if (u.pushToken && u.pushPlatform === 'android' && u.pushToken.startsWith('ExponentPushToken')) {
+    try {
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ to: u.pushToken, data: { type: 'call', callId: p.callId, callType: p.type, callerName: p.callerName }, priority: 'high', ttl: 30, _contentAvailable: true }),
+      });
+      return true;
+    } catch { /* adi bildirişə keç */ }
+  }
+  return false;
 }

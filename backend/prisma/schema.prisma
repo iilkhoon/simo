@@ -97,6 +97,10 @@ model User {
   incognito          Boolean    @default(false)
   locale             String     @default("az")
   pushToken          String?
+  /// Push tokeninin platforması: ios | android (zəng push-u üçün)
+  pushPlatform       String?
+  /// iOS PushKit VoIP tokeni — tətbiq bağlı olanda gələn zəng CallKit ekranında
+  voipToken          String?
   agencyId           String?
   agencyJoinedAt     DateTime?
   referralCode       String     @unique @default(cuid())

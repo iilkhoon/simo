@@ -26,6 +26,13 @@ export default function Notifications() {
     if (n.type === 'match' && n.data?.conversationId) router.push({ pathname: '/chat/[id]', params: { id: n.data.conversationId } });
     else if (n.type === 'live' && n.data?.roomId) router.push({ pathname: '/live/[id]', params: { id: n.data.roomId } });
     else if (n.type === 'gift' && n.data?.conversationId) router.push({ pathname: '/chat/[id]', params: { id: n.data.conversationId } });
+    else if (n.type === 'offer') router.push('/wallet');
+    else if (n.type === 'order') router.push({ pathname: '/orders', params: { as: 'seller' } });
+    else if (n.type === 'order_update') router.push('/orders');
+    else if (n.type === 'visit_digest') router.push('/visitors');
+    else if (n.type === 'like_digest') router.push('/likes');
+    else if (n.type === 'picks') router.push('/(tabs)');
+    else if ((n.type === 'comment' || n.type === 'post_live') && n.data?.videoId) router.push({ pathname: '/post/[id]', params: { id: String(n.data.videoId) } });
     else if (n.actor) router.push({ pathname: '/user/[id]', params: { id: n.actor.id } });
   }
 
@@ -44,7 +51,7 @@ export default function Notifications() {
               <View style={{ flex: 1 }}>
                 <Text style={font.body}>
                   <Text style={{ fontFamily: fonts.black }}>{item.actor?.name ?? 'Simo'} </Text>
-                  {t(`notifications.types.${item.type}`, { defaultValue: '' })}
+                  {t(`notifications.types.${item.type}`, { defaultValue: '' }) || t(`notifTypes.${item.type}`, { ...(item.data ?? {}), defaultValue: '' })}
                 </Text>
                 <Text style={font.tiny}>{timeAgo(item.createdAt)}</Text>
               </View>
