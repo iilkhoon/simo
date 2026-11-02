@@ -335,7 +335,7 @@ export default function LiveRoom() {
             <View style={[styles.emptySeat, { width: size, height: size, borderRadius: size }]}><Icon name="micOutline" size={22} color={colors.nightMuted} /></View>
           )}
           {talking ? <View style={styles.talkTag}><Icon name="mic" size={10} color={colors.white} /></View> : null}
-          {big ? <View style={styles.hostTag}><Text style={styles.hostTagText}>HOST</Text></View> : null}
+          {big ? <View style={styles.hostTag}><Text style={styles.hostTagText}>{t('tags.streamer')}</Text></View> : null}
         </View>
         <Text style={styles.seatName} numberOfLines={1}>{s.user ? s.user.name : `${t('live.seat')} ${s.seat}`}</Text>
       </Pressable>
@@ -395,7 +395,7 @@ export default function LiveRoom() {
         </View>
       </SafeAreaView>
       <View style={[styles.subTop, { top: insets.top + 60 }]} pointerEvents="none">
-        <Tag label={voice ? 'VOICE' : 'LIVE'} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
+        <Tag label={voice ? t('tags.voice') : t('tags.live')} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
         {room.title ? <GlassPill label={room.title} /> : null}
       </View>
       {pk && !voice ? <View style={[styles.pkWrap, { top: insets.top + 96 }]}><PkBar pk={pk} /></View> : null}

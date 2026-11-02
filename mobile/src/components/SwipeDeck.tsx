@@ -62,7 +62,6 @@ function Card({ user, myInterests }: { user: PublicUser; myInterests: string[] }
                 <Text style={styles.city} numberOfLines={1}>{user.city}</Text>
               </>
             ) : null}
-            {user.isHost ? <GlassPill label={t('profile.host')} icon="mic" bg={colors.brand} /> : null}
             {user.vipTier !== 'NONE' ? <GlassPill label={t(`vip.tiers.${user.vipTier}`)} icon="crown" bg={vipColor(user.vipTier).bg} color={vipColor(user.vipTier).fg} /> : null}
           </View>
           {user.bio ? <Text style={styles.bio} numberOfLines={1}>{user.bio}</Text> : null}
@@ -78,6 +77,7 @@ function Card({ user, myInterests }: { user: PublicUser; myInterests: string[] }
 }
 
 export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]; myInterests: string[]; onSwipe: (u: PublicUser, a: SwipeAction) => void }) {
+  const { t } = useTranslation();
   const pos = useRef(new Animated.ValueXY()).current;
   const usersRef = useRef(users);
   usersRef.current = users;
@@ -130,9 +130,9 @@ export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]
         {top ? (
           <Animated.View key={top.id} {...responder.panHandlers} style={[StyleSheet.absoluteFill, { transform: [{ translateX: pos.x }, { translateY: pos.y }, { rotate }] }]}>
             <Card user={top} myInterests={myInterests} />
-            <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}><Text style={[styles.stampText, { color: colors.white }]}>LIKE</Text></Animated.View>
-            <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOpacity }]}><Text style={[styles.stampText, { color: colors.ink }]}>NOPE</Text></Animated.View>
-            <Animated.View style={[styles.stamp, styles.stampSuper, { opacity: superOpacity }]}><Text style={[styles.stampText, { color: colors.ink }]}>SUPER</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampLike, { opacity: likeOpacity }]}><Text style={[styles.stampText, { color: colors.white }]}>{t('tags.like')}</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampNope, { opacity: nopeOpacity }]}><Text style={[styles.stampText, { color: colors.ink }]}>{t('tags.nope')}</Text></Animated.View>
+            <Animated.View style={[styles.stamp, styles.stampSuper, { opacity: superOpacity }]}><Text style={[styles.stampText, { color: colors.ink }]}>{t('tags.super')}</Text></Animated.View>
           </Animated.View>
         ) : null}
       </View>

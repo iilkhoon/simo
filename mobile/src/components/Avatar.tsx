@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -10,6 +11,7 @@ import { colors, fonts, tintFor, vipColor } from '../theme';
 export function Avatar({ uri, size = 48, online, vipTier, name, live, ring = true }: {
   uri?: string | null; size?: number; online?: boolean; vipTier?: string; name?: string; live?: boolean; ring?: boolean;
 }) {
+  const { t } = useTranslation();
   const vip = vipTier && vipTier !== 'NONE';
   const ringColor = ring ? (live ? colors.brand : vip ? vipColor(vipTier).bg : null) : null;
   const bw = size >= 64 ? 3 : size >= 36 ? 2 : 1.5;
@@ -29,7 +31,7 @@ export function Avatar({ uri, size = 48, online, vipTier, name, live, ring = tru
       {online && !live ? <View style={[styles.dot, { width: dot, height: dot, borderRadius: dot }]} /> : null}
       {live ? (
         <View style={styles.live}>
-          <Text style={styles.liveText}>LIVE</Text>
+          <Text style={styles.liveText}>{t('tags.live')}</Text>
         </View>
       ) : null}
     </View>

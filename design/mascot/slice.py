@@ -7,7 +7,8 @@ Fon (krem) künclərdən flood-fill ilə silinir, personaj kəsilib 512×512 kva
 """
 import sys, os
 from collections import deque
-from PIL import Image
+from PIL import Image, ImageFilter
+import numpy as np
 
 POSES = [
   'wave', 'love', 'wink', 'call', 'sing', 'gift',
@@ -31,7 +32,11 @@ def remove_bg(im, tol=12, edge=10):
     im = im.convert('RGBA'); w, h = im.size; px = im.load()
     bg = [px[0, 0], px[w - 1, 0], px[0, h - 1], px[w - 1, h - 1]]
     br = sum(c[0] for c in bg) // 4; bgc = sum(c[1] for c in bg) // 4; bb = sum(c[2] for c in bg) // 4
-    def near_bg(c): return abs(c[0] - br) + abs(c[1] - bgc) + abs(c[2] - bb) < tol * 3
+    # Hər sətrin fonu: sol və sağ kənar pikselinin ortası (qradiyent fon/döşəmə üçün)
+    rowbg = [tuple((px[2, y][k] + px[w - 3, y][k]) // 2 for k in range(3)) for y in range(h)]
+    def near_bg(c, y=None):
+        r0 = rowbg[y] if y is not None else (br, bgc, bb)
+        return abs(c[0] - r0[0]) + abs(c[1] - r0[1]) + abs(c[2] - r0[2]) < tol * 3
     seen = bytearray(w * h); q = deque()
     for x in range(w):
         q.append((x, 0, None)); q.append((x, h - 1, None))
@@ -41,11 +46,30 @@ def remove_bg(im, tol=12, edge=10):
         x, y, prev = q.popleft()
         if x < 0 or y < 0 or x >= w or y >= h or seen[y * w + x]: continue
         c = px[x, y]
-        if not near_bg(c): continue
+        if not near_bg(c, y): continue
         if prev is not None and abs(c[0] - prev[0]) + abs(c[1] - prev[1]) + abs(c[2] - prev[2]) > edge: continue
         seen[y * w + x] = 1
         px[x, y] = (c[0], c[1], c[2], 0)
         q.extend(((x + 1, y, c), (x - 1, y, c), (x, y + 1, c), (x, y - 1, c)))
+    # Qapalı fon boşluqları (qolla bədən arası): fona çox yaxın, bircins, kifayət qədər böyük hissələr
+    hole_tol = 7; seen2 = bytearray(w * h)
+    for sy in range(h):
+        for sx in range(w):
+            i0 = sy * w + sx
+            if seen2[i0] or px[sx, sy][3] == 0: continue
+            c0 = px[sx, sy]
+            if not (abs(c0[0] - br) + abs(c0[1] - bgc) + abs(c0[2] - bb) < hole_tol * 3): continue
+            comp = []; st = [(sx, sy)]; seen2[i0] = 1
+            while st:
+                x, y = st.pop(); comp.append((x, y))
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < w and 0 <= ny < h and not seen2[ny * w + nx]:
+                        c = px[nx, ny]
+                        if c[3] and abs(c[0] - br) + abs(c[1] - bgc) + abs(c[2] - bb) < hole_tol * 3:
+                            seen2[ny * w + nx] = 1; st.append((nx, ny))
+            if len(comp) >= 120:
+                for x, y in comp:
+                    c = px[x, y]; px[x, y] = (c[0], c[1], c[2], 0)
     # Ən böyük hissə (personaj) + kənara toxunmayan bəzəklər (konfetti, ?, notlar) qalır;
     # xananın kənarına toxunan kiçik hissələr qonşu xanadan düşən qırıntılardır — silinir
     lab = [0] * (w * h); best = (0, 0); cur = 0; edge_comp = set(); sizes = {}
@@ -67,6 +91,33 @@ def remove_bg(im, tol=12, edge=10):
             if px[x, y][3] and lab[y * w + x] not in keep: px[x, y] = (0, 0, 0, 0)
     return im
 
+def refine(im, band=4, lo=10, hi=70):
+    """Kənarı yumşaldır: fon zolağında alfa fon rəngindən uzaqlığa görə hesablanır,
+    rəng fondan "ayrılır" (defringe) — krem halo və pilləli kənar qalmır."""
+    a = np.asarray(im).astype(np.float32); rgb = a[..., :3]; al = a[..., 3] > 0
+    h, w = al.shape
+    corners = np.array([rgb[0, 0], rgb[0, w - 1], rgb[h - 1, 0], rgb[h - 1, w - 1]])
+    bg = corners.mean(0)
+    rowbg = ((rgb[:, 2] + rgb[:, w - 3]) / 2)[:, None, :]  # sətir fonu
+    bgmask = Image.fromarray((~al).astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(band * 2 + 1))
+    zone = (np.asarray(bgmask) > 0) & al
+    d = np.abs(rgb - rowbg).max(-1)
+    soft = np.clip((d - lo) / (hi - lo), 0, 1)
+    alpha = np.where(al, 1.0, 0.0); alpha[zone] = soft[zone]
+    # Kənar zolağında fondan tünd, boz pikselllər yerə düşən kölgədir — silinir
+    lum = rgb.mean(-1); sat = rgb.max(-1) - rgb.min(-1)
+    shadow = zone & (lum < rowbg.mean(-1) - 4) & (sat < bg.max() - bg.min() + 18) & (lum > 120)
+    alpha[shadow] = 0
+    # 1 px daxili eroziya: ən kənar piksel həmişə fonla qarışıqdır
+    er = np.asarray(Image.fromarray((al * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))) > 0
+    alpha = np.where(er, alpha, alpha * 0.35)
+    safe = np.maximum(alpha, 0.05)[..., None]
+    un = np.clip((rgb - (1 - safe) * rowbg) / safe, 0, 255)
+    rgb = np.where(zone[..., None], un, rgb)
+    al8 = Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
+    out = Image.fromarray(np.dstack([rgb, np.asarray(al8).astype(np.float32)]).astype(np.uint8), 'RGBA')
+    return out
+
 def main(path, cols, rows, poses=None):
     poses = poses or POSES
     os.makedirs(OUT, exist_ok=True)
@@ -76,7 +127,8 @@ def main(path, cols, rows, poses=None):
         for c in range(cols):
             if i >= len(poses): break
             cell = sheet.crop((int(c * cw), int(r * ch), int((c + 1) * cw), int((r + 1) * ch)))
-            cut = remove_bg(cell); bbox = cut.getbbox()
+            cell = cell.resize((cell.width * 2, cell.height * 2), Image.LANCZOS)
+            cut = refine(remove_bg(cell)); bbox = cut.getbbox()
             if bbox: cut = cut.crop(bbox)
             side = int(max(cut.size) * 1.08); canvas = Image.new('RGBA', (side, side), (0, 0, 0, 0))
             canvas.paste(cut, ((side - cut.width) // 2, side - cut.height - int(side * 0.02)), cut)

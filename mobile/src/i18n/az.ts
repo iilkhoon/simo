@@ -54,17 +54,17 @@ const az = {
     shopping: '🛍️ Alış-veriş', anime: '🌸 Anime', poetry: '✒️ Poeziya',
   },
   tabs: { home: 'Ana', feed: 'Akış', discover: 'Kəşf et', live: 'Canlı', videos: 'Videolar', chats: 'Mesajlar', me: 'Mən', profile: 'Profil' },
-  stories: { mine: 'Sənin story', new: 'Yeni story', pick: 'Foto və ya video seç', hint: '24 saat görünəcək', share: 'Paylaş', published: 'Story paylaşıldı ✨', reply: '{{name}}-ə yaz…' },
+  stories: { mine: 'Sənin hekayən', new: 'Yeni hekayə', pick: 'Foto və ya video seç', hint: '24 saat görünəcək', share: 'Paylaş', published: 'Hekayə paylaşıldı ✨', reply: '{{name}}-ə yaz…' },
   noble: { title: 'Zadəganlıq', sub: 'Status, hörmət və diqqət: otağa girişdə xüsusi effekt, profil çərçivəsi, rəngli çat qabarcığı və eksklüziv hədiyyələr.', until: '{{d}} tarixinədək aktivdir', days: 'gün', buy: 'Əldə et', extend: 'Uzat', tiers: { BEY: 'Bəy', XAN: 'Xan', SAH: 'Şah' } as Record<string, string>, perks: { frame: 'Profil çərçivəsi', badge: 'Status nişanı', entry: 'Giriş effekti', bubble: 'Rəngli çat qabarcığı', mount: 'Giriş nəqliyyatı', gifts: 'Eksklüziv hədiyyələr', top: 'Siyahılarda yuxarıda', antikick: 'Otaqdan çıxarılmır' } as Record<string, string> },
   badges: { tenure: '{{n}} il Simo-da', verified: 'Təsdiqlənib' },
   hostTasks: { title: 'Host olmaq yolu', ready: 'Hazırsan! Agentliyə müraciət et 🎉', progress: '{{done}}/{{total}} tamamlandı', sub: 'Tapşırıqları tamamla, sonra agentliyə müraciət et və qazanmağa başla.', items: { accountAge: 'Hesabı ən az {{n}} gün istifadə et', chatPartners: '{{n}} nəfərlə söhbət et', profile: 'Profili tamamla ({{n}} foto + haqqında)', firstPost: 'İlk postunu paylaş', kyc: 'Şəxsiyyətini təsdiqlə' } as Record<string, string> },
   kyc: { title: 'Şəxsiyyət təsdiqi', intro: 'Məlumatların yalnız təsdiq üçün istifadə olunur və şifrəli saxlanılır. Başqa istifadəçilər görmür.', firstName: 'Ad', lastName: 'Soyad', birth: 'Doğum tarixi', birthFormat: 'Tarixi GG.AA.İİİİ formatında yaz', docType: 'Sənəd', docs: { ID_CARD: 'Şəxsiyyət vəs.', PASSPORT: 'Pasport', DRIVER_LICENSE: 'Sürücülük' } as Record<string, string>, front: 'Sənədin ön üzü', back: 'Arxa üzü (istəyə görə)', selfie: 'Selfi', privacy: 'Göndərməklə məlumatlarının təsdiq məqsədilə emalına razılıq verirsən (Məxfilik siyasəti).', submit: 'Təsdiqə göndər', sent: 'Göndərildi. Adətən 24 saat ərzində yoxlanılır.', rejected: 'Əvvəlki müraciət rədd edildi', pending: 'Təsdiq gözləmədədir', pendingSub: 'Yoxlama adətən 24 saat çəkir. Nəticə barədə bildiriş gələcək.', approvedSub: 'Hesabın təsdiqlənib. Agentliyə qoşula və qazancını çıxara bilərsən.', status: { NONE: 'Təsdiqlənməyib', PENDING: 'Yoxlanılır', APPROVED: 'Təsdiqlənib ✓', REJECTED: 'Rədd edildi' } as Record<string, string> },
-  hostSettings: { title: 'Host parametrləri', msgPrice: 'Mesaj qiyməti (Nar)', msgPriceSub: 'Minimum {{min}} Nar. Maksimum qiymət şöhrət səviyyən artdıqca yüksəlir. Boş qoysan, agentliyin standart qiyməti işləyir.', agencyDefault: 'Agentlik standartı', freeChat: 'Mənə yazmaq pulsuzdur', freeChatSub: 'Açıq olsa, hamı sənə pulsuz yaza bilər (mesajlardan qazanc olmur).', private: 'Private content abunəsi', privateSub: 'Aylıq qiymət {{min}}–{{max}} Nar. Şöhrət səviyyəsi {{lv}}+ və şəxsiyyət təsdiqi tələb olunur. Abunəçilər private postlarını görür və sənə pulsuz yaza bilir.', privateOff: 'Bağlıdır', privateRules: 'Çılpaqlıq və açıq seksual məzmun qəti qadağandır — hesab bloklanır.' },
+  hostSettings: { title: 'Host parametrləri', msgPrice: 'Mesaj qiyməti (Nar)', msgPriceSub: 'Minimum {{min}} Nar. Maksimum qiymət şöhrət səviyyən artdıqca yüksəlir. Boş qoysan, agentliyin standart qiyməti işləyir.', agencyDefault: 'Agentlik standartı', freeChat: 'Mənə yazmaq pulsuzdur', freeChatSub: 'Açıq olsa, hamı sənə pulsuz yaza bilər (mesajlardan qazanc olmur).', private: 'Xüsusi məzmun abunəsi', privateSub: 'Aylıq qiymət {{min}}–{{max}} Nar. Şöhrət səviyyəsi {{lv}}+ və şəxsiyyət təsdiqi tələb olunur. Abunəçilər private postlarını görür və sənə pulsuz yaza bilir.', privateOff: 'Bağlıdır', privateRules: 'Çılpaqlıq və açıq seksual məzmun qəti qadağandır — hesab bloklanır.' },
   raffles: { title: 'Çəkilişlər', enter: 'Pulsuz qoşul', entered: 'Qoşuldun ✓', ends: 'Bitir: {{t}}', prize: '{{n}} Nar', entries: '{{n}} iştirakçı', share: 'Paylaş — şansını artır', won: 'Qazandın! 🎉', empty: 'Hazırda çəkiliş yoxdur', rules: 'İştirak pulsuzdur. Qaliblər təsadüfi seçilir, mükafat hədiyyə Nar kimi yazılır.' },
-  posts: { new: 'Yeni post', pickPhoto: 'Foto seç', maxLen: 'Maksimum {{n}} saniyə', tooLong: 'Video {{n}} saniyədən uzun ola bilməz', private: 'Private post', privateSub: 'Yalnız abunəçilərin görəcək', privateOff: 'Private üçün Host parametrlərində abunə qiyməti təyin et', noSaved: 'Hələ heç nə yadda saxlamamısan', likers: 'Bəyənənlər', seeLikers: '{{n}} nəfər bəyəndi — bax', posts: 'Postlar', privateTab: 'Private', subscribe: '{{price}} Nar / ay — abunə ol', subscribed: 'Abunəsən ✓', subscribeSub: 'Private foto və videolara giriş + pulsuz söhbət (30 gün)', locked: 'Bu post yalnız abunəçilər üçündür', empty: 'Hələ post yoxdur' },
+  posts: { new: 'Yeni post', pickPhoto: 'Foto seç', maxLen: 'Maksimum {{n}} saniyə', tooLong: 'Video {{n}} saniyədən uzun ola bilməz', private: 'Xüsusi post', privateSub: 'Yalnız abunəçilərin görəcək', privateOff: 'Xüsusi post üçün Host parametrlərində abunə qiyməti təyin et', noSaved: 'Hələ heç nə yadda saxlamamısan', likers: 'Bəyənənlər', seeLikers: '{{n}} nəfər bəyəndi — bax', posts: 'Postlar', privateTab: 'Xüsusi', subscribe: '{{price}} Nar / ay — abunə ol', subscribed: 'Abunəsən ✓', subscribeSub: 'Xüsusi foto və videolara giriş + pulsuz söhbət (30 gün)', locked: 'Bu post yalnız abunəçilər üçündür', empty: 'Hələ post yoxdur' },
   livePanel: { title: 'Yayın paneli', viewers: 'İzləyici', gifts: 'Hədiyyə', giftsValue: 'Hədiyyələr (Nar)', earned: 'Qazanc (Ləl)', requests: 'Qoşulmaq istəyənlər', noRequests: 'Hələ sorğu yoxdur', audio: 'Səs', video: 'Video', top: 'Top dəstəkçilər', newRequest: 'Yeni qoşulma sorğusu', invited: '{{name}} səni yayına dəvət edir', join: 'Qoşul', requestSent: 'Sorğu göndərildi' },
   pk: { invite: 'PK döyüşü', invited: '{{name}} səni PK döyüşünə çağırır ⚔️', rules: '5 dəqiqə. Ən çox hədiyyə toplayan qalib gəlir və bonus alır.', accept: 'Qəbul et', decline: 'İmtina', sent: 'PK dəvəti göndərildi', noLives: 'Hazırda başqa video yayın yoxdur', ended: 'Bitdi' },
-  create: { title: 'Yarat', video: 'Video', photo: 'Foto', story: 'Story', live: 'Canlı yayın', voice: 'Səsli otaq', private: 'Private' },
+  create: { title: 'Yarat', video: 'Video', photo: 'Foto', story: 'Hekayə', live: 'Canlı yayın', voice: 'Səsli otaq', private: 'Xüsusi' },
   discover: {
     shared: '{{n}} ortaq maraq', activeNow: 'İndi aktiv',
     title: 'Simo', daily: 'Günün 10 seçimi', dailySub: 'Sənin üçün xüsusi seçildi', nearby: 'Yaxınlıqda',
@@ -105,7 +105,7 @@ const az = {
     calling: 'Zəng edilir…', incomingVideo: 'Görüntülü zəng', incomingVoice: 'Səsli zəng', accept: 'Qəbul et',
     decline: 'Rədd et', end: 'Bitir', price: '{{price}} Nar/dəq', lowBalance: 'Balansın {{n}} dəqiqəyə çatır. Yüklə ki, söhbət kəsilməsin!',
     ended: 'Zəng bitdi', reasons: { NO_ANSWER: 'Cavab verilmədi', REJECTED: 'Zəng rədd edildi', INSUFFICIENT_COINS: 'Balans bitdi', HANGUP: 'Zəng bitdi', CANCELLED: 'Zəng ləğv edildi', DISCONNECTED: 'Bağlantı kəsildi' },
-    rtcMissing: 'Zəng modulu bu versiyada aktiv deyil (development build lazımdır)',
+    rtcMissing: 'Zənglər və canlı yayın yalnız mobil tətbiqdə işləyir',
     speaker: 'Dinamik', camera: 'Kamera', mic: 'Mikrofon',
   },
   gifts: { title: 'Hədiyyələr', romantic: 'Romantik', send: 'Göndər', balance: 'Balans', recharge: 'Yüklə', sent: 'Hədiyyə göndərildi! 🎁', azerbaijan: 'Azərbaycan', popular: 'Populyar', luxury: 'Lüks', pick: 'Hədiyyə seç' },
@@ -184,7 +184,7 @@ const az = {
     reasons: { SPAM: 'Spam', FAKE: 'Saxta profil', NUDITY: 'Çılpaqlıq', HARASSMENT: 'Təhqir / təqib', UNDERAGE: '18 yaşdan kiçik', SCAM: 'Fırıldaqçılıq', VIOLENCE: 'Zorakılıq', OTHER: 'Digər' } as Record<string, string>,
   },
   likes: { title: 'Səni bəyənənlər', empty: 'Hələ heç kim bəyənməyib', emptySub: 'Profilinə yaxşı şəkillər əlavə et və kəşfdə aktiv ol', locked: '{{n}} nəfər səni bəyəndi! Onları görmək üçün VIP Qızıl əldə et.', unlock: 'Kilidi aç' },
-  visitors: { title: 'Profilinə baxanlar', empty: 'Hələ baxan yoxdur', emptySub: 'Story paylaş və yayına çıx — daha çox insan görsün', locked: '{{n}} nəfər profilinə baxıb! Kim olduğunu görmək üçün VIP ol.' },
+  visitors: { title: 'Profilinə baxanlar', empty: 'Hələ baxan yoxdur', emptySub: 'Hekayə paylaş və yayına çıx — daha çox insan görsün', locked: '{{n}} nəfər profilinə baxıb! Kim olduğunu görmək üçün VIP ol.' },
   leaderboard: { title: 'Liderlər', charm: 'Şöhrət', wealth: 'Səxavət', day: 'Gün', week: 'Həftə', month: 'Ay' },
   hostApply: {
     title: 'Simo Host ol', sub: 'Söhbət et, yayın aç və hər mesajdan, zəngdən, hədiyyədən qazan.',
@@ -197,7 +197,7 @@ const az = {
     types: { like: 'səni bəyəndi 💗', match: 'ilə uyğunluq! 💞', gift: 'sənə hədiyyə göndərdi 🎁', visit: 'profilinə baxdı 👀', follow: 'səni izləməyə başladı', live: 'canlı yayına başladı 🔴', message: 'sənə yazdı' } as Record<string, string>,
   },
   errors: {
-    MUTUAL_FOLLOW_REQUIRED: 'Şəkil göndərmək üçün bir-birinizi izləməlisiniz', KYC_REQUIRED: 'Əvvəlcə şəxsiyyətini təsdiqlə', HOST_REQUIREMENTS: 'Əvvəlcə host tapşırıqlarını tamamla', WITHDRAW_HELD: 'Son 7 günün qazancı hələ gözləmədədir', WITHDRAW_WEEKLY_LIMIT: 'Həftədə yalnız bir dəfə pul çıxarmaq olar', VIDEO_TOO_LONG: 'Video 1:30-dan uzun ola bilməz', PRIVATE_DISABLED: 'Private abunə aktiv deyil', LEVEL_REQUIRED: 'Şöhrət səviyyən kifayət etmir', KYC_PENDING: 'Təsdiq artıq yoxlanılır', GUESTS_FULL: 'Qonaq yerləri doludur', PK_BUSY: 'Yayın artıq PK döyüşündədir', TARGET_NOT_LIVE: 'Yayın artıq bitib', RAFFLE_CLOSED: 'Çəkiliş bitib',
+    MUTUAL_FOLLOW_REQUIRED: 'Şəkil göndərmək üçün bir-birinizi izləməlisiniz', KYC_REQUIRED: 'Əvvəlcə şəxsiyyətini təsdiqlə', HOST_REQUIREMENTS: 'Əvvəlcə host tapşırıqlarını tamamla', WITHDRAW_HELD: 'Son 7 günün qazancı hələ gözləmədədir', WITHDRAW_WEEKLY_LIMIT: 'Həftədə yalnız bir dəfə pul çıxarmaq olar', VIDEO_TOO_LONG: 'Video 1:30-dan uzun ola bilməz', PRIVATE_DISABLED: 'Xüsusi abunə aktiv deyil', LEVEL_REQUIRED: 'Şöhrət səviyyən kifayət etmir', KYC_PENDING: 'Təsdiq artıq yoxlanılır', GUESTS_FULL: 'Qonaq yerləri doludur', PK_BUSY: 'Yayın artıq PK döyüşündədir', TARGET_NOT_LIVE: 'Yayın artıq bitib', RAFFLE_CLOSED: 'Çəkiliş bitib',
     INSUFFICIENT_COINS: 'Nar balansı kifayət etmir', UNAUTHORIZED: 'Yenidən daxil olun', TOKEN_EXPIRED: 'Sessiya bitdi',
     BANNED: 'Hesabınız bloklanıb', INVALID_PHONE: 'Nömrə düzgün deyil', OTP_TOO_SOON: '1 dəqiqə gözləyin',
     OTP_INVALID: 'Kod yanlışdır və ya vaxtı bitib', EMAIL_TAKEN: 'Bu e-poçt artıq qeydiyyatdadır',
@@ -213,6 +213,7 @@ const az = {
     SERVER_ERROR: 'Server xətası', USER_NOT_FOUND: 'İstifadəçi tapılmadı', FILE_TOO_LARGE: 'Fayl çox böyükdür',
     PAYMENT_VERIFY_FAILED: 'Ödəniş təsdiqlənmədi', NOT_HOST: 'Yalnız hostlar üçün', ONBOARDING_REQUIRED: 'Profili tamamla',
   } as Record<string, string>,
+  tags: { live: 'CANLI', voice: 'SƏSLİ', streamer: 'YAYIMÇI', like: 'BƏYƏN', nope: 'KEÇ', super: 'SUPER' },
 };
 
 export default az;

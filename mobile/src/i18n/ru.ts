@@ -107,7 +107,7 @@ const ru: Dict = {
     calling: 'Вызов…', incomingVideo: 'Видеозвонок', incomingVoice: 'Аудиозвонок', accept: 'Принять',
     decline: 'Отклонить', end: 'Завершить', price: '{{price}} Нар/мин', lowBalance: 'Баланса хватит на {{n}} мин. Пополни, чтобы разговор не прервался!',
     ended: 'Звонок завершён', reasons: { NO_ANSWER: 'Нет ответа', REJECTED: 'Звонок отклонён', INSUFFICIENT_COINS: 'Закончился баланс', HANGUP: 'Звонок завершён', CANCELLED: 'Звонок отменён', DISCONNECTED: 'Соединение потеряно' },
-    rtcMissing: 'Модуль звонков недоступен в этой сборке (нужен development build)',
+    rtcMissing: 'Звонки и эфиры работают только в мобильном приложении',
     speaker: 'Динамик', camera: 'Камера', mic: 'Микрофон',
   },
   gifts: { title: 'Подарки', romantic: 'Романтика', send: 'Отправить', balance: 'Баланс', recharge: 'Пополнить', sent: 'Подарок отправлен! 🎁', azerbaijan: 'Азербайджан', popular: 'Популярные', luxury: 'Люкс', pick: 'Выбери подарок' },
@@ -215,6 +215,7 @@ const ru: Dict = {
     SERVER_ERROR: 'Ошибка сервера', USER_NOT_FOUND: 'Пользователь не найден', FILE_TOO_LARGE: 'Файл слишком большой',
     PAYMENT_VERIFY_FAILED: 'Оплата не подтверждена', NOT_HOST: 'Только для хостов', ONBOARDING_REQUIRED: 'Заполните профиль',
   },
+  tags: { live: 'ЭФИР', voice: 'ГОЛОС', streamer: 'ВЕДУЩИЙ', like: 'НРАВИТСЯ', nope: 'НЕТ', super: 'СУПЕР' },
 };
 
 export default ru;

@@ -107,7 +107,7 @@ const en: Dict = {
     calling: 'Calling…', incomingVideo: 'Video call', incomingVoice: 'Voice call', accept: 'Accept',
     decline: 'Decline', end: 'End', price: '{{price}} Nar/min', lowBalance: 'Balance covers {{n}} more min. Top up so the call doesn’t drop!',
     ended: 'Call ended', reasons: { NO_ANSWER: 'No answer', REJECTED: 'Call declined', INSUFFICIENT_COINS: 'Out of Nar', HANGUP: 'Call ended', CANCELLED: 'Call cancelled', DISCONNECTED: 'Connection lost' },
-    rtcMissing: 'Calling is not available in this build (development build required)',
+    rtcMissing: 'Calls and live streams work in the mobile app only',
     speaker: 'Speaker', camera: 'Camera', mic: 'Mic',
   },
   gifts: { title: 'Gifts', romantic: 'Romantic', send: 'Send', balance: 'Balance', recharge: 'Top up', sent: 'Gift sent! 🎁', azerbaijan: 'Azerbaijan', popular: 'Popular', luxury: 'Luxury', pick: 'Pick a gift' },
@@ -215,6 +215,7 @@ const en: Dict = {
     SERVER_ERROR: 'Server error', USER_NOT_FOUND: 'User not found', FILE_TOO_LARGE: 'File is too large',
     PAYMENT_VERIFY_FAILED: 'Payment could not be verified', NOT_HOST: 'Hosts only', ONBOARDING_REQUIRED: 'Complete your profile',
   },
+  tags: { live: 'LIVE', voice: 'VOICE', streamer: 'HOST', like: 'LIKE', nope: 'NOPE', super: 'SUPER' },
 };
 
 export default en;

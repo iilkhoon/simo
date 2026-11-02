@@ -164,7 +164,7 @@ function VideoCard({ room, rank, onPress }: { room: Room; rank: number; onPress:
       )}
       <LinearGradient colors={['rgba(16,14,13,0)', 'rgba(16,14,13,0.78)']} style={styles.scrim} pointerEvents="none" />
       <View style={styles.cardTop}>
-        <GlassPill label={room.type === 'VOICE' ? 'VOICE' : 'LIVE'} icon={room.type === 'VOICE' ? 'mic' : 'radio'} bg={colors.brand} />
+        <GlassPill label={room.type === 'VOICE' ? t('tags.voice') : t('tags.live')} icon={room.type === 'VOICE' ? 'mic' : 'radio'} bg={colors.brand} />
         <GlassPill label={compact(room.viewerCount)} icon="eye" />
       </View>
       {rank >= 0 && rank < 3 ? <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.orangeSoft][rank] }]}><Text style={styles.rankText}>{rank + 1}</Text></View> : null}
