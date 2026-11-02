@@ -4,17 +4,16 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { colors, fonts, palette } from '../theme';
 
 /**
- * Simo loqosu — "Nar": Azərbaycan narı formasında düz işarə, içində ürək.
+ * Simo loqosu — söhbət baloncuğu + maskotun iki buynuzu + ürək: "danış, tanış ol, sev".
  */
-const BODY = 'M32 14c-3.2 0-4.6-5.6-4.6-5.6l-3 4.2-4.6-1.6 1.8 5.4C13.4 20 8 27.4 8 36c0 12.2 10.7 22 24 22s24-9.8 24-22c0-8.6-5.4-16-13.6-19.6l1.8-5.4-4.6 1.6-3-4.2S35.2 14 32 14z';
-const HEART = 'M32 47s-11-6.8-11-14c0-3.6 2.8-6.2 6-6.2 2.3 0 4 1.2 5 3 1-1.8 2.7-3 5-3 3.2 0 6 2.6 6 6.2C43 40.2 32 47 32 47z';
+const BODY = 'M8 36C8 26.5 12.6 19.2 18.8 15.2C17.2 10.8 17.8 6.2 20.6 3.4C21.6 2.4 23 2.6 23.4 4C24.4 7.4 25.4 10.6 26.6 13.7C30.4 12.9 35 12.8 39.6 13.6C42 10.6 45.4 8.8 49.2 8.4C50.4 8.3 51 9.2 50.7 10.4C50.1 13 49.2 15.4 47.9 17.6C53 21.4 56 27.6 56 34.4C56 46 46.2 54.4 33.6 54.4H23.4C20.6 58 16.2 60.6 10.6 61.2C12.6 58.6 13.6 55.8 13.4 52.4C10 48.2 8 42.8 8 36Z';
+const HEART = 'M32 46.6S20.8 40 20.8 32.6C20.8 29 23.6 26.4 26.9 26.4C29.2 26.4 31 27.6 32 29.4C33 27.6 34.8 26.4 37.1 26.4C40.4 26.4 43.2 29 43.2 32.6C43.2 40 32 46.6 32 46.6Z';
 
 export function LogoMark({ size = 64, light }: { size?: number; shadow?: boolean; light?: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 64 64">
       <Path d={BODY} fill={light ? colors.white : colors.brand} />
       <Path d={HEART} fill={light ? colors.brand : colors.white} />
-      <Circle cx="45" cy="28" r="2.6" fill={light ? colors.brand : colors.white} opacity={0.9} />
     </Svg>
   );
 }
