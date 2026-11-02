@@ -6,6 +6,7 @@ import { colors, fonts, noPad, radius } from '@/theme';
 import { Card, Header, Loader, PressBox, Screen, SectionTitle, T } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { CoinIcon, DiamondIcon } from '@/components/GiftIcon';
+import { Coin3D } from '@/components/Coin3D';
 import { api, ApiError } from '@/lib/api';
 import { azn, errorText, timeAgo } from '@/lib/format';
 import { buyCoins, storePrices } from '@/lib/payments';
@@ -78,8 +79,8 @@ export default function Wallet() {
       {/* Balans kartı: tünd premium, iri Nar sikkəsi */}
       <View style={styles.hero}>
         <View style={styles.heroGlow} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <CoinIcon size={58} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Coin3D size={92} style={{ marginVertical: -12, marginLeft: -10 }} />
           <View style={{ flex: 1 }}>
             <T v="label" color={colors.nightMuted}>{t('wallet.balance')}</T>
             <Text style={styles.heroNum} numberOfLines={1}>{coins.toLocaleString('en-US')}</Text>
@@ -153,7 +154,7 @@ export default function Wallet() {
 
 const styles = StyleSheet.create({
   hero: { backgroundColor: colors.night, borderRadius: radius.xl, padding: 20, overflow: 'hidden' },
-  heroGlow: { position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,194,61,0.16)' },
+  heroGlow: { position: 'absolute', left: -40, top: -50, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,194,61,0.10)' },
   heroNum: { ...noPad, color: colors.white, fontFamily: fonts.displayBlack, fontSize: 40, lineHeight: 46, letterSpacing: -1.5 },
   usage: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 16 },
   usageItem: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)' },
