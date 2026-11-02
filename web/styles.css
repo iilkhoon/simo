@@ -286,8 +286,8 @@ h1, h2 { font-weight: 900; letter-spacing: -0.045em; }
 .input:focus, input:focus, select:focus, textarea:focus { outline: none; border-color: var(--nar) !important; background: #fff !important; }
 .bubble { display: inline-block; position: relative; padding: .18em .5em .24em; border-radius: .4em; font-weight: 900; }
 .bubble::after { content: ''; position: absolute; left: .7em; bottom: -.22em; width: .5em; height: .5em; background: inherit; transform: rotate(45deg); border-radius: 3px; z-index: -1; }
-.phones .f4 { width: 120px; height: 120px; left: -30px; bottom: 6%; top: auto; background: transparent !important; box-shadow: none !important; transform: rotate(-10deg); z-index: 4; }
-.phones .f4 img { width: 120px; height: 120px; }
+.phones .f4 { width: 170px; height: 170px; left: -40px; bottom: 6%; top: auto; background: transparent !important; box-shadow: none !important; transform: rotate(-10deg); z-index: 4; }
+.phones .f4 img { width: 170px; height: 170px; filter: drop-shadow(0 14px 18px rgba(120,20,30,.22)); }
 .speech { position: absolute; z-index: 5; font: 900 15px var(--display); letter-spacing: -.02em; padding: 10px 14px; border-radius: 18px; white-space: nowrap; box-shadow: var(--sh); }
 .speech::after { content: ''; position: absolute; bottom: -6px; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
 .speech.s1 { background: var(--lime); top: 4%; left: -4%; transform: rotate(-6deg); }
@@ -296,3 +296,9 @@ h1, h2 { font-weight: 900; letter-spacing: -0.045em; }
 .speech.s2::after { left: 22px; }
 @media (max-width: 900px) { .speech, .phones .f4 { display: none; } }
 .doc .note { background: var(--card, #f4efe8); border-radius: 14px; padding: 12px 16px; font-size: 14px; }
+
+/* Maskot bölmələrdə */
+.calc { position: relative; }
+.calc-mascot { position: absolute; top: -46px; right: 10px; width: 104px; height: 104px; transform: rotate(6deg); pointer-events: none; }
+.cta-mascot { display: block; width: 130px; height: 130px; margin: -20px auto 4px; }
+@media (max-width: 560px) { .phones .f4, .phones .f4 img { width: 120px; height: 120px; } .phones .f4 { left: -10px; } .calc-mascot { width: 80px; height: 80px; top: -34px; } }
