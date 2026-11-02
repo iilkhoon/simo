@@ -33,6 +33,20 @@ enum HostStatus {
   REJECTED
 }
 
+enum KycStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NobleTier {
+  NONE
+  BEY
+  XAN
+  SAH
+}
+
 enum VipTier {
   NONE
   SILVER
@@ -95,6 +109,21 @@ model User {
   dailyLikesUsed     Int        @default(0)
   dailySuperDate     String?
   dailySuperUsed     Int        @default(0)
+  /// Hostun mesaj qiyməti (Nar). null — agentliyin standart qiyməti
+  msgPrice           Int?
+  /// Host "mənə yazmaq pulsuzdur" rejimi
+  freeChat           Boolean    @default(false)
+  /// Gündə pulsuz "salam" (yeni söhbətdə ilk mesaj) limiti
+  helloDate          String?
+  helloUsed          Int        @default(0)
+  /// "Kimi göstərək" filtr dəyişikliyi — həftəlik limit
+  filterWeek         String?
+  filterUsed         Int        @default(0)
+  kycStatus          KycStatus  @default(NONE)
+  nobleTier          NobleTier  @default(NONE)
+  nobleUntil         DateTime?
+  /// Private content: aylıq abunə qiyməti (Nar). null — bağlıdır
+  privatePrice       Int?
   banned             Boolean    @default(false)
   deletedAt          DateTime?
   createdAt          DateTime   @default(now())
@@ -110,6 +139,8 @@ model User {
   notifications      Notification[]
   withdrawals        Withdrawal[]
   liveRooms          LiveRoom[]
+  verifications      Verification[]
+  stories            Story[]
 
   @@index([gender, onboarded, lastSeenAt])
   @@index([lat, lng])
@@ -416,11 +447,17 @@ model LiveRoom {
   peakViewers Int        @default(0)
   giftsCoins  Int        @default(0)
   likes       Int        @default(0)
+  seatCount   Int        @default(8)
   startedAt   DateTime   @default(now())
   endedAt     DateTime?
   host        User       @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([status, startedAt])
+}
+
+enum MediaType {
+  VIDEO
+  PHOTO
 }
 
 enum VideoStatus {
@@ -433,6 +470,11 @@ model Video {
   userId        String
   url           String
   thumbnailUrl  String?
+  mediaType     MediaType   @default(VIDEO)
+  isPrivate     Boolean     @default(false)
+  durationSec   Int         @default(0)
+  savesCount    Int         @default(0)
+  sharesCount   Int         @default(0)
   caption       String      @default("")
   hashtags      String[]    @default([])
   views         Int         @default(0)
@@ -492,6 +534,16 @@ model Agency {
   commissionRate Float        @default(0.1)
   totalDiamonds  Int          @default(0)
   status         AgencyStatus @default(PENDING)
+  /// Müraciət formu
+  city           String       @default("")
+  contactPhone   String       @default("")
+  contactName    String       @default("")
+  experience     String       @default("")
+  expectedHosts  Int          @default(0)
+  /// Agentliyin hostları üçün standart mesaj qiyməti (Nar)
+  defaultMsgPrice Int         @default(30)
+  rejectReason   String       @default("")
+  reviewedAt     DateTime?
   createdAt      DateTime     @default(now())
   owner          User         @relation("AgencyOwner", fields: [ownerId], references: [id])
   members        User[]       @relation("AgencyMembers")
@@ -550,4 +602,113 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model Verification {
+  id          String    @id @default(cuid())
+  userId      String
+  firstName   String
+  lastName    String
+  birthDate   DateTime
+  docType     String    @default("ID_CARD")
+  docFrontUrl String
+  docBackUrl  String?
+  selfieUrl   String
+  status      KycStatus @default(PENDING)
+  note        String    @default("")
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+model VideoSave {
+  videoId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@id([videoId, userId])
+  @@index([userId, createdAt])
+}
+
+model Story {
+  id        String    @id @default(cuid())
+  userId    String
+  mediaUrl  String
+  mediaType MediaType @default(PHOTO)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId, createdAt])
+}
+
+model StoryView {
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@id([storyId, userId])
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  subscriberId String
+  creatorId    String
+  priceCoins   Int
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([subscriberId, creatorId])
+  @@index([creatorId, expiresAt])
+}
+
+enum PkStatus {
+  PENDING
+  ACTIVE
+  ENDED
+  DECLINED
+}
+
+model PkBattle {
+  id         String   @id @default(cuid())
+  roomAId    String
+  roomBId    String
+  hostAId    String
+  hostBId    String
+  scoreA     Int      @default(0)
+  scoreB     Int      @default(0)
+  status     PkStatus @default(PENDING)
+  durationSec Int     @default(300)
+  startedAt  DateTime?
+  endsAt     DateTime?
+  winnerId   String?
+  createdAt  DateTime @default(now())
+
+  @@index([status])
+}
+
+model Raffle {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @default("")
+  prizeCoins  Int
+  winners     Int       @default(1)
+  endsAt      DateTime
+  drawnAt     DateTime?
+  winnerIds   String[]  @default([])
+  createdAt   DateTime  @default(now())
+  entries     RaffleEntry[]
+}
+
+model RaffleEntry {
+  raffleId  String
+  userId    String
+  source    String   @default("APP")
+  createdAt DateTime @default(now())
+  raffle    Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  @@id([raffleId, userId])
 }

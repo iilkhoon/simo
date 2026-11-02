@@ -10,6 +10,12 @@ const TITLES: Record<string, Record<string, string>> = {
   live: { az: 'Canlı yayın başladı', ru: 'Начался эфир', en: 'Live started' },
   visit: { az: 'Profilinə baxdılar 👀', ru: 'Твой профиль смотрели 👀', en: 'Someone viewed your profile 👀' },
   follow: { az: 'Yeni izləyici', ru: 'Новый подписчик', en: 'New follower' },
+  agency: { az: 'Agentliyə yeni müraciət', ru: 'Новая заявка в агентство', en: 'New agency application' },
+  subscription: { az: 'Yeni abunəçi 💎', ru: 'Новый подписчик 💎', en: 'New subscriber 💎' },
+  raffle: { az: 'Çəkilişdə qazandın! 🎉', ru: 'Ты выиграл в розыгрыше! 🎉', en: 'You won the raffle! 🎉' },
+  pk: { az: 'PK döyüşünə dəvət ⚔️', ru: 'Приглашение на PK ⚔️', en: 'PK battle invite ⚔️' },
+  guest: { az: 'Yayına dəvət', ru: 'Приглашение в эфир', en: 'Live invite' },
+  kyc: { az: 'Şəxsiyyət təsdiqi', ru: 'Верификация', en: 'Verification' },
 };
 
 /** Expo Push API — iOS (APNs) və Android (FCM) üçün vahid */

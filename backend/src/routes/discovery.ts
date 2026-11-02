@@ -1,3 +1,4 @@
+import { spendCoins } from '../services/wallet.js';
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
@@ -38,8 +39,12 @@ export default async function discoveryRoutes(app: FastifyInstance) {
     if (b.action === 'SUPERLIKE') {
       const limit = vip ? vip.superLikesPerDay : ECONOMY.freeDailySuperLikes;
       const used = user.dailySuperDate === today ? user.dailySuperUsed : 0;
-      if (used >= limit) throw err.badRequest('SUPERLIKE_LIMIT');
-      await prisma.user.update({ where: { id: me }, data: { dailySuperDate: today, dailySuperUsed: used + 1 } });
+      if (used >= limit) {
+        // Limit bitdikdən sonra super like pulludur
+        await prisma.$transaction((tx) => spendCoins(tx, me, ECONOMY.superLikePrice, 'SUPERLIKE', b.toId));
+      } else {
+        await prisma.user.update({ where: { id: me }, data: { dailySuperDate: today, dailySuperUsed: used + 1 } });
+      }
     }
     await prisma.swipe.upsert({
       where: { fromId_toId: { fromId: me, toId: b.toId } },

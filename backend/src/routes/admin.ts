@@ -111,8 +111,29 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   app.post('/admin/agencies/:id', async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const b = z.object({ status: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED']).optional(), commissionRate: z.number().min(0).max(0.3).optional() }).parse(req.body);
-    await prisma.agency.update({ where: { id }, data: b });
+    const b = z.object({ status: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED']).optional(), rejectReason: z.string().max(300).optional() }).parse(req.body);
+    const a = await prisma.agency.update({ where: { id }, data: { ...b, reviewedAt: new Date() } });
+    if (b.status === 'ACTIVE') {
+      // Agentlik sahibi də qazanc əldə edə bilsin deyə agentliyin üzvü və host olur
+      await prisma.user.update({ where: { id: a.ownerId }, data: { agencyId: a.id, agencyJoinedAt: new Date(), hostStatus: 'APPROVED' } });
+    }
+    emitToUser(a.ownerId, 'agency:status', { status: a.status, reason: a.rejectReason });
+    return { ok: true };
+  });
+
+  /* ───────── Şəxsiyyət təsdiqi (KYC) ───────── */
+  app.get('/admin/kyc', async (req) => {
+    const q = z.object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).default('PENDING') }).parse(req.query);
+    const items = await prisma.verification.findMany({ where: { status: q.status }, orderBy: { createdAt: 'asc' }, take: 100, include: { user: { select: { id: true, shortId: true, name: true, avatarUrl: true, birthDate: true, gender: true } } } });
+    return { items };
+  });
+
+  app.post('/admin/kyc/:id', async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = z.object({ status: z.enum(['APPROVED', 'REJECTED']), note: z.string().max(300).default('') }).parse(req.body);
+    const v = await prisma.verification.update({ where: { id }, data: { status: b.status, note: b.note, reviewedAt: new Date() } });
+    await prisma.user.update({ where: { id: v.userId }, data: { kycStatus: b.status, ...(b.status === 'APPROVED' ? { verified: true } : {}) } });
+    emitToUser(v.userId, 'kyc:status', { status: b.status, note: b.note });
     return { ok: true };
   });
 

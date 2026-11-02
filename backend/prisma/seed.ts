@@ -14,17 +14,17 @@ const GIFTS: [string, string, string, string, number, GiftTier, string][] = [
   ['pomegranate', 'Nar', 'Гранат', 'Pomegranate', 20, 'SMALL', 'azerbaijan'],
   ['chocolate', 'Şokolad', 'Шоколад', 'Chocolate', 30, 'SMALL', 'popular'],
   ['teddy', 'Ayıcıq', 'Мишка', 'Teddy bear', 50, 'SMALL', 'popular'],
-  ['bouquet', 'Gül dəstəsi', 'Букет', 'Bouquet', 99, 'SMALL', 'popular'],
-  ['perfume', 'Ətir', 'Духи', 'Perfume', 199, 'BIG', 'luxury'],
+  ['bouquet', 'Gül dəstəsi', 'Букет', 'Bouquet', 99, 'SMALL', 'romantic'],
+  ['perfume', 'Ətir', 'Духи', 'Perfume', 199, 'BIG', 'romantic'],
   ['champagne', 'Şampan', 'Шампанское', 'Champagne', 299, 'BIG', 'luxury'],
-  ['ring', 'Nişan üzüyü', 'Кольцо', 'Ring', 520, 'BIG', 'luxury'],
+  ['ring', 'Nişan üzüyü', 'Кольцо', 'Ring', 520, 'BIG', 'romantic'],
   ['crown', 'Tac', 'Корона', 'Crown', 999, 'BIG', 'luxury'],
   ['maiden_tower', 'Qız Qalası', 'Девичья башня', 'Maiden Tower', 1999, 'LUXURY', 'azerbaijan'],
   ['flame_towers', 'Alov Qüllələri', 'Пламенные башни', 'Flame Towers', 2999, 'LUXURY', 'azerbaijan'],
   ['sports_car', 'İdman avtomobili', 'Спорткар', 'Sports car', 4999, 'LUXURY', 'luxury'],
   ['yacht', 'Yaxta', 'Яхта', 'Yacht', 9999, 'LUXURY', 'luxury'],
   ['palace', 'Saray', 'Дворец', 'Palace', 19999, 'LUXURY', 'luxury'],
-  ['love_planet', 'Sevgi planeti', 'Планета любви', 'Love planet', 29999, 'LUXURY', 'luxury'],
+  ['love_planet', 'Sevgi planeti', 'Планета любви', 'Love planet', 29999, 'LUXURY', 'romantic'],
 ];
 
 // [id, coins, bonusCoins, qiymət (qəpik), populyar] — bonus böyük paketlərdə artır, amma 1 coin ≥ 1.08 qəpik qalır (bax: docs/ECONOMY.md)

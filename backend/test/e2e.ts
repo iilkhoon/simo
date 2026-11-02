@@ -101,6 +101,10 @@ async function main() {
       assert.equal((await api('GET', '/admin/stats', man)).status, 403);
       const up = await api('POST', `/admin/users/${girlId}`, admin, { hostStatus: 'APPROVED' });
       assert.equal(up.status, 200);
+      // Qazanc yalnız aktiv agentlikdə: test agentliyi (Bürünc səviyyə: agentlik 15%, host 15%, Simo 70%)
+      const owner = await prisma.user.create({ data: { name: 'Fixture Agency', email: `fx${stamp}@test.az` } });
+      const fx = await prisma.agency.create({ data: { name: `Fixture ${stamp}`, code: `FX${stamp}`.slice(0, 8), ownerId: owner.id, status: 'ACTIVE', defaultMsgPrice: 10 } });
+      await prisma.user.update({ where: { id: girlId }, data: { agencyId: fx.id, agencyJoinedAt: new Date() } });
     });
 
     await step('Kəşf, günün 10 seçimi, yaxınlıqdakılar', async () => {
@@ -184,7 +188,7 @@ async function main() {
       assert.equal(tooMuch.status, 402);
       assert.equal(tooMuch.data.error, 'INSUFFICIENT_COINS');
       const g = await api('GET', '/me', girl);
-      assert.equal(g.data.diamonds, (500 - 320) * 0.5, 'yalnız ödənişli hissədən (180 coin) 50%');
+      assert.equal(g.data.diamonds, Math.floor(180 * 0.3) - Math.floor(180 * 0.15), 'yalnız ödənişli hissədən (180 Nar): host 15%');
     });
 
     await step('VIP Silver alışı və gündəlik bonus', async () => {
@@ -278,22 +282,44 @@ async function main() {
       assert.equal(row.commentsCount, 1);
     });
 
-    await step('Agentlik: yarat, admin təsdiqi, qoşulma, komissiya', async () => {
+    await step('Agentlik: müraciət formu + KYC, admin təsdiqi, kataloq, host şərtləri, qoşulma, səviyyəli komissiya', async () => {
       agent = await registerPhone(`055${stamp}`);
       await api('PUT', '/me/onboarding', agent, { name: 'Star Agency', gender: 'FEMALE', birthDate: '1990-01-01', avatarUrl: 'https://x.az/c.jpg' });
-      const a = await api('POST', '/agencies', agent, { name: `Star ${stamp}` });
+      const form = { name: `Star ${stamp}`, city: 'Bakı', contactName: 'Leyla Məmmədova', contactPhone: '+994501112233', experience: '3 il', expectedHosts: 20 };
+      const noKyc = await api('POST', '/agencies', agent, form);
+      assert.equal(noKyc.data.error, 'KYC_REQUIRED');
+      const kyc = await api('POST', '/kyc', agent, { firstName: 'Leyla', lastName: 'Məmmədova', birthDate: '1990-01-01', docFrontUrl: 'https://x.az/id.jpg', selfieUrl: 'https://x.az/s.jpg' });
+      assert.equal(kyc.status, 200, JSON.stringify(kyc.data));
+      const a = await api('POST', '/agencies', agent, form);
       assert.equal(a.data.agency.status, 'PENDING');
       await api('POST', `/admin/agencies/${a.data.agency.id}`, admin, { status: 'ACTIVE' });
-      const j = await api('POST', '/agencies/join', girl, { code: a.data.agency.code });
-      assert.equal(j.status, 200);
+      const list = await api('GET', '/agencies', girl);
+      assert.ok(list.data.items.some((x: any) => x.id === a.data.agency.id && x.tier === 1 && x.agencyShare === 0.15));
+      // Qız əvvəlki agentlikdən çıxır, yeni agentliyə müraciət edir — əvvəl şərtlər tamamlanmalıdır
+      await api('POST', '/agencies/leave', girl);
+      const early = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
+      assert.equal(early.data.error, 'HOST_REQUIREMENTS');
+      await prisma.user.update({ where: { id: girlId }, data: { createdAt: new Date(Date.now() - 5 * 86400_000), bio: 'Musiqi və səyahət sevirəm' } });
+      await api('PUT', '/me/photos', girl, { photos: ['https://x.az/1.jpg', 'https://x.az/2.jpg', 'https://x.az/3.jpg'] });
+      await api('POST', '/videos', girl, { url: 'https://x.az/first.mp4', caption: 'Salam!', durationSec: 15 });
+      await api('POST', '/kyc', girl, { firstName: 'Aysel', lastName: 'Əliyeva', birthDate: '1999-03-03', docFrontUrl: 'https://x.az/id2.jpg', selfieUrl: 'https://x.az/s2.jpg' });
+      for (let i = 0; i < 10; i++) {
+        const u = await prisma.user.create({ data: { name: `P${i}`, email: `p${i}_${stamp}@test.az` } });
+        const c = await prisma.conversation.create({ data: { userAId: girlId < u.id ? girlId : u.id, userBId: girlId < u.id ? u.id : girlId } });
+        await prisma.message.create({ data: { conversationId: c.id, senderId: girlId, text: 'Salam' } });
+      }
+      const reqs = await api('GET', '/host/requirements', girl);
+      assert.equal(reqs.data.eligible, true, JSON.stringify(reqs.data));
+      const j = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
+      assert.equal(j.status, 200, JSON.stringify(j.data));
       const dash = await api('GET', '/agencies/me', agent);
       assert.equal(dash.data.requests.length, 1);
       await api('POST', `/agencies/requests/${dash.data.requests[0].id}/approve`, agent);
       await api('POST', '/gifts/send', man, { giftId: 'bouquet', receiverId: girlId, count: 1, context: 'PROFILE' });
       const ag = await api('GET', '/me', agent);
-      assert.equal(ag.data.diamonds, Math.floor(Math.floor(99 * 0.5) * 0.1), 'agentlik komissiyası');
+      assert.equal(ag.data.diamonds, Math.floor(99 * 0.15), 'agentlik payı (Bürünc: 15%)');
       const dash2 = await api('GET', '/agencies/me', agent);
-      assert.equal(dash2.data.stats.members, 1);
+      assert.equal(dash2.data.stats.members, 2, 'sahib + host');
       assert.ok(dash2.data.members[0].weekDiamonds > 0);
     });
 
@@ -301,9 +327,14 @@ async function main() {
       await prisma.user.update({ where: { id: girlId }, data: { diamonds: { increment: 12000 } } });
       const ex = await api('POST', '/wallet/exchange', girl, { diamonds: 101 });
       assert.equal(ex.status, 200);
+      const noKyc = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169 7388 0000 0000' });
+      assert.equal(noKyc.data.error, 'KYC_REQUIRED');
+      const pend = await api('GET', '/admin/kyc', admin);
+      const v = pend.data.items.find((x: any) => x.userId === girlId);
+      await api('POST', `/admin/kyc/${v.id}`, admin, { status: 'APPROVED' });
       const w = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169 7388 0000 0000' });
       assert.equal(w.status, 200, JSON.stringify(w.data));
-      assert.equal(w.data.withdrawal.amountQepik, 5000 - 150, '200 almaz = 1 ₼, 3% xidmət haqqı');
+      assert.equal(w.data.withdrawal.amountQepik, 10000 - 300, '100 Ləl = 1 ₼, 3% xidmət haqqı');
       const w2 = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169' });
       assert.equal(w2.data.error, 'WITHDRAW_PENDING');
       const before = (await api('GET', '/me', girl)).data.diamonds;
@@ -340,13 +371,13 @@ async function main() {
       }
     });
 
-    await step('Dəvət: qısa ID ilə qeydiyyat, dəvət edənə ilk alışın 10%-i (promo)', async () => {
+    await step('Dəvət: qısa ID ilə qeydiyyat, dəvət edənə hər alışın 5%-i (promo)', async () => {
       const manShort = (await api('GET', '/me', man)).data.shortId;
       const before = (await api('GET', '/me', man)).data.coins;
       const r = await api('POST', '/auth/email/register', undefined, { email: `ref${stamp}@test.az`, password: 'secret123', referralCode: String(manShort) });
       await api('PUT', '/me/onboarding', r.data.accessToken, { name: 'Ref', gender: 'MALE', birthDate: '1990-01-01', avatarUrl: 'https://x.az/r.jpg' });
       await api('POST', '/payments/dev/purchase', r.data.accessToken, { packageId: 'coins_1300' });
-      assert.equal((await api('GET', '/me', man)).data.coins, before + 140, '1300+100 coinin 10%-i (promo, ≤200)');
+      assert.equal((await api('GET', '/me', man)).data.coins, before + 70, '1300+100 Nar-ın 5%-i (promo) — hər alışda');
     });
 
     await step('Hesabın silinməsi', async () => {

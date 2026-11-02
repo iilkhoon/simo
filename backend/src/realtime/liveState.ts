@@ -1,17 +1,30 @@
 /** Canlı otaqların yaddaşdakı vəziyyəti (izləyicilər, səsli otaqda oturacaqlar). Çox serverli quruluşda Redis-ə köçürülür. */
 export const VOICE_SEATS = 8;
 
+export interface PkState { battleId: string; opponentRoomId: string; side: 'A' | 'B'; endsAt: number }
+
 interface RoomState {
   hostId: string;
   viewers: Map<string, number>;
   seats: (string | null)[];
   hostLeftTimer?: NodeJS.Timeout;
+  /** Video yayında qonaqlar (səsli və ya videolu), ən çox 3 */
+  guests: Map<string, 'AUDIO' | 'VIDEO'>;
+  guestRequests: Set<string>;
+  invites: Map<string, 'AUDIO' | 'VIDEO'>;
+  pk?: PkState;
 }
+
+export const MAX_GUESTS = 3;
 
 const rooms = new Map<string, RoomState>();
 
-export function initRoom(roomId: string, hostId: string, voice: boolean) {
-  rooms.set(roomId, { hostId, viewers: new Map(), seats: voice ? Array(VOICE_SEATS).fill(null) : [] });
+export function initRoom(roomId: string, hostId: string, voice: boolean, seatCount = VOICE_SEATS) {
+  rooms.set(roomId, { hostId, viewers: new Map(), seats: voice ? Array(seatCount).fill(null) : [], guests: new Map(), guestRequests: new Set(), invites: new Map() });
+}
+
+export function liveRoomIds(): { roomId: string; hostId: string }[] {
+  return [...rooms.entries()].map(([roomId, r]) => ({ roomId, hostId: r.hostId }));
 }
 
 export function getRoom(roomId: string) {
@@ -40,6 +53,8 @@ export function removeViewer(roomId: string, userId: string): boolean {
     r.viewers.delete(userId);
     const idx = r.seats.indexOf(userId);
     if (idx >= 0) r.seats[idx] = null;
+    r.guests.delete(userId);
+    r.guestRequests.delete(userId);
     return true;
   }
   r.viewers.set(userId, n);

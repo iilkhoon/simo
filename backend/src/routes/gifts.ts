@@ -8,6 +8,7 @@ import { emitToRoom, emitToUser } from '../realtime/hub.js';
 import { getOrCreateConversation } from './chat.js';
 import { notify } from '../services/notify.js';
 import { levelFromXp } from '../economy.js';
+import { addPkScore } from '../services/pk.js';
 
 export default async function giftRoutes(app: FastifyInstance) {
   app.get('/gifts', async () => {
@@ -73,7 +74,10 @@ export default async function giftRoutes(app: FastifyInstance) {
       emitToUser(b.receiverId, 'message:new', msg);
       emitToUser(me, 'message:new', msg);
     }
-    if (b.context === 'LIVE' && b.contextId) emitToRoom(`live:${b.contextId}`, 'live:gift', event);
+    if (b.context === 'LIVE' && b.contextId) {
+      emitToRoom(`live:${b.contextId}`, 'live:gift', event);
+      void addPkScore(b.contextId, b.receiverId, coins).catch(() => {});
+    }
     if (b.context === 'CALL' && b.contextId) emitToUser(b.receiverId, 'call:gift', event);
 
     emitToUser(b.receiverId, 'gift:received', event);

@@ -31,23 +31,39 @@ async function isBlocked(a: string, b: string) {
   return !!row;
 }
 
+/** Hostun mesaj qiyməti: öz qiyməti → agentliyin standartı → ümumi standart */
+export async function hostMsgPrice(hostId: string): Promise<number> {
+  const h = await prisma.user.findUnique({ where: { id: hostId }, select: { msgPrice: true, agency: { select: { defaultMsgPrice: true, status: true } } } });
+  if (h?.msgPrice) return h.msgPrice;
+  if (h?.agency && h.agency.status === 'ACTIVE') return h.agency.defaultMsgPrice;
+  return ECONOMY.msgPrice.default;
+}
+
+/** Ödənişli qarşılıqlı izləmə: hər ikisi bir-birini izləyir */
+export async function mutualFollow(a: string, b: string) {
+  const n = await prisma.follow.count({ where: { OR: [{ followerId: a, followingId: b }, { followerId: b, followingId: a }] } });
+  return n === 2;
+}
+
 /** Mesajın qiymətini hesablayır (göndərmədən) */
 export async function messagePricing(senderId: string, receiverId: string, conversationId?: string) {
   const [sender, receiver] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: senderId } }),
-    prisma.user.findUniqueOrThrow({ where: { id: receiverId }, select: { hostStatus: true } }),
+    prisma.user.findUniqueOrThrow({ where: { id: receiverId }, select: { hostStatus: true, freeChat: true } }),
   ]);
   const paid = receiver.hostStatus === 'APPROVED' && sender.hostStatus !== 'APPROVED';
   if (!paid) return { price: 0, reason: 'FREE' as const, sender };
-  if (ECONOMY.firstMessageFree) {
-    const sent = conversationId ? await prisma.message.count({ where: { conversationId, senderId } }) : 0;
-    if (sent === 0) return { price: 0, reason: 'FIRST_FREE' as const, sender };
-  }
-  const vip = activeVip(sender);
+  if (receiver.freeChat) return { price: 0, reason: 'HOST_FREE' as const, sender };
+  const sub = await prisma.subscription.findUnique({ where: { subscriberId_creatorId: { subscriberId: senderId, creatorId: receiverId } } });
+  if (sub && sub.expiresAt.getTime() > Date.now()) return { price: 0, reason: 'SUBSCRIBED' as const, sender };
   const today = todayKey();
+  const sent = conversationId ? await prisma.message.count({ where: { conversationId, senderId } }) : 0;
+  const hellos = sender.helloDate === today ? sender.helloUsed : 0;
+  if (sent === 0 && hellos < ECONOMY.freeHellosPerDay) return { price: 0, reason: 'FIRST_FREE' as const, sender, hellos };
+  const vip = activeVip(sender);
   const used = sender.freeMsgDate === today ? sender.freeMsgUsed : 0;
   if (vip && used < vip.freeMessagesPerDay) return { price: 0, reason: 'VIP_FREE' as const, sender, vipUsed: used };
-  return { price: ECONOMY.messagePrice, reason: 'PAID' as const, sender };
+  return { price: await hostMsgPrice(receiverId), reason: 'PAID' as const, sender, hellosLeft: Math.max(0, ECONOMY.freeHellosPerDay - hellos) };
 }
 
 export default async function chatRoutes(app: FastifyInstance) {
@@ -141,6 +157,8 @@ export default async function chatRoutes(app: FastifyInstance) {
     if (!conv || (conv.userAId !== me && conv.userBId !== me)) throw err.notFound();
     const otherId = conv.userAId === me ? conv.userBId : conv.userAId;
     if (await isBlocked(me, otherId)) throw err.forbidden('BLOCKED');
+    // Şəkil/video yalnız qarşılıqlı izləmədə
+    if (b.type === 'IMAGE' && !(await mutualFollow(me, otherId))) throw err.forbidden('MUTUAL_FOLLOW_REQUIRED');
 
     const pricing = await messagePricing(me, otherId, conv.id);
     const text = sanitizeText(b.text);
@@ -148,6 +166,9 @@ export default async function chatRoutes(app: FastifyInstance) {
       const m = await tx.message.create({
         data: { conversationId: id, senderId: me, type: b.type, text, mediaUrl: b.mediaUrl, coinsCost: pricing.price },
       });
+      if (pricing.reason === 'FIRST_FREE') {
+        await tx.user.update({ where: { id: me }, data: { helloDate: todayKey(), helloUsed: (pricing.hellos ?? 0) + 1 } });
+      }
       if (pricing.reason === 'VIP_FREE') {
         await tx.user.update({ where: { id: me }, data: { freeMsgDate: todayKey(), freeMsgUsed: (pricing.vipUsed ?? 0) + 1 } });
       }

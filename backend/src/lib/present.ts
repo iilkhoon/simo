@@ -1,5 +1,5 @@
 import type { User, Photo } from '../generated/prisma/client.js';
-import { activeVip, ageFrom, levelFromXp } from '../economy.js';
+import { activeNoble, activeVip, ageFrom, levelFromXp } from '../economy.js';
 
 export function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
   const R = 6371;
@@ -16,6 +16,7 @@ type PublicSource = Pick<
   | 'id' | 'shortId' | 'name' | 'gender' | 'birthDate' | 'bio' | 'city' | 'avatarUrl' | 'interests' | 'languages'
   | 'lookingFor' | 'verified' | 'hostStatus' | 'totalSpent' | 'totalEarned' | 'vipTier' | 'vipUntil' | 'online'
   | 'lastSeenAt' | 'videoCallPrice' | 'voiceCallPrice' | 'lat' | 'lng' | 'incognito'
+  | 'nobleTier' | 'nobleUntil' | 'privatePrice' | 'freeChat' | 'msgPrice' | 'createdAt'
 > & { photos?: Photo[] };
 
 export const publicUserSelect = {
@@ -23,6 +24,7 @@ export const publicUserSelect = {
   interests: true, languages: true, lookingFor: true, verified: true, hostStatus: true, totalSpent: true,
   totalEarned: true, vipTier: true, vipUntil: true, online: true, lastSeenAt: true, videoCallPrice: true,
   voiceCallPrice: true, lat: true, lng: true, incognito: true,
+  nobleTier: true, nobleUntil: true, privatePrice: true, freeChat: true, msgPrice: true, createdAt: true,
 } as const;
 
 export function presentUser(u: PublicSource, viewer?: { lat: number | null; lng: number | null }) {
@@ -56,6 +58,11 @@ export function presentUser(u: PublicSource, viewer?: { lat: number | null; lng:
     videoCallPrice: u.videoCallPrice,
     voiceCallPrice: u.voiceCallPrice,
     distanceKm: distance,
+    nobleTier: activeNoble(u)?.tier ?? 'NONE',
+    privatePrice: u.privatePrice,
+    freeChat: u.freeChat,
+    msgPrice: u.msgPrice,
+    joinedAt: u.createdAt,
   };
 }
 

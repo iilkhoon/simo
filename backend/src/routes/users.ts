@@ -4,8 +4,8 @@ import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
-import { ECONOMY, activeVip, ageFrom, levelFromXp, todayKey, xpForLevel } from '../economy.js';
-import { creditCoins } from '../services/wallet.js';
+import { ECONOMY, activeNoble, activeVip, ageFrom, levelFromXp, todayKey, weekKey, xpForLevel } from '../economy.js';
+import { creditCoins, spendCoins } from '../services/wallet.js';
 import { notify } from '../services/notify.js';
 
 export const INTERESTS = [
@@ -51,6 +51,16 @@ export async function presentMe(userId: string) {
     charm: { level: cl, xp: u.totalEarned, next: xpForLevel(cl + 1) },
     freeMessagesLeft: vip ? Math.max(0, vip.freeMessagesPerDay - freeUsed) : 0,
     likesLeft: vip ? null : Math.max(0, ECONOMY.freeDailyLikes - likesUsed),
+    superLikesLeft: Math.max(0, (vip ? vip.superLikesPerDay : ECONOMY.freeDailySuperLikes) - (u.dailySuperDate === today ? u.dailySuperUsed : 0)),
+    hellosLeft: Math.max(0, ECONOMY.freeHellosPerDay - (u.helloDate === today ? u.helloUsed : 0)),
+    filterChangesLeft: vip ? null : Math.max(0, ECONOMY.freeFilterChangesPerWeek - (u.filterWeek === weekKey() ? u.filterUsed : 0)),
+    promoCoins: u.promoCoins,
+    kycStatus: u.kycStatus,
+    noble: activeNoble(u),
+    nobleUntil: activeNoble(u) ? u.nobleUntil : null,
+    msgPrice: u.msgPrice,
+    freeChat: u.freeChat,
+    privatePrice: u.privatePrice,
     checkin: {
       streak: u.checkinStreak,
       doneToday: u.lastCheckinAt ? todayKey(u.lastCheckinAt) === today : false,
@@ -123,6 +133,18 @@ export default async function userRoutes(app: FastifyInstance) {
     const b = patchSchema.parse(req.body);
     if (b.ageMin && b.ageMax && b.ageMin > b.ageMax) throw err.badRequest('INVALID_AGE_RANGE');
     if (b.interests) b.interests = b.interests.filter((i) => INTERESTS.includes(i));
+    // "Kimi göstərək" filtri: həftədə 2 pulsuz dəyişiklik, sonra VIP və ya Nar
+    const cur = await prisma.user.findUniqueOrThrow({ where: { id } });
+    const filterChanged = (['interestedIn', 'ageMin', 'ageMax', 'maxDistanceKm'] as const).some((k) => k in b && b[k] !== undefined && b[k] !== cur[k]);
+    if (filterChanged && !activeVip(cur)) {
+      const wk = weekKey();
+      const used = cur.filterWeek === wk ? cur.filterUsed : 0;
+      if (used >= ECONOMY.freeFilterChangesPerWeek) {
+        await prisma.$transaction((tx) => spendCoins(tx, id, ECONOMY.filterChangePrice, 'FILTER_CHANGE'));
+      } else {
+        await prisma.user.update({ where: { id }, data: { filterWeek: wk, filterUsed: used + 1 } });
+      }
+    }
     await prisma.user.update({ where: { id }, data: b });
     return presentMe(id);
   });

@@ -29,10 +29,11 @@ export async function fulfillPayment(paymentId: string, raw?: unknown) {
       bonus = Math.min(ECONOMY.firstRechargeBonusMax, Math.floor(p.coins * ECONOMY.firstRechargeBonusRate));
       await tx.user.update({ where: { id: p.userId }, data: { firstRechargeDone: true } });
       balance = (await creditCoins(tx, p.userId, bonus, 'FIRST_RECHARGE_BONUS', p.id, '', true)) ?? balance;
-      if (user.referredById) {
-        const ref = Math.min(ECONOMY.referralMax, Math.floor(p.coins * ECONOMY.referralShare));
-        await creditCoins(tx, user.referredById, ref, 'REFERRAL', p.userId, '', true);
-      }
+    }
+    // Dəvət edən: dəvət olunanın HƏR alışından 5% promo Nar (hər alışda ən çox 500)
+    if (user.referredById) {
+      const ref = Math.min(ECONOMY.referralMax, Math.floor(p.coins * ECONOMY.referralShare));
+      await creditCoins(tx, user.referredById, ref, 'REFERRAL', p.userId, '', true);
     }
     return { payment: p, credited: p.coins + bonus, balance, already: false };
   });

@@ -5,6 +5,9 @@ import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
+import { hostRequirements } from './host.js';
+import { AGENCY_TIERS, ECONOMY, agencyTier } from '../economy.js';
+import { agencyMonthly } from '../services/wallet.js';
 
 function agencyCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -16,9 +19,22 @@ const EARN_TYPES = ['GIFT_RECEIVED', 'MESSAGE_EARNED', 'CALL_EARNED'];
 export default async function agencyRoutes(app: FastifyInstance) {
   app.post('/agencies', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
-    const b = z.object({ name: z.string().trim().min(3).max(40), description: z.string().max(300).default(''), logoUrl: z.string().url().optional() }).parse(req.body);
+    // Agentlik yaratmaq pulsuzdur, amma müraciət formu + şəxsiyyət təsdiqi + admin yoxlaması tələb olunur
+    const b = z.object({
+      name: z.string().trim().min(3).max(40),
+      description: z.string().max(500).default(''),
+      logoUrl: z.string().url().optional(),
+      city: z.string().trim().min(2).max(40),
+      contactName: z.string().trim().min(3).max(80),
+      contactPhone: z.string().trim().min(7).max(20),
+      experience: z.string().max(500).default(''),
+      expectedHosts: z.number().int().min(1).max(10000),
+    }).parse(req.body);
     const owned = await prisma.agency.findUnique({ where: { ownerId: me } });
     if (owned) throw err.badRequest('AGENCY_EXISTS');
+    const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
+    if (u.kycStatus !== 'PENDING' && u.kycStatus !== 'APPROVED') throw err.badRequest('KYC_REQUIRED');
+    if (u.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
     let code = agencyCode();
     while (await prisma.agency.findUnique({ where: { code } })) code = agencyCode();
     const agency = await prisma.agency.create({ data: { ...b, code, ownerId: me } });
@@ -40,6 +56,8 @@ export default async function agencyRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (user.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
     if (a.ownerId === me) throw err.badRequest('OWN_AGENCY');
+    const reqs = await hostRequirements(me);
+    if (!reqs.eligible) throw err.badRequest('HOST_REQUIREMENTS', { items: reqs.items });
     const pending = await prisma.agencyJoinRequest.findFirst({ where: { userId: me, status: 'PENDING' } });
     if (pending) throw err.badRequest('REQUEST_PENDING');
     const request = await prisma.agencyJoinRequest.create({ data: { agencyId: a.id, userId: me } });
@@ -69,8 +87,12 @@ export default async function agencyRoutes(app: FastifyInstance) {
     const m = new Map(month.map((r) => [r.userId, r._sum.amount ?? 0]));
     const reqUsers = await prisma.user.findMany({ where: { id: { in: requests.map((r) => r.userId) } }, select: { ...publicUserSelect, photos: true } });
     const ru = new Map(reqUsers.map((u) => [u.id, presentUser(u)]));
+    const monthly = await agencyMonthly(prisma, agency.id);
+    const tier = agencyTier(monthly);
+    const next = AGENCY_TIERS.find((t) => t.minMonthly > monthly) ?? null;
     return {
       agency,
+      tier: { ...tier, hostShare: Math.round((ECONOMY.receiversShare - tier.share) * 100) / 100, monthly, next },
       stats: {
         members: members.length,
         weekDiamonds: [...w.values()].reduce((a, b) => a + b, 0),
@@ -95,7 +117,8 @@ export default async function agencyRoutes(app: FastifyInstance) {
       if (user.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
       await prisma.$transaction([
         prisma.agencyJoinRequest.update({ where: { id: r.id }, data: { status: 'APPROVED' } }),
-        prisma.user.update({ where: { id: r.userId }, data: { agencyId: r.agencyId, agencyJoinedAt: new Date() } }),
+        // Agentliyə qəbul = host statusu (qazanc başlayır)
+        prisma.user.update({ where: { id: r.userId }, data: { agencyId: r.agencyId, agencyJoinedAt: new Date(), hostStatus: 'APPROVED', verified: user.kycStatus === 'APPROVED' } }),
       ]);
     } else {
       await prisma.agencyJoinRequest.update({ where: { id: r.id }, data: { status: 'REJECTED' } });

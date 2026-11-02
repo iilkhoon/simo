@@ -1,56 +1,108 @@
 /**
- * Simo iqtisadiyyatı — bütün qiymətlər və nisbətlər bir yerdə. Ətraflı hesablama: /docs/ECONOMY.md
+ * Simo iqtisadiyyatı — bütün qiymətlər və nisbətlər bir yerdə. Ətraflı: /docs/ECONOMY.md
  *
- *  Simo Coin  — istifadəçinin pulla aldığı valyuta (mesaj, zəng, hədiyyə, VIP).
- *               1 coin ≈ 1.09–1.99 qəpik (paketdən asılı).
- *  Promo coin — bonuslardan gələn pulsuz coin (qeydiyyat, gündəlik bonus, dəvət, ilk yükləmə hədiyyəsi).
- *               Xərclənə bilər, amma qəbul edənə NAĞDLAŞAN ALMAZ VERMİR (fırıldağa qarşı) və həmişə birinci xərclənir.
- *  Simo Almaz — qəbul edənin qazandığı valyuta. 200 almaz = 1 ₼ (1 almaz = 0.5 qəpik).
+ *  Nar   — istifadəçinin pulla aldığı valyuta (mesaj, zəng, hədiyyə, VIP, abunə). Nominal: 1 Nar = 1 qəpik
+ *          (satış qiyməti paketdən asılı 1.09–1.99 qəpik).
+ *  Promo Nar — bonuslardan gələn pulsuz Nar: birinci xərclənir, qəbul edənə Ləl YARATMIR.
+ *  Ləl   — host və agentliyin qazancı. 1 Ləl = 1 qəpik (100 Ləl = 1 ₼).
  *
- *  Pul axını (1 ödənişli coin xərcləndikdə):
- *    host:      0.5 almaz = 0.25 qəpik
- *    agentlik:  hostun almazının 10%-i (platforma payından) = 0.025 qəpik
- *    platforma: qalan hissə — mağaza komissiyasından (15–30%) sonra belə ödənişin ~60–85%-i
+ *  Ödənişli 1 Nar xərcləndikdə (nominal dəyər):
+ *    Simo       70%
+ *    host       30% − agentlik payı
+ *    agentlik   15–20% (agentlik səviyyəsi artdıqca artır)
+ *  Qazanmaq üçün host AKTİV agentliyin üzvü olmalıdır; agentliksiz qəbul edəndə 100% Simo-da qalır.
  */
-import type { VipTier } from './generated/prisma/client.js';
+import type { VipTier, NobleTier } from './generated/prisma/client.js';
 
 export const ECONOMY = {
-  /** Qəbul edənin ödənişli coin dəyərindən aldığı pay (almaz şəklində) */
-  hostShare: 0.5,
-  /** Agentliyə platformanın payından ödənilən komissiya (hostun qazandığı almazın %-i) */
-  defaultAgencyCommission: 0.1,
-  /** Təsdiqlənmiş hosta (qıza) göndərilən hər mesajın qiyməti */
-  messagePrice: 10,
-  /** Yeni söhbətdə ilk mesaj pulsuzdur (buz qırıcı) */
-  firstMessageFree: true,
+  /** Qəbul edənlərin (host + agentlik) ümumi payı */
+  receiversShare: 0.3,
+  /** Mesaj qiyməti: standart və host səviyyəsinə görə hədlər (Nar) */
+  msgPrice: { min: 10, default: 30 },
+  msgPriceMaxByLevel: [[0, 40], [5, 60], [10, 100], [20, 200]] as [number, number][],
+  /** Gündə yeni söhbətlərdə neçə ilk mesaj ("salam") pulsuzdur */
+  freeHellosPerDay: 3,
   videoCallPrice: { min: 40, max: 400, default: 80 },
   voiceCallPrice: { min: 20, max: 200, default: 40 },
-  /** Qeydiyyat bonusu (promo) */
   signupBonus: 30,
-  /** 7 günlük giriş bonusu dövrü (promo) */
   checkinRewards: [3, 3, 5, 5, 8, 10, 20],
-  /** İlk yükləmə hədiyyəsi: alınan coinlərin 100%-i qədər, ən çox 300 promo coin */
   firstRechargeBonusRate: 1,
   firstRechargeBonusMax: 300,
-  /** Dəvət edən şəxs dəvət olunanın ilk alışından bu payı promo coin kimi alır (ən çox 200) */
-  referralShare: 0.1,
-  referralMax: 200,
-  /** Almaz → coin mübadiləsi: 3 almaz = 1 coin (nağdlaşdırmadan bir az sərfəli deyil — pul platformada qalır) */
-  diamondsPerCoin: 3,
-  /** Nağdlaşdırma: 200 almaz = 1 ₼ → 1 almaz = 0.5 qəpik */
-  diamondsPerAzn: 200,
-  minWithdrawDiamonds: 10000,
-  /** Çıxarış xidmət haqqı (bank/köçürmə xərcini örtür) */
+  /** Dəvət edən: dəvət olunanın HƏR alışından 5% promo Nar */
+  referralShare: 0.05,
+  referralMax: 500,
+  /** Ləl → Nar mübadiləsi: 1:1 (pul tətbiqdə qalır və yenidən 70/30 bölünür) */
+  diamondsPerCoin: 1,
+  diamondsPerAzn: 100,
+  minWithdrawDiamonds: 5000,
   withdrawFeeRate: 0.03,
-  freeDailyLikes: 50,
+  /** Yeni qazanc 7 gün "gözləmədə" qalır (fırıldaq / geri qaytarma riski) */
+  withdrawHoldDays: 7,
+  /** Həftədə bir çıxarış */
+  withdrawPerWeek: 1,
+  freeDailyLikes: 10,
   freeDailySuperLikes: 1,
+  superLikePrice: 100,
+  /** "Kimi göstərək" filtri: həftədə pulsuz dəyişiklik sayı, sonra VIP və ya Nar */
+  freeFilterChangesPerWeek: 2,
+  filterChangePrice: 50,
+  /** Private content: aylıq abunə qiyməti (Nar) */
+  privatePrice: { min: 500, max: 10000, minLevel: 3 },
+  /** Video / post */
+  maxVideoSec: 90,
+  storyHours: 24,
+  /** Host olub agentliyə müraciət etmək üçün şərtlər */
+  hostRequirements: { accountAgeDays: 3, chatPartners: 10, photos: 3 },
+  /** PK döyüşü */
+  pkDurationSec: 300,
+  pkWinnerBonusPromo: 100,
 } as const;
 
-/** Almazın nağd dəyəri (qəpik), çıxarış haqqı çıxılmaqla */
+/** Agentlik səviyyələri: son 30 gündə hostların ümumi qazancına (Ləl) görə; agentlik payı artır */
+export const AGENCY_TIERS = [
+  { tier: 1, name: 'Bürünc', minMonthly: 0, share: 0.15 },
+  { tier: 2, name: 'Gümüş', minMonthly: 100_000, share: 0.16 },
+  { tier: 3, name: 'Qızıl', minMonthly: 500_000, share: 0.17 },
+  { tier: 4, name: 'Platin', minMonthly: 2_000_000, share: 0.18 },
+  { tier: 5, name: 'Almaz', minMonthly: 10_000_000, share: 0.2 },
+] as const;
+
+export function agencyTier(monthlyDiamonds: number) {
+  let t: (typeof AGENCY_TIERS)[number] = AGENCY_TIERS[0];
+  for (const x of AGENCY_TIERS) if (monthlyDiamonds >= x.minMonthly) t = x;
+  return t;
+}
+
+/** Ödənişli Nar → host və agentlik payı (Ləl) */
+export function splitEarnings(paidCoins: number, agencyShare: number) {
+  const total = Math.floor(paidCoins * ECONOMY.receiversShare);
+  const agency = Math.floor(paidCoins * agencyShare);
+  return { host: Math.max(0, total - agency), agency };
+}
+
+export function maxMsgPriceForLevel(level: number): number {
+  let m = ECONOMY.msgPriceMaxByLevel[0][1];
+  for (const [lv, max] of ECONOMY.msgPriceMaxByLevel) if (level >= lv) m = max;
+  return m;
+}
+
+/** Almazın (Ləl) nağd dəyəri (qəpik), çıxarış haqqı çıxılmaqla */
 export function withdrawQepik(diamonds: number): { gross: number; fee: number; net: number } {
   const gross = Math.floor((diamonds * 100) / ECONOMY.diamondsPerAzn);
   const fee = Math.ceil(gross * ECONOMY.withdrawFeeRate);
   return { gross, fee, net: gross - fee };
+}
+
+/** Zadəganlıq — aylıq status (100% Simo gəliri) */
+export const NOBLE_PLANS: Record<Exclude<NobleTier, 'NONE'>, { tier: Exclude<NobleTier, 'NONE'>; priceCoins: number; days: number; perks: string[] }> = {
+  BEY: { tier: 'BEY', priceCoins: 2000, days: 30, perks: ['frame', 'badge', 'entry'] },
+  XAN: { tier: 'XAN', priceCoins: 8000, days: 30, perks: ['frame', 'badge', 'entry', 'bubble', 'mount', 'gifts'] },
+  SAH: { tier: 'SAH', priceCoins: 30000, days: 30, perks: ['frame', 'badge', 'entry', 'bubble', 'mount', 'gifts', 'top', 'antikick'] },
+};
+
+export function activeNoble(u: { nobleTier: NobleTier; nobleUntil: Date | null }) {
+  if (u.nobleTier === 'NONE' || !u.nobleUntil || u.nobleUntil.getTime() < Date.now()) return null;
+  return NOBLE_PLANS[u.nobleTier];
 }
 
 export interface VipPlan {
@@ -102,14 +154,18 @@ export function xpForLevel(level: number): number {
   return level * level * 50;
 }
 
-export function hostDiamonds(coins: number): number {
-  return Math.floor(coins * ECONOMY.hostShare);
-}
-
 export function todayKey(d = new Date()): string {
   // Bakı vaxtı (UTC+4)
   const baku = new Date(d.getTime() + 4 * 3600_000);
   return baku.toISOString().slice(0, 10);
+}
+
+/** Həftə açarı (Bakı vaxtı, bazar ertəsindən başlayır) */
+export function weekKey(d = new Date()): string {
+  const baku = new Date(d.getTime() + 4 * 3600_000);
+  const day = (baku.getUTCDay() + 6) % 7;
+  const monday = new Date(Date.UTC(baku.getUTCFullYear(), baku.getUTCMonth(), baku.getUTCDate() - day));
+  return monday.toISOString().slice(0, 10);
 }
 
 export function ageFrom(birth: Date | null | undefined): number | null {

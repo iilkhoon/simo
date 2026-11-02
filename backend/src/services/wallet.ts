@@ -4,7 +4,7 @@
  */
 import type { Tx } from '../db.js';
 import { err } from '../lib/errors.js';
-import { ECONOMY, hostDiamonds } from '../economy.js';
+import { agencyTier, splitEarnings } from '../economy.js';
 
 /**
  * Coin xərcləyir. Promo (pulsuz) coinlər birinci xərclənir.
@@ -56,40 +56,52 @@ export async function spendDiamonds(tx: Tx, userId: string, amount: number, type
   });
 }
 
+/** Agentliyin son 30 gündəki hostlarının ümumi qazancı (Ləl) — səviyyəni təyin edir */
+export async function agencyMonthly(tx: Tx, agencyId: string): Promise<number> {
+  const since = new Date(Date.now() - 30 * 86400_000);
+  const members = await tx.user.findMany({ where: { agencyId }, select: { id: true } });
+  if (!members.length) return 0;
+  const r = await tx.walletTransaction.aggregate({
+    where: { userId: { in: members.map((m) => m.id) }, currency: 'DIAMOND', amount: { gt: 0 }, type: { in: EARN_TYPES }, createdAt: { gte: since } },
+    _sum: { amount: true },
+  });
+  return r._sum.amount ?? 0;
+}
+
+export const EARN_TYPES = ['GIFT_RECEIVED', 'MESSAGE_EARNED', 'CALL_EARNED', 'SUBSCRIPTION_EARNED'];
+
 /**
- * Ödənişli coin xərcləndikdə qəbul edənə almaz yazılır (promo coin hissəsi üçün yazılmır). Əgər qəbul edən agentliyə üzvdürsə,
- * agentlik sahibi platformanın payından komissiya alır.
+ * Ödənişli Nar xərcləndikdə: Simo 70%, qalan 30% host ilə agentlik arasında bölünür
+ * (agentlik payı səviyyəyə görə 15–20%). Qəbul edən aktiv agentlikdə deyilsə — Ləl yazılmır.
+ * Qaytarır: hosta yazılan Ləl.
  */
-export async function rewardReceiver(tx: Tx, receiverId: string, coinsSpent: number, type: string, refId?: string) {
-  const diamonds = hostDiamonds(coinsSpent);
-  if (diamonds <= 0) return 0;
-  const u = await tx.user.update({
-    where: { id: receiverId },
-    data: { diamonds: { increment: diamonds }, totalEarned: { increment: diamonds } },
-    select: { diamonds: true, agencyId: true },
-  });
-  await tx.walletTransaction.create({
-    data: { userId: receiverId, currency: 'DIAMOND', amount: diamonds, balanceAfter: u.diamonds, type, refId },
-  });
-  if (u.agencyId) {
-    const agency = await tx.agency.findUnique({ where: { id: u.agencyId } });
-    if (agency && agency.status === 'ACTIVE' && agency.ownerId !== receiverId) {
-      const commission = Math.floor(diamonds * (agency.commissionRate || ECONOMY.defaultAgencyCommission));
-      await tx.agency.update({ where: { id: agency.id }, data: { totalDiamonds: { increment: diamonds } } });
-      if (commission > 0) {
-        const owner = await tx.user.update({
-          where: { id: agency.ownerId },
-          data: { diamonds: { increment: commission } },
-          select: { diamonds: true },
-        });
-        await tx.walletTransaction.create({
-          data: {
-            userId: agency.ownerId, currency: 'DIAMOND', amount: commission, balanceAfter: owner.diamonds,
-            type: 'AGENCY_COMMISSION', refId: receiverId,
-          },
-        });
-      }
-    }
+export async function rewardReceiver(tx: Tx, receiverId: string, paidCoins: number, type: string, refId?: string) {
+  if (paidCoins <= 0) return 0;
+  const r = await tx.user.findUnique({ where: { id: receiverId }, select: { agencyId: true } });
+  if (!r?.agencyId) return 0;
+  const agency = await tx.agency.findUnique({ where: { id: r.agencyId } });
+  if (!agency || agency.status !== 'ACTIVE') return 0;
+  const tier = agencyTier(await agencyMonthly(tx, agency.id));
+  const ownerIsHost = agency.ownerId === receiverId;
+  const split = splitEarnings(paidCoins, tier.share);
+  // Agentlik sahibi özü host kimi qazanırsa — hər iki pay ona
+  const hostAmount = ownerIsHost ? split.host + split.agency : split.host;
+  if (hostAmount > 0) {
+    const u = await tx.user.update({
+      where: { id: receiverId },
+      data: { diamonds: { increment: hostAmount }, totalEarned: { increment: hostAmount } },
+      select: { diamonds: true },
+    });
+    await tx.walletTransaction.create({
+      data: { userId: receiverId, currency: 'DIAMOND', amount: hostAmount, balanceAfter: u.diamonds, type, refId },
+    });
   }
-  return diamonds;
+  await tx.agency.update({ where: { id: agency.id }, data: { totalDiamonds: { increment: hostAmount } } });
+  if (!ownerIsHost && split.agency > 0) {
+    const owner = await tx.user.update({ where: { id: agency.ownerId }, data: { diamonds: { increment: split.agency } }, select: { diamonds: true } });
+    await tx.walletTransaction.create({
+      data: { userId: agency.ownerId, currency: 'DIAMOND', amount: split.agency, balanceAfter: owner.diamonds, type: 'AGENCY_COMMISSION', refId: receiverId, note: `tier:${tier.tier}` },
+    });
+  }
+  return hostAmount;
 }

@@ -3,9 +3,16 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
-import { ECONOMY, VIP_PLANS, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
-import { creditCoins, spendCoins, spendDiamonds } from '../services/wallet.js';
+import { ECONOMY, NOBLE_PLANS, VIP_PLANS, activeNoble, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
+import { EARN_TYPES, creditCoins, spendCoins, spendDiamonds } from '../services/wallet.js';
 import { presentMe } from './users.js';
+
+/** Son N gündə qazanılan (hələ çıxarıla bilməyən) Ləl */
+export async function heldDiamonds(userId: string): Promise<number> {
+  const since = new Date(Date.now() - ECONOMY.withdrawHoldDays * 86400_000);
+  const r = await prisma.walletTransaction.aggregate({ where: { userId, currency: 'DIAMOND', amount: { gt: 0 }, type: { in: [...EARN_TYPES, 'AGENCY_COMMISSION'] }, createdAt: { gte: since } }, _sum: { amount: true } });
+  return r._sum.amount ?? 0;
+}
 
 export default async function walletRoutes(app: FastifyInstance) {
   app.get('/wallet/packages', async () => {
@@ -24,6 +31,7 @@ export default async function walletRoutes(app: FastifyInstance) {
       ...user,
       history,
       packages,
+      held: await heldDiamonds(me),
       rates: {
         diamondsPerCoin: ECONOMY.diamondsPerCoin,
         diamondsPerAzn: ECONOMY.diamondsPerAzn,
@@ -57,9 +65,18 @@ export default async function walletRoutes(app: FastifyInstance) {
       })
       .parse(req.body);
     const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
-    if (user.hostStatus !== 'APPROVED' && !user.agencyId) throw err.forbidden('HOST_REQUIRED');
+    const ownsAgency = await prisma.agency.count({ where: { ownerId: me, status: 'ACTIVE' } });
+    if (user.hostStatus !== 'APPROVED' && !user.agencyId && !ownsAgency) throw err.forbidden('HOST_REQUIRED');
+    if (user.kycStatus !== 'APPROVED') throw err.forbidden('KYC_REQUIRED');
     const pending = await prisma.withdrawal.count({ where: { userId: me, status: 'PENDING' } });
     if (pending > 0) throw err.badRequest('WITHDRAW_PENDING');
+    // Həftədə bir çıxarış
+    const weekAgo = new Date(Date.now() - 7 * 86400_000);
+    const recent = await prisma.withdrawal.count({ where: { userId: me, createdAt: { gte: weekAgo }, status: { not: 'REJECTED' } } });
+    if (recent >= ECONOMY.withdrawPerWeek) throw err.badRequest('WITHDRAW_WEEKLY_LIMIT');
+    // Son 7 günün qazancı gözləmədədir
+    const held = await heldDiamonds(me);
+    if (b.diamonds > Math.max(0, user.diamonds - held)) throw err.badRequest('WITHDRAW_HELD', { available: Math.max(0, user.diamonds - held), held });
     const w = await prisma.$transaction(async (tx) => {
       const row = await tx.withdrawal.create({
         data: { userId: me, diamonds: b.diamonds, amountQepik: withdrawQepik(b.diamonds).net, method: b.method, account: b.account, note: `fee:${withdrawQepik(b.diamonds).fee}` },
@@ -94,6 +111,25 @@ export default async function walletRoutes(app: FastifyInstance) {
   });
 
   /** Gündəlik giriş bonusu: 7 günlük dövr, bir gün buraxılsa sıfırlanır */
+  app.get('/noble/plans', async () => ({ plans: Object.values(NOBLE_PLANS) }));
+
+  /** Zadəganlıq statusu: Bəy / Xan / Şah — aylıq (eyni rütbə uzadılır, yüksəyə keçid dərhal) */
+  app.post('/noble/buy', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const b = z.object({ tier: z.enum(['BEY', 'XAN', 'SAH']) }).parse(req.body);
+    const plan = NOBLE_PLANS[b.tier];
+    await prisma.$transaction(async (tx) => {
+      const u = await tx.user.findUniqueOrThrow({ where: { id: me } });
+      const cur = activeNoble(u);
+      const order = ['NONE', 'BEY', 'XAN', 'SAH'];
+      if (cur && order.indexOf(cur.tier) > order.indexOf(b.tier)) throw err.badRequest('LOWER_TIER');
+      await spendCoins(tx, me, plan.priceCoins, 'NOBLE_PURCHASE', plan.tier);
+      const base = cur && cur.tier === b.tier && u.nobleUntil ? u.nobleUntil.getTime() : Date.now();
+      await tx.user.update({ where: { id: me }, data: { nobleTier: b.tier, nobleUntil: new Date(base + plan.days * 86400_000) } });
+    });
+    return presentMe(me);
+  });
+
   app.post('/rewards/checkin', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const reward = await prisma.$transaction(async (tx) => {
