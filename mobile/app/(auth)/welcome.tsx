@@ -52,7 +52,7 @@ export default function Welcome() {
           })}
         </SafeAreaView>
         <View style={[styles.disc, { top: topH * 0.2, left: W / 2 - topH * 0.36, width: topH * 0.72, height: topH * 0.72, borderRadius: topH }]} />
-        <Float i={0} style={{ top: topH * 0.3, left: W / 2 - topH * 0.25 }}><Mascot size={topH * 0.56} pose="wave" float={false} /></Float>
+        <Float i={0} style={{ top: topH * 0.3, left: W / 2 - topH * 0.25 }}><Mascot size={topH * 0.56} pose="hero" float={false} /></Float>
         <Float i={1} style={{ top: topH * 0.2, left: 18, transform: [{ rotate: '-6deg' }] }}><SpeechBlock color="lime" size="sm" tail="right">{t('auth.bubble1')}</SpeechBlock></Float>
         <Float i={2} style={{ top: topH * 0.36, right: 14, transform: [{ rotate: '5deg' }] }}><SpeechBlock color="lilac" size="sm">{t('auth.bubble2')}</SpeechBlock></Float>
         <Float i={3} style={{ top: topH * 0.74, left: 26, transform: [{ rotate: '4deg' }] }}><SpeechBlock color="saffron" size="sm" tail="right">{t('auth.bubble3')}</SpeechBlock></Float>
