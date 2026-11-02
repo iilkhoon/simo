@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
-import { colors, fonts, radius, tintFor } from '@/theme';
+import { colors, fonts, radius, tintFor, webNoOutline } from '@/theme';
 import { Box, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10 },
   plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   inputBox: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 44, borderRadius: 22, backgroundColor: colors.bg, paddingLeft: 14, paddingRight: 4 },
-  input: { flex: 1, color: colors.ink, paddingTop: 11, paddingBottom: 11, maxHeight: 120, fontSize: 15.5, fontFamily: fonts.medium },
+  input: { flex: 1, minWidth: 0, ...webNoOutline, color: colors.ink, paddingTop: 11, paddingBottom: 11, maxHeight: 120, fontSize: 15.5, fontFamily: fonts.medium },
   giftBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center', marginBottom: 3 },
   send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
 });

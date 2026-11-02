@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, tintFor } from '@/theme';
-import { Box, Btn, Card, Chip, IconBtn, Loader, PressBox, T, Tag } from '@/components/ui';
+import { Box, Btn, Card, Chip, GlassPill, IconBtn, Loader, PressBox, T } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
@@ -19,7 +19,7 @@ import { useStore } from '@/store';
 import type { PublicUser } from '@/lib/types';
 
 const { width: W } = Dimensions.get('window');
-const PW = W - 24 - 6 - 4; // kənar boşluq + kölgə + kontur
+const PW = W - 32; // ekran kənarları 16 + 16
 const PH = PW * 1.18;
 
 interface Profile {
@@ -83,13 +83,13 @@ export default function UserProfile() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingTop: insets.top + 6, paddingHorizontal: 12 }}>
+        <View style={{ paddingTop: insets.top + 6, paddingHorizontal: 16 }}>
           <View style={styles.topBar}>
             <IconBtn name="back" size={40} onPress={() => router.back()} />
             <View style={{ flex: 1 }} />
             {!isMe ? <IconBtn name="more" size={40} onPress={() => setMenu(true)} /> : <IconBtn name="settings" size={40} onPress={() => router.push('/edit-profile')} />}
           </View>
-          <Box r={28} sh={6} bg={tintFor(u.name)} style={{ marginTop: 12 }} inner={{ height: PH }}>
+          <Box r={28} sh={2} bg={tintFor(u.name)} style={{ marginTop: 12 }} inner={{ height: PH, width: PW }}>
             <FlatList
               data={photos}
               horizontal
@@ -101,12 +101,12 @@ export default function UserProfile() {
             />
             {photos.length > 1 ? (
               <View style={styles.dots} pointerEvents="none">
-                {photos.map((_, i) => <View key={i} style={[styles.dotBar, i === photo && { backgroundColor: colors.card }]} />)}
+                {photos.map((_, i) => <View key={i} style={[styles.dotBar, i === photo && { backgroundColor: colors.white }]} />)}
               </View>
             ) : null}
             <View style={styles.photoTags} pointerEvents="none">
-              {u.online ? <Tag label={t('common.online').toUpperCase()} bg={colors.online} fg={colors.white} /> : null}
-              {u.distanceKm != null ? <Tag label={t('common.km', { n: u.distanceKm })} icon="location" bg={colors.card} /> : null}
+              {u.online ? <GlassPill label={t('discover.activeNow')} icon="dot" bg={colors.online} /> : null}
+              {u.distanceKm != null ? <GlassPill label={t('common.km', { n: u.distanceKm })} icon="location" /> : null}
             </View>
           </Box>
         </View>
@@ -199,17 +199,20 @@ export default function UserProfile() {
 
       {!isMe ? (
         <View style={[styles.bar, { paddingBottom: insets.bottom + 10 }]}>
-          <IconBtn name="chat" size={52} sh={3} onPress={message} />
-          <IconBtn name="gift" size={52} sh={3} bg={colors.coin} onPress={() => setGiftOpen(true)} />
-          <PressBox style={{ flex: 1 }} r={26} sh={3} bg={colors.diamond} onPress={() => void startCall(u.id, 'VOICE')} inner={styles.callBtn}>
-            <Icon name="call" size={20} color={colors.white} />
-            {u.isHost ? <Text style={styles.callPrice}>{u.voiceCallPrice}/{t('match.min')}</Text> : null}
+          <IconBtn name="chat" size={52} sh={1} bg={colors.bgSunken} onPress={message} />
+          <IconBtn name="gift" size={52} sh={1} bg={colors.coin} onPress={() => setGiftOpen(true)} />
+          <PressBox style={{ flex: 1 }} r={26} sh={0} bg={colors.diamond} onPress={() => void startCall(u.id, 'VOICE')} inner={styles.callBtn}>
+            <Icon name="call" size={19} color={colors.white} />
+            <View style={styles.callCol}>
+              <Text style={styles.callTitle} numberOfLines={1}>{t('match.voice')}</Text>
+              {u.isHost ? <Text style={styles.callPrice} numberOfLines={1}>{u.voiceCallPrice}/{t('match.min')}</Text> : null}
+            </View>
           </PressBox>
-          <PressBox style={{ flex: 1.5 }} r={26} sh={3} bg={colors.brand} onPress={() => void startCall(u.id, 'VIDEO')} inner={styles.callBtn}>
-            <Icon name="videocam" size={21} color={colors.white} />
-            <View>
-              <Text style={styles.callTitle}>{t('profile.videoCall')}</Text>
-              {u.isHost ? <Text style={styles.callPrice}>{u.videoCallPrice} {t('common.coins')}/{t('match.min')}</Text> : null}
+          <PressBox style={{ flex: 1 }} r={26} sh={0} bg={colors.brand} onPress={() => void startCall(u.id, 'VIDEO')} inner={styles.callBtn}>
+            <Icon name="videocam" size={20} color={colors.white} />
+            <View style={styles.callCol}>
+              <Text style={styles.callTitle} numberOfLines={1}>{t('match.video')}</Text>
+              {u.isHost ? <Text style={styles.callPrice} numberOfLines={1}>{u.videoCallPrice}/{t('match.min')}</Text> : null}
             </View>
           </PressBox>
         </View>
@@ -241,9 +244,9 @@ export default function UserProfile() {
 
 const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center' },
-  dots: { position: 'absolute', top: 10, left: 14, right: 14, flexDirection: 'row', gap: 4 },
-  dotBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(23,18,15,0.35)' },
-  photoTags: { position: 'absolute', left: 12, bottom: 12, flexDirection: 'row', gap: 6 },
+  dots: { position: 'absolute', top: 12, left: 14, right: 14, flexDirection: 'row', gap: 4 },
+  dotBar: { flex: 1, height: 3.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.45)' },
+  photoTags: { position: 'absolute', left: 14, bottom: 14, flexDirection: 'row', gap: 6 },
   stat: { alignItems: 'flex-start' },
   section: { padding: 16, gap: 10 },
   liveBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
@@ -255,8 +258,9 @@ const styles = StyleSheet.create({
   videoCell: { width: (W - 32 - 12) / 3, aspectRatio: 0.72, backgroundColor: colors.bgSunken, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   videoViews: { position: 'absolute', left: 5, bottom: 5, backgroundColor: colors.card, borderRadius: 6, paddingHorizontal: 4 },
   videoViewsText: { color: colors.ink, fontSize: 10, fontFamily: fonts.black },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 12, backgroundColor: colors.card, borderTopWidth: 1, borderColor: colors.hairline },
-  callBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52 },
-  callTitle: { color: colors.white, fontFamily: fonts.bold, fontSize: 14 },
-  callPrice: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.semibold, fontSize: 11 },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 12, backgroundColor: colors.card, borderTopWidth: 1, borderColor: colors.hairline },
+  callBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, paddingHorizontal: 10 },
+  callCol: { alignItems: 'flex-start', flexShrink: 1 },
+  callTitle: { color: colors.white, fontFamily: fonts.bold, fontSize: 14, lineHeight: 17 },
+  callPrice: { color: 'rgba(255,255,255,0.88)', fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14 },
 });

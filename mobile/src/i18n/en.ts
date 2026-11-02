@@ -108,7 +108,7 @@ const en: Dict = {
       PURCHASE: 'Coin purchase', SIGNUP_BONUS: 'Welcome bonus', CHECKIN: 'Daily bonus', GIFT_SENT: 'Gift sent',
       GIFT_RECEIVED: 'Gift received', MESSAGE_SENT: 'Message', MESSAGE_EARNED: 'Message earnings', CALL_SPENT: 'Call',
       CALL_EARNED: 'Call earnings', VIP_PURCHASE: 'VIP', EXCHANGE: 'Exchange', WITHDRAW: 'Withdrawal',
-      WITHDRAW_REFUND: 'Refund', AGENCY_COMMISSION: 'Agency commission', REFERRAL: 'Referral bonus', ADMIN: 'Bonus',
+      WITHDRAW_REFUND: 'Refund', AGENCY_COMMISSION: 'Agency commission', REFERRAL: 'Referral bonus', ADMIN: 'Bonus', FIRST_RECHARGE_BONUS: 'First top-up gift',
     },
   },
   vip: {

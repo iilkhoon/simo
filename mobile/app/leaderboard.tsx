@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   medalText: { fontFamily: fonts.display, fontSize: 12, color: colors.ink },
   podName: { fontFamily: fonts.bold, marginTop: 6, maxWidth: 90 },
   podScore: { fontFamily: fonts.black, fontSize: 13 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 4, borderBottomWidth: 1.5, borderBottomColor: colors.hairline },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.hairline },
   rank: { color: colors.textMuted, width: 26, fontFamily: fonts.displayBold, textAlign: 'center' },
   name: { color: colors.ink, fontFamily: fonts.bold, flex: 1, fontSize: 15 },
 });

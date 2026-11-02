@@ -163,13 +163,19 @@ export default function CallScreen() {
         <Surface style={StyleSheet.absoluteFill} canvas={{ uid: remoteUid! }} />
       ) : (
         <SafeAreaView edges={['top']} style={styles.center}>
-          <GlassPill label={isVideo ? t('chat.callVideo') : t('chat.callVoice')} icon={isVideo ? 'videocam' : 'call'} bg={colors.glassLight} style={{ alignSelf: 'center', height: 30, paddingHorizontal: 12, marginBottom: 30 }} />
-          <View style={[styles.halo, { borderColor: isVideo ? colors.brand : colors.sky }]} />
-          <Box r={110} sh={0} bg={tintFor(peer.name)} inner={{ width: 200, height: 200 }}>
-            {peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{peer.name.slice(0, 1)}</T></View>
-            )}
-          </Box>
+          <View style={styles.pills}>
+            <GlassPill label={isVideo ? t('chat.callVideo') : t('chat.callVoice')} icon={isVideo ? 'videocam' : 'call'} bg={colors.glassLight} style={{ height: 30, paddingHorizontal: 12 }} />
+            {call.pricePerMin > 0 && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
+          </View>
+          {/* Halqa fotoya nəzərən mərkəzlənir (yuxarıdakı həblərin hündürlüyündən asılı deyil) */}
+          <View style={styles.photoWrap}>
+            <View style={[styles.halo, { borderColor: isVideo ? colors.brand : colors.sky }]} />
+            <Box r={110} sh={0} bg={tintFor(peer.name)} inner={{ width: 200, height: 200 }}>
+              {peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{peer.name.slice(0, 1)}</T></View>
+              )}
+            </Box>
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 24 }}>
             <Text style={styles.name}>{peer.name}</Text>
             {peer.verified ? <VerifiedBadge size={20} /> : null}
@@ -203,7 +209,7 @@ export default function CallScreen() {
             </View>
           </View>
         ) : <View />}
-        {call.pricePerMin > 0 && isCaller ? <Tag label={t('call.price', { price: call.pricePerMin })} icon="cash" bg={colors.coin} style={{ height: 26, paddingHorizontal: 9 }} /> : null}
+        {remoteVideo && call.pricePerMin > 0 && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
       </SafeAreaView>
 
       {lowBalance != null && isCaller ? (
@@ -275,8 +281,11 @@ function Dots() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', paddingTop: 30 },
-  halo: { position: 'absolute', top: 30 + 30 + 30 - 14, width: 228, height: 228, borderRadius: 114, borderWidth: 3, opacity: 0.6 },
+  // paddingTop 8 + 30px həb = yuxarı sıra ilə (qiymət etiketi) eyni mərkəz xətti
+  center: { flex: 1, alignItems: 'center', paddingTop: 8 },
+  pills: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 16, paddingHorizontal: 16 },
+  photoWrap: { width: 228, height: 228, alignItems: 'center', justifyContent: 'center' },
+  halo: { position: 'absolute', top: 0, left: 0, width: 228, height: 228, borderRadius: 114, borderWidth: 3, opacity: 0.6 },
   name: { color: colors.white, fontSize: 30, fontFamily: fonts.display, letterSpacing: -0.8 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: colors.glassLight, borderRadius: 16, paddingHorizontal: 12, height: 32 },
   status: { color: colors.white, fontSize: 14, fontFamily: fonts.bold },

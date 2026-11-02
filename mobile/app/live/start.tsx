@@ -39,8 +39,8 @@ export default function StartLive() {
           {(['VIDEO', 'VOICE'] as const).map((k) => {
             const on = type === k;
             return (
-              <PressBox key={k} style={{ flex: 1 }} r={22} sh={on ? 5 : 2} bg={on ? (k === 'VIDEO' ? colors.brand : colors.diamond) : colors.card} inner={styles.type} onPress={() => setType(k)}>
-                <View style={styles.typeIcon}><Icon name={k === 'VIDEO' ? 'videocam' : 'mic'} size={24} color={colors.ink} /></View>
+              <PressBox key={k} style={{ flex: 1 }} r={22} sh={on ? 0 : 1} bg={on ? (k === 'VIDEO' ? colors.brand : colors.diamond) : colors.card} inner={styles.type} onPress={() => setType(k)}>
+                <View style={[styles.typeIcon, !on && { backgroundColor: colors.bgSunken }]}><Icon name={k === 'VIDEO' ? 'videocam' : 'mic'} size={24} color={colors.ink} /></View>
                 <T v="h3" color={on ? colors.white : colors.ink}>{k === 'VIDEO' ? t('live.startVideo') : t('live.startVoice')}</T>
                 <T v="tiny" color={on ? 'rgba(255,255,255,0.85)' : colors.textMuted} center>{k === 'VIDEO' ? t('live.videoHint') : t('live.voiceHint')}</T>
               </PressBox>

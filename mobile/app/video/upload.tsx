@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius, fonts } from '@/theme';
+import { colors, font, radius, fonts, webNoOutline } from '@/theme';
 import { Btn, Header, Screen } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
@@ -79,5 +79,5 @@ export default function Upload() {
 
 const styles = StyleSheet.create({
   box: { height: 360, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderStyle: 'dashed' },
-  input: { backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, padding: 14, minHeight: 90, textAlignVertical: 'top', fontFamily: fonts.medium, fontSize: 15 },
+  input: { minWidth: 0, ...webNoOutline, backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, padding: 14, minHeight: 90, textAlignVertical: 'top', fontFamily: fonts.medium, fontSize: 15 },
 });

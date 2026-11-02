@@ -11,6 +11,8 @@ import { WEB_URL } from '@/config';
 import type { Me } from '@/lib/types';
 
 export default function Rewards() {
+  const [gridW, setGridW] = useState(0);
+  const cellW = gridW ? (gridW - GAP * 3) / 4 : 70;
   const { t } = useTranslation();
   const { me, setMe, toast } = useStore();
   const [busy, setBusy] = useState(false);
@@ -39,14 +41,14 @@ export default function Rewards() {
           <Text style={font.h3}>{t('rewards.checkin')}</Text>
           <Tag label={`🔥 ${t('rewards.streak', { n: streak })}`} bg={colors.brandSoft} style={{ height: 26, paddingHorizontal: 9 }} />
         </View>
-        <View style={styles.days}>
+        <View style={styles.days} onLayout={(e) => setGridW(e.nativeEvent.layout.width)}>
           {rewards.map((r, i) => {
             const done = i < pos || (doneToday && i === pos);
             const today = i === pos;
             return (
-              <View key={i} style={[styles.day, { backgroundColor: done ? colors.coin : today ? colors.brandSoft : colors.card }, today && !done && { borderStyle: 'dashed' }, i === 6 && { width: '100%', flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
+              <View key={i} style={[styles.day, { width: i === 6 ? cellW * 2 + GAP : cellW, backgroundColor: done ? colors.coin : today ? colors.brandSoft : colors.bgSunken }, today && !done && styles.today, i === 6 && styles.bigDay]}>
                 <Text style={styles.dayLabel}>{t('rewards.day', { n: i + 1 })}</Text>
-                <CoinIcon size={i === 6 ? 34 : 24} />
+                <CoinIcon size={i === 6 ? 30 : 24} />
                 <Text style={styles.dayAmount}>+{r}</Text>
                 {done ? <View style={styles.tick}><Text style={{ color: colors.white, fontSize: 10, fontFamily: fonts.black }}>✓</Text></View> : null}
               </View>
@@ -65,12 +67,16 @@ export default function Rewards() {
   );
 }
 
+const GAP = 8;
+
 const styles = StyleSheet.create({
-  days: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  day: { width: '22.8%', borderRadius: radius.md, alignItems: 'center', paddingVertical: 10, gap: 4 },
-  dayLabel: { color: colors.ink, fontSize: 11, fontFamily: fonts.bold },
-  dayAmount: { color: colors.ink, fontFamily: fonts.black },
-  tick: { position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.online, alignItems: 'center', justifyContent: 'center' },
+  days: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
+  day: { height: 84, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  today: { borderWidth: 1.5, borderColor: colors.brand, borderStyle: 'dashed' },
+  bigDay: { flexDirection: 'row', gap: 10 },
+  dayLabel: { color: colors.ink, fontSize: 11, lineHeight: 14, fontFamily: fonts.bold },
+  dayAmount: { color: colors.ink, fontFamily: fonts.black, fontSize: 14, lineHeight: 18 },
+  tick: { position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.online, alignItems: 'center', justifyContent: 'center' },
   code: { alignSelf: 'flex-start', backgroundColor: colors.coinSoft, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, borderStyle: 'dashed' },
   codeText: { color: colors.ink, fontFamily: fonts.display, fontSize: 20, letterSpacing: 2 },
 });

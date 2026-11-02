@@ -68,8 +68,8 @@ export default function Vip() {
               <View style={{ position: 'absolute', right: -30, top: -30 }}><Burst size={150} color={colors.coin} points={14} /></View>
               <View style={{ position: 'absolute', right: 22, top: 22 }}><Icon name="crown" size={46} color={colors.ink} /></View>
               <T v="label" color={colors.coin}>SIMO VIP</T>
-              <Text style={[styles.title, { maxWidth: '68%' }]}>{t('vip.heroTitle')}</Text>
-              <T v="small" color={colors.nightMuted} style={{ maxWidth: '62%' }}>{t('vip.subtitle')}</T>
+              <Text style={styles.title}>{t('vip.heroTitle')}</Text>
+              <T v="small" color={colors.nightMuted} style={{ maxWidth: '80%' }}>{t('vip.subtitle')}</T>
             </Box>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               {plans.map((p) => {
@@ -117,8 +117,8 @@ export default function Vip() {
 }
 
 const styles = StyleSheet.create({
-  hero: { padding: 20, paddingTop: 96, minHeight: 170, justifyContent: 'flex-end' },
-  title: { color: colors.white, fontSize: 26, fontFamily: fonts.display, letterSpacing: -1, marginVertical: 6, maxWidth: '70%' },
+  hero: { padding: 20, paddingTop: 112, minHeight: 170, justifyContent: 'flex-end' },
+  title: { color: colors.white, fontSize: 26, lineHeight: 30, fontFamily: fonts.display, letterSpacing: -1, marginVertical: 6 },
   tier: { padding: 12, paddingTop: 34, alignItems: 'center', gap: 6 },
   tierName: { fontFamily: fonts.displayBold, fontSize: 14 },
   days: { fontFamily: fonts.semibold, fontSize: 11 },

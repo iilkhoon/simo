@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, radius } from '@/theme';
-import { Btn, Chip, Header, Input, Loader, Screen } from '@/components/ui';
+import { colors, radius } from '@/theme';
+import { Btn, Chip, Header, Input, Loader, Screen, T } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -61,7 +61,7 @@ export default function EditProfile() {
             {photos[i] ? (
               <>
                 <Image source={{ uri: photos[i] }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                <View style={styles.remove}><Icon name="close" size={12} /></View>
+                <View style={styles.remove}><Icon name="close" size={12} color={colors.white} /></View>
               </>
             ) : i === photos.length && uploading ? <Loader /> : <Icon name="add" size={26} color={colors.textMuted} />}
           </Pressable>
@@ -71,11 +71,11 @@ export default function EditProfile() {
         <Input label={t('onboarding.namePlaceholder')} value={name} onChangeText={setName} maxLength={30} />
         <Input label={t('profile.about')} value={bio} onChangeText={setBio} multiline maxLength={300} style={{ height: 100, paddingTop: 14, textAlignVertical: 'top' }} />
         <Input label={t('common.city')} value={city} onChangeText={setCity} maxLength={40} />
-        <Text style={font.small}>{t('onboarding.lookingTitle')}</Text>
+        <T v="label" color={colors.textMuted} style={{ marginTop: 4 }}>{t('onboarding.lookingTitle')}</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {LOOKING.map((l) => <Chip key={l} label={t(`lookingFor.${l}`)} active={looking === l} onPress={() => setLooking(l)} />)}
         </View>
-        <Text style={font.small}>{t('profile.interests')}</Text>
+        <T v="label" color={colors.textMuted} style={{ marginTop: 4 }}>{t('profile.interests')}</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {INTERESTS.map((i) => (
             <Chip key={i} label={t(`interests.${i}`)} active={interests.includes(i)} onPress={() => setInterests((c) => (c.includes(i) ? c.filter((x) => x !== i) : c.length < 10 ? [...c, i] : c))} />
@@ -87,8 +87,10 @@ export default function EditProfile() {
   );
 }
 
+const PHOTO_W = (Dimensions.get('window').width - 32 - 20) / 3;
+
 const styles = StyleSheet.create({
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photo: { width: '31%', aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderStyle: 'dashed', borderWidth: 2, borderColor: 'rgba(26,21,18,0.18)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photo: { width: PHOTO_W, aspectRatio: 0.75, borderRadius: radius.md, backgroundColor: colors.card, borderStyle: 'dashed', borderWidth: 2, borderColor: 'rgba(26,21,18,0.18)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   remove: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
 });

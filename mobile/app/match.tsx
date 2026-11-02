@@ -131,19 +131,21 @@ export default function Match() {
       </View>
 
       {st.s === 'found' ? (
+        <View>
+        <T v="tiny" color={colors.nightMuted} center numberOfLines={1} style={{ marginBottom: 10 }}>{t('match.billing')}</T>
         <View style={styles.actions}>
           <View style={styles.col}>
-            <IconBtn name="shuffle" size={60} sh={0} bg={colors.glassLight} color={colors.white} onPress={() => void search(kind)} />
+            <IconBtn name="shuffle" size={56} sh={0} bg={colors.glassLight} color={colors.white} onPress={() => void search(kind)} />
             <T v="tiny" color={colors.nightMuted}>{t('match.next')}</T>
           </View>
           <View style={[styles.col, { flex: 1, alignItems: 'stretch' }]}>
             <Btn kind={video ? 'primary' : 'diamond'} icon={video ? 'videocam' : 'call'} title={t('match.call')} loading={calling} onPress={call} />
-            <T v="tiny" color={colors.nightMuted} center>{t('match.billing')}</T>
           </View>
           <View style={styles.col}>
-            <IconBtn name="person" size={60} sh={0} bg={colors.glassLight} color={colors.white} onPress={() => router.push({ pathname: '/user/[id]', params: { id: st.user.id } })} />
+            <IconBtn name="person" size={56} sh={0} bg={colors.glassLight} color={colors.white} onPress={() => router.push({ pathname: '/user/[id]', params: { id: st.user.id } })} />
             <T v="tiny" color={colors.nightMuted}>{t('match.profile')}</T>
           </View>
+        </View>
         </View>
       ) : (
         <View style={{ height: 24 }} />
@@ -164,5 +166,5 @@ const styles = StyleSheet.create({
   price: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.coin, borderRadius: 14, paddingHorizontal: 10, height: 28 },
   per: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink },
   actions: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingTop: 6, paddingBottom: 8 },
-  col: { alignItems: 'center', gap: 6 },
+  col: { alignItems: 'center', gap: 6, minWidth: 64 },
 });

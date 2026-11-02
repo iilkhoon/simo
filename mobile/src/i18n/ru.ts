@@ -108,7 +108,7 @@ const ru: Dict = {
       PURCHASE: 'Покупка монет', SIGNUP_BONUS: 'Бонус за регистрацию', CHECKIN: 'Ежедневный бонус', GIFT_SENT: 'Отправлен подарок',
       GIFT_RECEIVED: 'Получен подарок', MESSAGE_SENT: 'Сообщение', MESSAGE_EARNED: 'Доход с сообщений', CALL_SPENT: 'Звонок',
       CALL_EARNED: 'Доход со звонков', VIP_PURCHASE: 'VIP', EXCHANGE: 'Обмен', WITHDRAW: 'Вывод',
-      WITHDRAW_REFUND: 'Возврат', AGENCY_COMMISSION: 'Комиссия агентства', REFERRAL: 'Бонус за приглашение', ADMIN: 'Бонус',
+      WITHDRAW_REFUND: 'Возврат', AGENCY_COMMISSION: 'Комиссия агентства', REFERRAL: 'Бонус за приглашение', ADMIN: 'Бонус', FIRST_RECHARGE_BONUS: 'Подарок за первое пополнение',
     },
   },
   vip: {

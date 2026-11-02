@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, radius } from '@/theme';
+import { colors, fonts, radius, noPad } from '@/theme';
 import { Header, Loader, Screen, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -57,7 +57,7 @@ export default function Otp() {
       <T v="body" color={colors.textMuted} style={{ marginTop: 8 }}>{t('auth.otpSub', { phone })}</T>
       <Pressable onPress={() => input.current?.focus()} style={styles.boxes}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <View key={i} style={[styles.box, code[i] ? { backgroundColor: colors.coinSoft } : null, code.length === i && { backgroundColor: colors.card, transform: [{ translateY: -3 }], shadowOpacity: 0 }]}>
+          <View key={i} style={[styles.box, code[i] ? { backgroundColor: colors.coinSoft } : null, code.length === i && styles.boxActive]}>
             <Text style={styles.digit}>{code[i] ?? ''}</Text>
           </View>
         ))}
@@ -83,7 +83,8 @@ export default function Otp() {
 }
 
 const styles = StyleSheet.create({
-  boxes: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 32 },
-  box: { width: 48, height: 62, borderRadius: radius.sm, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  digit: { color: colors.ink, fontSize: 26, fontFamily: fonts.display },
+  boxes: { flexDirection: 'row', gap: 8, marginTop: 32 },
+  box: { flex: 1, height: 62, borderRadius: radius.sm, backgroundColor: colors.card, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  boxActive: { borderColor: colors.brand },
+  digit: { ...noPad, color: colors.ink, fontSize: 26, lineHeight: 32, fontFamily: fonts.display },
 });

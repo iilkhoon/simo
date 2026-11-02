@@ -137,5 +137,5 @@ const styles = StyleSheet.create({
   hero: { padding: 20, gap: 8 },
   heroNum: { color: colors.white, fontSize: 42, fontFamily: fonts.display, letterSpacing: -1.5, textShadowColor: 'rgba(0,0,0,0.18)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
   block: { padding: 16, gap: 10, marginTop: 14 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1.5, borderColor: colors.hairline },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderColor: colors.hairline },
 });

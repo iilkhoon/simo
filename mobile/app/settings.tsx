@@ -3,8 +3,8 @@ import { Alert, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font, fonts, radius } from '@/theme';
-import { Card, Chip, Header, MenuRow, Screen } from '@/components/ui';
+import { colors, font, fonts } from '@/theme';
+import { Card, Header, MenuRow, Screen, Tabs } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { LANGUAGES } from '@/i18n';
 import { api } from '@/lib/api';
@@ -67,18 +67,16 @@ export default function Settings() {
     <Screen scroll>
       <Header title={t('settings.title')} />
       <Text style={styles.section}>{t('settings.language')}</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {LANGUAGES.map((l) => <Chip key={l.code} label={`${l.flag} ${l.label}`} active={i18n.language === l.code} onPress={() => void changeLanguage(l.code)} />)}
-      </View>
+      <Tabs<string> value={i18n.language} onChange={(c) => void changeLanguage(c as never)} options={LANGUAGES.map((l) => ({ key: l.code as string, label: l.label }))} />
 
       <Text style={styles.section}>{t('settings.discovery')}</Text>
       <Card style={{ padding: 16, gap: 16 }}>
         <Text style={font.small}>{t('settings.interestedIn')}</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Chip label={t('settings.women')} active={prefs.interestedIn === 'FEMALE'} onPress={() => setPref('interestedIn', 'FEMALE')} />
-          <Chip label={t('settings.men')} active={prefs.interestedIn === 'MALE'} onPress={() => setPref('interestedIn', 'MALE')} />
-          <Chip label={t('settings.everyone')} active={prefs.interestedIn === null} onPress={() => setPref('interestedIn', null)} />
-        </View>
+        <Tabs<'FEMALE' | 'MALE' | 'ALL'>
+          value={prefs.interestedIn ?? 'ALL'}
+          onChange={(k) => setPref('interestedIn', k === 'ALL' ? null : k)}
+          options={[{ key: 'FEMALE', label: t('settings.women') }, { key: 'MALE', label: t('settings.men') }, { key: 'ALL', label: t('settings.everyone') }]}
+        />
         <View style={styles.line}>
           <Text style={[font.body, { flex: 1 }]}>{t('settings.ageRange', { min: prefs.ageMin, max: prefs.ageMax })}</Text>
         </View>
@@ -108,8 +106,8 @@ export default function Settings() {
         <MenuRow icon="help" label={t('settings.support')} tint={colors.bgSunken} onPress={() => void Linking.openURL('mailto:support@simo.az')} last />
       </Card>
       <Card style={{ marginTop: 16 }}>
-        <Pressable onPress={() => void logout()} style={styles.danger}><Icon name="logout" color={colors.text} /><Text style={font.body}>{t('settings.logout')}</Text></Pressable>
-        <Pressable onPress={del} style={[styles.danger, { borderBottomWidth: 0 }]}><Icon name="trash" color={colors.danger} /><Text style={[font.body, { color: colors.danger }]}>{t('settings.deleteAccount')}</Text></Pressable>
+        <MenuRow icon="logout" label={t('settings.logout')} tint={colors.bgSunken} right={<View />} onPress={() => void logout()} />
+        <MenuRow icon="trash" label={t('settings.deleteAccount')} tint={colors.brandSoft} danger right={<View />} onPress={del} last />
       </Card>
       <Text style={[font.tiny, { textAlign: 'center', marginTop: 20 }]}>{t('settings.version', { v: Constants.expoConfig?.version ?? '1.0.0' })} · {t('common.id', { id: me.shortId })}</Text>
     </Screen>
@@ -119,7 +117,6 @@ export default function Settings() {
 const styles = StyleSheet.create({
   section: { color: colors.brand, fontFamily: fonts.bold, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', fontSize: 11, letterSpacing: 1.1 },
   line: { flexDirection: 'row', alignItems: 'center' },
-  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  stepText: { color: colors.ink, fontSize: 20, fontFamily: fonts.bold, marginTop: -2 },
-  danger: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1.5, borderColor: colors.hairline, borderRadius: radius.md },
+  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgSunken, alignItems: 'center', justifyContent: 'center' },
+  stepText: { color: colors.ink, fontSize: 20, lineHeight: 24, fontFamily: fonts.bold, textAlign: 'center' },
 });

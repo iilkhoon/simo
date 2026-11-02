@@ -49,7 +49,7 @@ export default function MeTab() {
       </View>
 
       {/* Profil kartı */}
-      <PressBox style={{ marginTop: 14 }} r={24} sh={5} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} inner={styles.head}>
+      <PressBox r={24} sh={2} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} inner={styles.head}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Avatar uri={me.avatarUrl} name={me.name} size={78} vipTier={me.vipTier} />
           <View style={{ flex: 1, gap: 5 }}>
@@ -65,7 +65,7 @@ export default function MeTab() {
               <LevelBadge kind="charm" level={me.charm.level} />
             </View>
           </View>
-          <IconBtn name="more" size={36} sh={2} onPress={() => router.push('/edit-profile')} />
+          <IconBtn name="more" size={36} sh={0} bg={colors.bgSunken} onPress={() => router.push('/edit-profile')} />
         </View>
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
           <Progress label={t('me.wealth')} level={me.wealth.level} xp={me.wealth.xp} next={me.wealth.next} color={colors.coin} />
@@ -74,14 +74,14 @@ export default function MeTab() {
       </PressBox>
 
       {/* Balanslar */}
-      <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
-        <PressBox style={{ flex: 1 }} r={22} sh={4} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+        <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
           <T v="label">Simo Coin</T>
           <CoinAmount n={me.coins.toLocaleString('en-US')} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
-          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={52} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
+          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={48} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
         </PressBox>
-        <PressBox style={{ flex: 1 }} r={22} sh={4} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
+        <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
           <T v="label">Simo Almaz</T>
           <DiamondAmount n={me.diamonds.toLocaleString('en-US')} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
@@ -89,7 +89,7 @@ export default function MeTab() {
       </View>
 
       {/* VIP */}
-      <PressBox style={{ marginTop: 10 }} r={22} sh={4} bg={me.vip ? vipColor(me.vip.tier).bg : colors.ink} onPress={() => router.push('/vip')} inner={styles.vip}>
+      <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={me.vip ? vipColor(me.vip.tier).bg : colors.ink} onPress={() => router.push('/vip')} inner={styles.vip}>
         <View style={[styles.vipIcon, { backgroundColor: me.vip ? colors.card : colors.coin }]}><Icon name="crown" size={22} color={colors.ink} /></View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.vipTitle, { color: me.vip ? vipColor(me.vip.tier).fg : colors.bg }]}>{t('vip.title')}</Text>
@@ -101,7 +101,7 @@ export default function MeTab() {
       </PressBox>
 
       {!isHost && me.gender === 'FEMALE' ? (
-        <PressBox style={{ marginTop: 10 }} r={22} sh={4} bg={colors.highlight} onPress={() => router.push('/host-apply')} inner={styles.vip}>
+        <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={colors.highlight} onPress={() => router.push('/host-apply')} inner={styles.vip}>
           <View style={[styles.vipIcon, { backgroundColor: colors.card }]}><Icon name="sparkles" size={20} color={colors.ink} /></View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.vipTitle, { color: colors.ink }]}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost')}</Text>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   balance: { padding: 14, gap: 8, minHeight: 116 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: colors.ink, borderRadius: 10, paddingHorizontal: 9, height: 24 },
   ctaText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11.5 },
-  x2: { position: 'absolute', top: -6, right: -6, width: 52, height: 52, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '12deg' }] },
+  x2: { position: 'absolute', top: 8, right: 8, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '12deg' }] },
   x2Text: { position: 'absolute', color: colors.white, fontFamily: fonts.display, fontSize: 13 },
   vip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   vipIcon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },

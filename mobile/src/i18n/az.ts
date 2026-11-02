@@ -106,7 +106,7 @@ const az = {
       PURCHASE: 'Coin alışı', SIGNUP_BONUS: 'Qeydiyyat bonusu', CHECKIN: 'Gündəlik bonus', GIFT_SENT: 'Hədiyyə göndərildi',
       GIFT_RECEIVED: 'Hədiyyə alındı', MESSAGE_SENT: 'Mesaj', MESSAGE_EARNED: 'Mesaj qazancı', CALL_SPENT: 'Zəng',
       CALL_EARNED: 'Zəng qazancı', VIP_PURCHASE: 'VIP', EXCHANGE: 'Mübadilə', WITHDRAW: 'Nağdlaşdırma',
-      WITHDRAW_REFUND: 'Geri qaytarma', AGENCY_COMMISSION: 'Agentlik komissiyası', REFERRAL: 'Dəvət bonusu', ADMIN: 'Bonus',
+      WITHDRAW_REFUND: 'Geri qaytarma', AGENCY_COMMISSION: 'Agentlik komissiyası', REFERRAL: 'Dəvət bonusu', ADMIN: 'Bonus', FIRST_RECHARGE_BONUS: 'İlk yükləmə hədiyyəsi',
     } as Record<string, string>,
   },
   vip: {

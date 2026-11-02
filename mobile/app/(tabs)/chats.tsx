@@ -97,8 +97,8 @@ export default function Chats() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ gap: 12, paddingRight: 8 }}
                     renderItem={({ item }) => (
-                      <Pressable onPress={() => void openMatch(item)} style={{ alignItems: 'center', width: 66 }}>
-                        <Avatar uri={item.avatarUrl} name={item.name} size={60} online={item.online} vipTier="GOLD" />
+                      <Pressable onPress={() => void openMatch(item)} style={{ alignItems: 'center', width: 64 }}>
+                        <Avatar uri={item.avatarUrl} name={item.name} size={64} online={item.online} vipTier="GOLD" />
                         <Text style={styles.matchName} numberOfLines={1}>{item.name}</Text>
                       </Pressable>
                     )}
@@ -167,8 +167,9 @@ export default function Chats() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 6, borderRadius: 16, borderBottomWidth: 1.5, borderBottomColor: colors.hairline },
-  matchName: { color: colors.ink, fontSize: 12, marginTop: 6, fontFamily: fonts.semibold },
+  // Sətir ekran enində: sol kənar başlıqla (16) eyni xətdə, basılanda fon tam en boyu
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, marginHorizontal: -16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: colors.hairline },
+  matchName: { color: colors.ink, fontSize: 12, lineHeight: 15, marginTop: 6, fontFamily: fonts.semibold, maxWidth: 64, textAlign: 'center' },
   name: { color: colors.ink, fontSize: 16, fontFamily: fonts.bold, flexShrink: 1 },
   last: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.regular },
   time: { color: colors.textDim, fontSize: 12, fontFamily: fonts.semibold },

@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } fro
 import { Box } from '@/components/ui';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts } from '@/theme';
+import { colors, fonts, webNoOutline } from '@/theme';
 import { Btn, Header, Screen, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -41,7 +41,7 @@ export default function Phone() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, gap: 16 }}>
         <T v="h1">{t('auth.phoneTitle')}</T>
         <T v="body" color={colors.textMuted}>{t('auth.phoneSub')}</T>
-        <Box r={18} sh={4} inner={styles.row}>
+        <Box r={20} sh={2} inner={styles.row}>
           <View style={styles.prefix}><Text style={styles.prefixText}>🇦🇿 +994</Text></View>
           <TextInput
             autoFocus
@@ -65,7 +65,8 @@ export default function Phone() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', height: 66 },
-  prefix: { height: '100%', paddingHorizontal: 14, justifyContent: 'center', borderRightWidth: 1, borderColor: colors.hairline, backgroundColor: colors.bgSunken },
+  prefix: { height: '100%', paddingHorizontal: 16, justifyContent: 'center', flexShrink: 0, borderRightWidth: 1, borderColor: colors.hairline, backgroundColor: colors.bgSunken },
   prefixText: { color: colors.ink, fontSize: 17, fontFamily: fonts.black },
-  input: { flex: 1, color: colors.ink, fontSize: 24, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: '100%', letterSpacing: 0.5 },
+  // minWidth: 0 — sahə sıxıla bilsin (əks halda vebdə fokusda konteyner sürüşür və +994 prefiksi gizlənir)
+  input: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 24, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: '100%', letterSpacing: 0.5, ...webNoOutline },
 });

@@ -29,7 +29,8 @@ function Float({ i, style, children }: { i: number; style: object; children: Rea
 
 export default function Welcome() {
   const { t, i18n } = useTranslation();
-  const topH = Math.min(H * 0.5, 430);
+  // Kiçik ekranlarda (360×740) aşağı hissə sığsın deyə yuxarı səhnə hündürlükdən asılıdır
+  const topH = Math.max(300, Math.min(H * 0.48, 430));
   const words = t('auth.tagline').split(/(?<=\.)\s+/);
   const wc: BlockName[] = ['nar', 'ink', 'lime'];
   return (
@@ -58,9 +59,9 @@ export default function Welcome() {
         <Float i={5} style={{ top: topH * 0.16, right: 64, transform: [{ rotate: '14deg' }] }}><View style={styles.giftDot}><GiftIcon id="rose" size={30} /></View></Float>
       </View>
       <SafeAreaView edges={['bottom']} style={styles.bottom}>
-        <View style={{ gap: 4 }}>
+        <View style={styles.words}>
           {words.map((w, i) => (
-            <SpeechBlock key={i} color={wc[i % 3]} tail="none" size="md" rotate={[-2, 1.5, -1][i % 3]} style={{ marginLeft: i * 18 }}>{w}</SpeechBlock>
+            <SpeechBlock key={i} color={wc[i % 3]} tail={i === 0 ? 'left' : 'none'} size="md" rotate={[-2, 1.5, -1][i % 3]}>{w}</SpeechBlock>
           ))}
         </View>
         <T v="body" color={colors.textMuted} style={{ marginTop: 14 }}>{t('auth.welcomeSub')}</T>
@@ -76,12 +77,13 @@ export default function Welcome() {
 }
 
 const styles = StyleSheet.create({
-  langs: { position: 'absolute', top: 0, left: 20, right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, zIndex: 2 },
+  langs: { position: 'absolute', top: 0, left: 20, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, zIndex: 2 },
   lang: { paddingHorizontal: 11, height: 32, justifyContent: 'center', borderRadius: 16, backgroundColor: colors.card, marginTop: 8 },
   langText: { color: colors.ink, fontFamily: fonts.black, fontSize: 12 },
   brandSm: { color: colors.ink, fontSize: 26, fontFamily: fonts.displayBlack, letterSpacing: -1.2, marginTop: -3 },
   disc: { position: 'absolute', backgroundColor: palette.narSoft },
   giftDot: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  bottom: { flex: 1, paddingHorizontal: 22, paddingTop: 8 },
+  bottom: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  words: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6, rowGap: 8 },
   terms: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginTop: 14, lineHeight: 17, fontFamily: fonts.medium, marginBottom: 6 },
 });

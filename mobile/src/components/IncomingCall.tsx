@@ -8,11 +8,10 @@ import { useStore } from '../store';
 import { api } from '../lib/api';
 import { errorText } from '../lib/format';
 import { colors, fonts, tintFor } from '../theme';
-import { Icon } from './Icon';
-import { Box, IconBtn, T, Tag } from './ui';
+import { GlassPill, IconBtn, T } from './ui';
 import { LevelBadge, VerifiedBadge } from './Badges';
 
-/** Gələn zəng — tam ekran "kağız" kartı, fotoşəkil stiker kimi, iri qəbul/rədd düymələri */
+/** Gələn zəng — tünd premium ekran (zəng ekranı ilə eyni dil): bulanıq foto fon, döyünən halqa, iri rədd/qəbul düymələri */
 export function IncomingCall() {
   const { t } = useTranslation();
   const incoming = useStore((s) => s.incomingCall);
@@ -52,42 +51,46 @@ export function IncomingCall() {
     }
   }
 
-  const rot = pulse.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '8deg'] });
+  const halo = (i: number) => ({
+    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55 - i * 0.2, 0.15 - i * 0.05] }),
+    transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1 + i * 0.12, 1.12 + i * 0.12] }) }],
+  });
+  const accent = video ? colors.brand : colors.sky;
 
   return (
     <Modal visible transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: video ? colors.brandSoft : colors.diamondSoft }}>
+      <View style={{ flex: 1, backgroundColor: colors.night }}>
+        {caller.avatarUrl ? <Image source={{ uri: caller.avatarUrl }} style={[StyleSheet.absoluteFill, { opacity: 0.45 }]} contentFit="cover" blurRadius={40} /> : null}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,14,13,0.55)' }]} />
         <SafeAreaView style={styles.wrap}>
-          <Tag label={video ? t('call.incomingVideo').toUpperCase() : t('call.incomingVoice').toUpperCase()} icon={video ? 'videocam' : 'call'} bg={colors.ink} fg={colors.bg} style={{ alignSelf: 'center', height: 26, paddingHorizontal: 10 }} />
-          <View style={{ alignItems: 'center', marginTop: 28 }}>
-            <Box r={28} sh={6} bg={tintFor(caller.name)} inner={{ width: 230, height: 290 }} style={{ transform: [{ rotate: '-2deg' }] }}>
+          <GlassPill label={video ? t('call.incomingVideo') : t('call.incomingVoice')} icon={video ? 'videocam' : 'call'} bg={colors.glassLight} style={{ alignSelf: 'center', height: 30, paddingHorizontal: 12 }} />
+          <View style={styles.stage}>
+            {[1, 0].map((i) => <Animated.View key={i} style={[styles.halo, { borderColor: accent }, halo(i)]} />)}
+            <View style={[styles.photo, { backgroundColor: tintFor(caller.name) }]}>
               {caller.avatarUrl ? <Image source={{ uri: caller.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><T v="hero">{caller.name.slice(0, 1)}</T></View>
+                <T v="hero">{caller.name.slice(0, 1)}</T>
               )}
-            </Box>
-            <Animated.View style={[styles.ringSticker, { transform: [{ rotate: rot }] }]}>
-              <Icon name={video ? 'videocam' : 'call'} size={26} color={colors.white} />
-            </Animated.View>
-          </View>
-          <View style={{ alignItems: 'center', marginTop: 22, gap: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.name}>{caller.name}{caller.age ? `, ${caller.age}` : ''}</Text>
-              {caller.verified ? <VerifiedBadge size={20} /> : null}
             </View>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
+          </View>
+          <View style={{ alignItems: 'center', gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.name} numberOfLines={1}>{caller.name}{caller.age ? `, ${caller.age}` : ''}</Text>
+              {caller.verified ? <VerifiedBadge size={22} color={colors.sky} /> : null}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <LevelBadge level={caller.wealthLevel} kind="wealth" />
-              {caller.city ? <Tag label={caller.city} icon="location" bg={colors.card} /> : null}
+              {caller.city ? <GlassPill label={caller.city} icon="location" bg={colors.glassLight} /> : null}
             </View>
           </View>
           <View style={{ flex: 1 }} />
           <View style={styles.actions}>
             <View style={styles.col}>
-              <IconBtn name="close" size={76} sh={5} bg={colors.ink} color={colors.bg} onPress={decline} />
-              <T v="bodyStrong">{t('call.decline')}</T>
+              <IconBtn name="close" size={72} sh={0} bg={colors.brand} color={colors.white} iconSize={32} onPress={decline} />
+              <T v="bodyStrong" color={colors.nightText}>{t('call.decline')}</T>
             </View>
             <View style={styles.col}>
-              <IconBtn name={video ? 'videocam' : 'call'} size={76} sh={5} bg={colors.online} color={colors.white} onPress={accept} />
-              <T v="bodyStrong">{t('call.accept')}</T>
+              <IconBtn name={video ? 'videocam' : 'call'} size={72} sh={0} bg={colors.online} color={colors.white} iconSize={30} onPress={accept} />
+              <T v="bodyStrong" color={colors.nightText}>{t('call.accept')}</T>
             </View>
           </View>
         </SafeAreaView>
@@ -98,8 +101,10 @@ export function IncomingCall() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, padding: 24 },
-  ringSticker: { position: 'absolute', right: '22%', top: -14, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
-  name: { color: colors.ink, fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.8 },
-  actions: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
-  col: { alignItems: 'center', gap: 10 },
+  stage: { alignSelf: 'center', width: 230, height: 230, alignItems: 'center', justifyContent: 'center', marginTop: 36, marginBottom: 28 },
+  halo: { position: 'absolute', width: 210, height: 210, borderRadius: 105, borderWidth: 3 },
+  photo: { width: 190, height: 190, borderRadius: 95, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  name: { color: colors.white, fontSize: 30, fontFamily: fonts.display, letterSpacing: -1, flexShrink: 1 },
+  actions: { flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: 20 },
+  col: { alignItems: 'center', gap: 10, width: 110 },
 });

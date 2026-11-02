@@ -6,7 +6,7 @@ import {
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { blocks, colors, elev, fonts, glow, radius, shadow as SH, type, type BlockName, type TypeName } from '../theme';
+import { blocks, colors, elev, fonts, glow, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 export const tap = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -122,7 +122,7 @@ export function Btn({ title, onPress, loading, disabled, kind = 'primary', size 
       ) : (
         <>
           {icon ? <Icon name={icon} size={size === 'sm' ? 15 : 19} color={disabled ? colors.textDim : c.fg} /> : null}
-          <Text style={{ fontFamily: fonts.bold, fontSize: size === 'lg' ? 16 : size === 'md' ? 15 : 13, color: disabled ? colors.textDim : c.fg }} numberOfLines={1}>
+          <Text style={{ ...noPad, fontFamily: fonts.bold, fontSize: size === 'lg' ? 16 : size === 'md' ? 15 : 13, lineHeight: size === 'lg' ? 20 : size === 'md' ? 19 : 17, color: disabled ? colors.textDim : c.fg }} numberOfLines={1}>
             {title}
           </Text>
           {iconRight}
@@ -185,7 +185,7 @@ export function Chip({ label, active, onPress, style, icon, color = colors.ink }
   label: string; active?: boolean; onPress?: () => void; style?: StyleProp<ViewStyle>; icon?: IconName; color?: string;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, active && { backgroundColor: color }, pressed && { opacity: 0.8 }, style]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, active && { backgroundColor: color, borderColor: color }, pressed && { opacity: 0.8 }, style]}>
       {icon ? <Icon name={icon} size={14} color={active ? colors.bg : colors.ink} /> : null}
       <Text style={[styles.chipText, active && { color: colors.bg }]}>{label}</Text>
     </Pressable>
@@ -220,7 +220,7 @@ export function Tabs<K extends string>({ options, value, onChange, night }: { op
         const on = o.key === value;
         return (
           <Pressable key={o.key} onPress={() => { tap(); onChange(o.key); }} style={[styles.tab, on && [{ backgroundColor: night ? colors.bg : colors.card }, elev(1)]]}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: on ? colors.ink : night ? colors.nightMuted : colors.textMuted }}>{o.label}</Text>
+            <Text style={{ ...noPad, fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: on ? colors.ink : night ? colors.nightMuted : colors.textMuted }} numberOfLines={1}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -294,15 +294,15 @@ export function EmptyState({ icon = 'heart', title, sub, action, tint = colors.b
 }
 
 /* ───────────── Siyahı sətirləri ───────────── */
-export function MenuRow({ icon, label, value, onPress, tint = colors.brandSoft, badge, last, right }: {
-  icon: IconName; label: string; value?: string; onPress?: () => void; tint?: string; badge?: number; last?: boolean; right?: React.ReactNode;
+export function MenuRow({ icon, label, value, onPress, tint = colors.brandSoft, badge, last, right, danger }: {
+  icon: IconName; label: string; value?: string; onPress?: () => void; tint?: string; badge?: number; last?: boolean; right?: React.ReactNode; danger?: boolean;
 }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, !last && styles.rowLine, pressed && { backgroundColor: colors.bgSunken }]}>
       <View style={[styles.rowIcon, { backgroundColor: tint }]}>
-        <Icon name={icon} size={18} color={colors.ink} />
+        <Icon name={icon} size={18} color={danger ? colors.danger : colors.ink} />
       </View>
-      <T v="bodyStrong" style={{ flex: 1 }}>{label}</T>
+      <T v="bodyStrong" color={danger ? colors.danger : colors.ink} style={{ flex: 1 }} numberOfLines={1}>{label}</T>
       {badge ? <Badge n={badge} /> : null}
       {value ? <T v="small" color={colors.textMuted}>{value}</T> : null}
       {right ?? <Icon name="chevron" size={16} color={colors.textDim} />}
@@ -366,26 +366,26 @@ export function LiveDot({ color = colors.brand }: { color?: string }) {
 }
 
 const styles = StyleSheet.create({
-  header: { height: 60, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 8 },
+  header: { height: 60, flexDirection: 'row', alignItems: 'center', gap: 8 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, height: 38, borderRadius: radius.pill,
-    backgroundColor: colors.card,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 15, height: 38, borderRadius: radius.pill,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: 'rgba(26,21,18,0.1)',
   },
-  chipText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink },
+  chipText: { ...noPad, fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17, color: colors.ink },
   glass: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 26, borderRadius: 13, alignSelf: 'flex-start' },
-  glassText: { fontFamily: fonts.bold, fontSize: 11.5 },
+  glassText: { ...noPad, fontFamily: fonts.bold, fontSize: 11.5, lineHeight: 14 },
   tabs: { flexDirection: 'row', borderRadius: radius.pill, padding: 4, backgroundColor: colors.bgSunken },
   tab: { flex: 1, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   input: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bgSunken, borderRadius: radius.md,
     borderWidth: 1.5, borderColor: 'transparent', paddingHorizontal: 16, minHeight: 56,
   },
-  inputText: { flex: 1, fontFamily: fonts.medium, fontSize: 16, color: colors.ink, paddingVertical: 12 },
+  inputText: { flex: 1, minWidth: 0, ...webNoOutline, fontFamily: fonts.medium, fontSize: 16, color: colors.ink, paddingVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14 },
   rowLine: { borderBottomWidth: 1, borderBottomColor: colors.hairline },
   rowIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, height: 22, borderRadius: 11, alignSelf: 'flex-start' },
-  tagText: { fontFamily: fonts.black, fontSize: 10.5, letterSpacing: 0.2 },
+  tagText: { ...noPad, fontFamily: fonts.black, fontSize: 10.5, lineHeight: 13, letterSpacing: 0.2 },
   badge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: colors.card },
-  badgeText: { color: colors.white, fontSize: 10, fontFamily: fonts.black },
+  badgeText: { ...noPad, color: colors.white, fontSize: 10, lineHeight: 12, fontFamily: fonts.black },
 });

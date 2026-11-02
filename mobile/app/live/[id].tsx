@@ -3,10 +3,10 @@ import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pre
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, vipColor } from '@/theme';
+import { colors, fonts, vipColor, webNoOutline } from '@/theme';
 import { GlassPill, Box, Btn, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
 import { GiftIcon } from '@/components/GiftIcon';
 import { Icon } from '@/components/Icon';
@@ -34,6 +34,7 @@ interface Line { id: string; kind: 'comment' | 'gift' | 'enter'; text: string; u
 interface Summary { durationSec: number; peakViewers: number; giftsCoins: number; diamonds: number; likes: number }
 
 export default function LiveRoom() {
+  const insets = useSafeAreaInsets();
   useKeepAwake();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -310,13 +311,13 @@ export default function LiveRoom() {
           <IconBtn name="close" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
         </View>
       </SafeAreaView>
-      <View style={styles.subTop} pointerEvents="none">
+      <View style={[styles.subTop, { top: insets.top + 60 }]} pointerEvents="none">
         <Tag label={voice ? 'VOICE' : 'LIVE'} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
         {room.title ? <GlassPill label={room.title} /> : null}
       </View>
 
       {voice ? (
-        <View style={styles.stage}>
+        <View style={[styles.stage, { top: insets.top + 98 }]}>
           <View style={styles.stageCard}>
             {hostSeat ? seatView(hostSeat, true) : null}
             <View style={styles.seatGrid}>{guestSeats.map((s) => seatView(s))}</View>
@@ -402,7 +403,7 @@ export default function LiveRoom() {
                   [t('live.earned'), `💎 ${summary.diamonds}`, colors.diamondSoft],
                   [t('live.likes'), compact(summary.likes), colors.coinSoft],
                 ] as const).map(([k, v, bg]) => (
-                  <Box key={k} r={16} sh={3} bg={bg} style={{ width: '46%' }} inner={styles.stat}>
+                  <Box key={k} r={16} sh={0} bg={bg} style={{ width: '47%' }} inner={styles.stat}>
                     <T v="num">{v}</T>
                     <T v="tiny" color={colors.textMuted}>{k}</T>
                   </Box>
@@ -422,15 +423,15 @@ export default function LiveRoom() {
 const QUICK = ['rose', 'heart', 'kiss', 'pomegranate'];
 
 const styles = StyleSheet.create({
-  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 6, gap: 8 },
+  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingTop: 6, gap: 8 },
   hostPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.glass, borderRadius: 24, padding: 3, paddingRight: 5, height: 46 },
   hostName: { color: colors.white, fontFamily: fonts.black, fontSize: 13 },
   hostSub: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 11 },
   follow: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
   rank: { position: 'absolute', bottom: -4, right: -3, width: 15, height: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rankText: { fontFamily: fonts.black, fontSize: 8, color: colors.ink },
-  subTop: { position: 'absolute', top: 108, left: 14, right: 14, flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  stage: { position: 'absolute', top: 146, left: 14, right: 14 },
+  subTop: { position: 'absolute', left: 14, right: 14, flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  stage: { position: 'absolute', left: 14, right: 14 },
   stageShadow: { position: 'absolute', left: 5, top: 5, right: -5, bottom: -5, borderRadius: 28, backgroundColor: colors.ink },
   stageCard: { backgroundColor: colors.night2, borderRadius: 32, paddingVertical: 20, alignItems: 'center' },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(205,184,255,0.16)' },
@@ -442,10 +443,10 @@ const styles = StyleSheet.create({
   hostTag: { position: 'absolute', bottom: -9, backgroundColor: colors.coin, borderRadius: 6, paddingHorizontal: 6, height: 17, justifyContent: 'center' },
   hostTagText: { color: colors.ink, fontFamily: fonts.black, fontSize: 9, letterSpacing: 0.6 },
   seatName: { color: colors.nightText, fontFamily: fonts.bold, fontSize: 11.5, maxWidth: W / 4 - 12 },
-  enterWrap: { position: 'absolute', top: '44%', left: 12, right: 12 },
+  enterWrap: { position: 'absolute', top: '44%', left: 14, right: 14 },
   enter: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingHorizontal: 14, height: 40, borderRadius: 20 },
   enterText: { fontFamily: fonts.black, fontSize: 13, maxWidth: W - 90 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12 },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12, maxWidth: '100%' },
   lineNight: { backgroundColor: 'rgba(15,13,12,0.55)' },
   lineDay: { backgroundColor: colors.card },
@@ -455,9 +456,9 @@ const styles = StyleSheet.create({
   quickHint: { fontFamily: fonts.semibold, fontSize: 11, marginLeft: 4 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10 },
   inputBox: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.card, justifyContent: 'center', paddingHorizontal: 14 },
-  input: { fontFamily: fonts.medium, fontSize: 14 },
+  input: { minWidth: 0, ...webNoOutline, fontFamily: fonts.medium, fontSize: 14 },
   endWrap: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
   endCard: { padding: 22, alignItems: 'center', gap: 14 },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignSelf: 'stretch' },
   stat: { padding: 12, alignItems: 'center', gap: 2 },
 });

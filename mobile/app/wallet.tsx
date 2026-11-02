@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   price: { marginTop: 8, backgroundColor: colors.ink, borderRadius: radius.pill, height: 38, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   priceText: { color: colors.white, fontFamily: fonts.black, fontSize: 15 },
   secure: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, paddingHorizontal: 4 },
-  hist: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1.5, borderColor: colors.hairline },
+  hist: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderColor: colors.hairline },
   histIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   histAmt: { fontFamily: fonts.black, fontSize: 14 },
 });

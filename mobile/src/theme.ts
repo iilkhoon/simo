@@ -124,19 +124,25 @@ export const fonts = {
   black: 'Onest_800ExtraBold',
 };
 
+/** Android şriftə əlavə yuxarı/aşağı boşluq qoyur — mətn həb və düymələrdə şaquli mərkəzdən sürüşür. Söndürürük. */
+export const noPad = Platform.OS === 'android' ? ({ includeFontPadding: false, textAlignVertical: 'center' } as const) : ({} as const);
+
+/** Vebdə brauzerin fokus konturunu söndürür (fokus nar kontur ilə göstərilir) */
+export const webNoOutline = (Platform.OS === 'web' ? { outlineStyle: 'none' } : {}) as object;
+
 /** Tipoqrafiya şkalası */
 export const type = {
-  hero: { fontFamily: fonts.displayBlack, fontSize: 40, lineHeight: 42, letterSpacing: -1.6 },
-  h1: { fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1 },
-  h2: { fontFamily: fonts.display, fontSize: 22, lineHeight: 27, letterSpacing: -0.6 },
-  h3: { fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },
-  title: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22 },
-  body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
-  bodyStrong: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21 },
-  small: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
-  tiny: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14 },
-  label: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1, textTransform: 'uppercase' as const },
-  num: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22, letterSpacing: -0.4 },
+  hero: { ...noPad, fontFamily: fonts.displayBlack, fontSize: 40, lineHeight: 42, letterSpacing: -1.6 },
+  h1: { ...noPad, fontFamily: fonts.display, fontSize: 30, lineHeight: 34, letterSpacing: -1 },
+  h2: { ...noPad, fontFamily: fonts.display, fontSize: 22, lineHeight: 27, letterSpacing: -0.6 },
+  h3: { ...noPad, fontFamily: fonts.displayBold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },
+  title: { ...noPad, fontFamily: fonts.bold, fontSize: 17, lineHeight: 22 },
+  body: { ...noPad, fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
+  bodyStrong: { ...noPad, fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21 },
+  small: { ...noPad, fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
+  tiny: { ...noPad, fontFamily: fonts.semibold, fontSize: 11, lineHeight: 14 },
+  label: { ...noPad, fontFamily: fonts.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1, textTransform: 'uppercase' as const },
+  num: { ...noPad, fontFamily: fonts.display, fontSize: 17, lineHeight: 22, letterSpacing: -0.4 },
 };
 export type TypeName = keyof typeof type;
 
