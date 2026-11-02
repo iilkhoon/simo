@@ -4,8 +4,8 @@ import { Image } from 'expo-image';
 import { MASCOT } from './mascotAssets';
 
 /**
- * Simo maskotu — 3D qırmızı personaj (30 poza). Şəkillər `assets/mascot/*.png`-dədir,
- * `design/mascot/slice.py` pozalar cədvəlindən avtomatik kəsir.
+ * Simo maskotu — 3D parlaq qırmızı nar (17 şəkil, qalan pozalar ən yaxına yönəlir). Şəkillər `assets/mascot/*.png`-dədir,
+ * `design/mascot/slice.py` `design/mascot/source/`-dakı cədvəllərdən avtomatik kəsir.
  */
 export type MascotPose =
   | 'wave' | 'love' | 'wink' | 'call' | 'sing' | 'gift'

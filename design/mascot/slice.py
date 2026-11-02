@@ -1,6 +1,8 @@
 """
 Maskot pozalar cədvəlini ayrı şəffaf PNG-lərə kəsir və mobil manifesti yaradır.
-İstifadə: python3 design/mascot/slice.py <cədvəl.png> <sütun> <sətir>
+İstifadə: python3 design/mascot/slice.py <cədvəl.png> <sütun> <sətir> [poza1,poza2,...]
+Pozalar verilməsə POSES sırası işlənir. Manifest qovluqdakı bütün PNG-lərdən və ALIASES-dən yığılır,
+ona görə bir neçə cədvəli ardıcıl kəsmək olar.
 Fon (krem) künclərdən flood-fill ilə silinir, personaj kəsilib 512×512 kvadrata yerləşdirilir.
 """
 import sys, os
@@ -14,6 +16,12 @@ POSES = [
   'coffee', 'welcome', 'dance', 'music', 'game', 'trophy',
   'heart', 'thumbs', 'cute', 'rose', 'calm', 'cool',
 ]
+# Ayrıca şəkli olmayan pozalar ən yaxın mövcud pozanı göstərir
+ALIASES = {
+  'thumbs': 'crown', 'trophy': 'crown', 'coffee': 'calm', 'dance': 'party', 'cute': 'shy',
+  'laugh': 'party', 'kiss': 'love', 'welcome': 'wave', 'music': 'sing', 'game': 'wink',
+  'heart': 'love', 'rose': 'love', 'cool': 'wink',
+}
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, '..', '..', 'mobile', 'assets', 'mascot')
 
@@ -59,28 +67,32 @@ def remove_bg(im, tol=12, edge=10):
             if px[x, y][3] and lab[y * w + x] not in keep: px[x, y] = (0, 0, 0, 0)
     return im
 
-def main(path, cols, rows):
+def main(path, cols, rows, poses=None):
+    poses = poses or POSES
     os.makedirs(OUT, exist_ok=True)
     sheet = Image.open(path).convert('RGB'); W, H = sheet.size
     cw, ch = W / cols, H / rows; i = 0; made = []
     for r in range(rows):
         for c in range(cols):
-            if i >= len(POSES): break
+            if i >= len(poses): break
             cell = sheet.crop((int(c * cw), int(r * ch), int((c + 1) * cw), int((r + 1) * ch)))
             cut = remove_bg(cell); bbox = cut.getbbox()
             if bbox: cut = cut.crop(bbox)
             side = int(max(cut.size) * 1.08); canvas = Image.new('RGBA', (side, side), (0, 0, 0, 0))
             canvas.paste(cut, ((side - cut.width) // 2, side - cut.height - int(side * 0.02)), cut)
             canvas = canvas.resize((512, 512), Image.LANCZOS)
-            canvas.save(os.path.join(OUT, f'{POSES[i]}.png'), optimize=True)
-            made.append(POSES[i]); i += 1
+            canvas.save(os.path.join(OUT, f'{poses[i]}.png'), optimize=True)
+            made.append(poses[i]); i += 1
     man = os.path.join(ROOT, '..', '..', 'mobile', 'src', 'components', 'mascotAssets.ts')
     with open(man, 'w') as f:
         f.write('// AVTOMATİK: design/mascot/slice.py yaradır — əl ilə dəyişməyin\n')
         f.write('/* eslint-disable */\nexport const MASCOT: Record<string, number> = {\n')
-        for p in made: f.write(f"  {p}: require('../../assets/mascot/{p}.png'),\n")
+        have = sorted(f[:-4] for f in os.listdir(OUT) if f.endswith('.png'))
+        for p in have: f.write(f"  {p}: require('../../assets/mascot/{p}.png'),\n")
+        for a, t in ALIASES.items():
+            if a not in have and t in have: f.write(f"  {a}: require('../../assets/mascot/{t}.png'),\n")
         f.write('};\n')
     print('ok', len(made))
 
 if __name__ == '__main__':
-    main(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))
+    main(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4].split(',') if len(sys.argv) > 4 else None)
