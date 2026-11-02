@@ -14,12 +14,12 @@ export default function Blocked() {
   useEffect(load, [load]);
   return (
     <Screen>
-      <Header title={t('settings.blockList')} />
+      <Header title={t('settings.blockEmpty')} sub={t('settings.blockEmptySub')} />
       <FlatList
         data={users}
         keyExtractor={(u) => u.id}
         contentContainerStyle={{ flexGrow: 1, gap: 10 }}
-        ListEmptyComponent={<EmptyState icon="ban" title={t('settings.blockList')} />}
+        ListEmptyComponent={<EmptyState icon="ban" title={t('settings.blockEmpty')} sub={t('settings.blockEmptySub')} />}
         renderItem={({ item }) => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar uri={item.avatarUrl} name={item.name} size={46} />

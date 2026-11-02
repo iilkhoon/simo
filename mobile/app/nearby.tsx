@@ -45,7 +45,7 @@ export default function Nearby() {
         <Switch value={online} onValueChange={setOnline} trackColor={{ true: colors.online, false: colors.bgSunken }} thumbColor={colors.card} />
         <Text style={font.small}>{t('discover.onlineNow')}</Text>
       </View>
-      {noLocation ? (
+      {noLocation && !items?.length ? (
         <EmptyState icon="location" title={t('common.permissionDenied')} action={<Btn full={false} size="md" kind="dark" title={t('common.retry')} onPress={() => void syncLocation(true).then((ok) => { setNoLocation(!ok); void load(); })} />} />
       ) : !items ? <Loader full /> : (
         <FlatList

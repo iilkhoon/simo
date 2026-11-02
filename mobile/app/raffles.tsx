@@ -7,7 +7,7 @@ import { Btn, EmptyState, Header, Loader, Screen, T } from '@/components/ui';
 import { CoinIcon } from '@/components/GiftIcon';
 import { Mascot } from '@/components/Mascot';
 import { api } from '@/lib/api';
-import { errorText, timeAgo } from '@/lib/format';
+import { errorText, dateTime, timeAgo } from '@/lib/format';
 import { useStore } from '@/store';
 import { WEB_URL } from '@/config';
 
@@ -46,7 +46,7 @@ export default function Raffles() {
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={styles.title}>{item.title}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}><CoinIcon size={18} /><Text style={styles.prize}>{t('raffles.prize', { n: item.prizeCoins.toLocaleString('en-US') })}</Text></View>
-                  <T v="tiny" color={colors.textMuted}>{t('raffles.entries', { n: item.entries })} · {item.drawnAt ? timeAgo(item.drawnAt) : t('raffles.ends', { t: new Date(item.endsAt).toLocaleString() })}</T>
+                  <T v="tiny" color={colors.textMuted}>{t('raffles.entries', { n: item.entries })} · {item.drawnAt ? timeAgo(item.drawnAt) : t('raffles.ends', { t: dateTime(item.endsAt) })}</T>
                 </View>
               </View>
               {item.description ? <T v="small" color={colors.textMuted}>{item.description}</T> : null}

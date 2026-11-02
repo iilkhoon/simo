@@ -11,7 +11,7 @@ import { UserTile } from './UserTile';
 const TW = (Dimensions.get('window').width - 32 - 16) / 3;
 
 /** "Məni bəyənənlər" və "Profilimə baxanlar" — VIP olmayanlara bulanıq göstərilir (maraq oyadır) */
-export function LockedGrid({ endpoint, title, lockedText, emptyTitle }: { endpoint: string; title: string; lockedText: (n: number) => string; emptyTitle: string }) {
+export function LockedGrid({ endpoint, title, lockedText, emptyTitle, emptySub }: { endpoint: string; title: string; lockedText: (n: number) => string; emptyTitle: string; emptySub?: string }) {
   const { t } = useTranslation();
   const [data, setData] = useState<{ locked: boolean; total: number; items: { user: PublicUser; super?: boolean }[] } | null>(null);
   const load = useCallback(() => void api<NonNullable<typeof data>>(endpoint).then(setData).catch(() => setData({ locked: false, total: 0, items: [] })), [endpoint]);
@@ -33,7 +33,7 @@ export function LockedGrid({ endpoint, title, lockedText, emptyTitle }: { endpoi
             keyExtractor={(x, i) => (x.user.id || 'l') + i}
             columnWrapperStyle={{ gap: 8 }}
             contentContainerStyle={{ gap: 8, flexGrow: 1, paddingBottom: 30 }}
-            ListEmptyComponent={<EmptyState icon="heart" title={emptyTitle} />}
+            ListEmptyComponent={<EmptyState icon={endpoint.includes("visitors") ? "eye" : "heart"} title={emptyTitle} sub={emptySub} />}
             renderItem={({ item }) => (
               <View>
                 <UserTile user={item.user as PublicUser} width={TW} blurred={data.locked} />

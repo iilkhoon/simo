@@ -7,7 +7,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { CoinIcon } from '@/components/GiftIcon';
 import { NobleBadge } from '@/components/Badges';
 import { api } from '@/lib/api';
-import { errorText } from '@/lib/format';
+import { dateOnly, errorText } from '@/lib/format';
 import { useStore } from '@/store';
 import type { Me } from '@/lib/types';
 
@@ -41,7 +41,7 @@ export default function Noble() {
     <Screen scroll>
       <Header title={t('noble.title')} />
       <T v="small" color={colors.textMuted} style={{ marginBottom: 14 }}>{t('noble.sub')}</T>
-      {me?.noble ? <View style={styles.current}><NobleBadge tier={me.noble.tier} /><T v="small">{t('noble.until', { d: me.nobleUntil ? new Date(me.nobleUntil).toLocaleDateString() : '' })}</T></View> : null}
+      {me?.noble ? <View style={styles.current}><NobleBadge tier={me.noble.tier} /><T v="small">{t('noble.until', { d: me.nobleUntil ? dateOnly(me.nobleUntil) : '' })}</T></View> : null}
       <View style={{ gap: 14 }}>
         {plans.map((p) => {
           const l = LOOK[p.tier];

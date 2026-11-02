@@ -20,7 +20,7 @@ export default async function discoveryRoutes(app: FastifyInstance) {
   app.get('/discover/daily', { preHandler: requireAuth }, async (req) => ({ items: await dailyPicks(uid(req)) }));
 
   app.get('/nearby', { preHandler: requireAuth }, async (req) => {
-    const q = z.object({ radius: z.coerce.number().min(1).max(500).default(50), online: z.coerce.boolean().default(false) }).parse(req.query);
+    const q = z.object({ radius: z.coerce.number().min(1).max(500).default(50), online: z.enum(['true', 'false', '1', '0']).default('false').transform((v) => v === 'true' || v === '1') }).parse(req.query);
     return { items: await nearby(uid(req), q.radius, q.online) };
   });
 

@@ -7,7 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from 'expo-router/js-tabs';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, webNoOutline } from '@/theme';
+import { colors, noPad, fonts, webNoOutline } from '@/theme';
 import { Btn, EmptyState, IconBtn, Loader, Tabs, tap } from '@/components/ui';
 import { sheetStyles } from '@/components/ActionSheet';
 import { Icon } from '@/components/Icon';
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   plus: { marginTop: -11, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   sideBtn: { alignItems: 'center', gap: 3 },
   disc: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  sideText: { color: colors.white, fontSize: 12, fontFamily: fonts.black, textShadowColor: colors.ink, textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 1 },
+  sideText: { ...noPad, color: colors.white, fontSize: 12, lineHeight: 16, fontFamily: fonts.black, backgroundColor: 'rgba(20,14,12,0.6)', paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9, overflow: 'hidden', marginTop: 3, minWidth: 22, textAlign: 'center' },
   caption: { position: 'absolute', left: 12, right: 80, bottom: 40, backgroundColor: 'rgba(15,13,12,0.55)', borderRadius: 16, padding: 12 },
   author: { color: colors.white, fontFamily: fonts.black, fontSize: 15 },
   captionText: { color: colors.nightText, marginTop: 5, fontSize: 14, fontFamily: fonts.regular, lineHeight: 19 },

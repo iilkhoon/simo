@@ -136,7 +136,7 @@ const az = {
   },
   earnings: {
     available: 'Çıxarıla bilər', held: 'Gözləmədə ({{n}} gün)', needAgency: 'Qazanmaq üçün agentliyə qoşul →', needKyc: 'Pul çıxarmaq üçün şəxsiyyətini təsdiqlə →', weekly: 'Həftədə 1 çıxarış, yeni qazanc 7 gün gözləyir', kycRule: 'Şəxsiyyət təsdiqi tələb olunur',
-    title: 'Qazancım', diamonds: 'Ləl balansı', cashValue: '≈ {{azn}} ₼', exchange: 'Nar-a dəyiş', exchangeSub: '{{rate}} Ləl = 1 Nar', fee: 'xidmət haqqı {{n}}%',
+    title: 'Qazancım', diamonds: 'Ləl balansı', cashValue: '≈ {{azn}} ₼', exchange: 'Nar-a dəyiş', exchangeSub: '{{rate}} Ləl = 1 Nar', fee: 'Xidmət haqqı {{n}}%',
     withdraw: 'Pul çıxar', min: 'Minimum {{n}} Ləl', method: 'Üsul', account: 'Kart nömrəsi / hesab', amount: 'Ləl miqdarı',
     methods: { CARD: 'Bank kartı', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Agentlik vasitəsilə' } as Record<string, string>,
     requests: 'Sorğular', status: { PENDING: 'Gözləmədə', APPROVED: 'Təsdiqləndi', PAID: 'Ödənildi', REJECTED: 'Rədd edildi' } as Record<string, string>,
@@ -150,7 +150,7 @@ const az = {
     commission: 'Komissiya (30 gün)', week: 'Həftə', month: 'Ay', pending: 'Admin təsdiqi gözlənilir',
     joinSent: 'Sorğu göndərildi! Agentlik təsdiq edəndə xəbər tutacaqsan.', leave: 'Agentlikdən çıx', approveHost: 'Host et',
     inviteCode: 'Dəvət kodun: {{code}}', yourAgency: 'Agentliyin: {{name}}',
-    pitch: 'Agentliklər hostları bir araya gətirir, onlara dəstək olur və hər hostun qazancından əlavə {{n}}% komissiya alır.',
+    pitch: 'Agentliklər hostları bir araya gətirir və böyüdür. Qazancın 30%-i host və agentlik arasında bölünür; agentlik böyüdükcə onun payı 15%-dən 20%-dək artır.',
     hostPitch: 'Agentliyə qoşul — təlim, dəstək və daha yüksək qazanc!',
   },
   match: {
@@ -171,7 +171,7 @@ const az = {
   settings: {
     title: 'Parametrlər', language: 'Dil', discovery: 'Axtarış parametrləri', ageRange: 'Yaş aralığı: {{min}}–{{max}}',
     distance: 'Maksimum məsafə: {{n}} km', interestedIn: 'Kimi göstərək?', everyone: 'Hamını', men: 'Kişiləri', women: 'Qadınları',
-    incognito: 'Görünməz rejim (VIP Qızıl+)', blockList: 'Bloklananlar', terms: 'İstifadə şərtləri', privacy: 'Məxfilik siyasəti',
+    incognito: 'Görünməz rejim (VIP Qızıl+)', blockList: 'Bloklananlar', blockEmpty: 'Bloklanan yoxdur', blockEmptySub: 'Blokladığın istifadəçilər burada görünəcək', terms: 'İstifadə şərtləri', privacy: 'Məxfilik siyasəti',
     support: 'Dəstək', logout: 'Çıxış', deleteAccount: 'Hesabı sil', deleteConfirm: 'Hesabın və bütün məlumatların həmişəlik silinəcək. Əminsən?',
     version: 'Versiya {{v}}',
   },
@@ -183,8 +183,8 @@ const az = {
     reportTitle: 'Şikayət səbəbi', reported: 'Şikayətin qəbul edildi. Təşəkkürlər!', blocked: 'İstifadəçi bloklandı',
     reasons: { SPAM: 'Spam', FAKE: 'Saxta profil', NUDITY: 'Çılpaqlıq', HARASSMENT: 'Təhqir / təqib', UNDERAGE: '18 yaşdan kiçik', SCAM: 'Fırıldaqçılıq', VIOLENCE: 'Zorakılıq', OTHER: 'Digər' } as Record<string, string>,
   },
-  likes: { title: 'Səni bəyənənlər', locked: '{{n}} nəfər səni bəyəndi! Onları görmək üçün VIP Qızıl əldə et.', unlock: 'Kilidi aç' },
-  visitors: { title: 'Profilinə baxanlar', locked: '{{n}} nəfər profilinə baxıb! Kim olduğunu görmək üçün VIP ol.' },
+  likes: { title: 'Səni bəyənənlər', empty: 'Hələ heç kim bəyənməyib', emptySub: 'Profilinə yaxşı şəkillər əlavə et və kəşfdə aktiv ol', locked: '{{n}} nəfər səni bəyəndi! Onları görmək üçün VIP Qızıl əldə et.', unlock: 'Kilidi aç' },
+  visitors: { title: 'Profilinə baxanlar', empty: 'Hələ baxan yoxdur', emptySub: 'Story paylaş və yayına çıx — daha çox insan görsün', locked: '{{n}} nəfər profilinə baxıb! Kim olduğunu görmək üçün VIP ol.' },
   leaderboard: { title: 'Liderlər', charm: 'Şöhrət', wealth: 'Səxavət', day: 'Gün', week: 'Həftə', month: 'Ay' },
   hostApply: {
     title: 'Simo Host ol', sub: 'Söhbət et, yayın aç və hər mesajdan, zəngdən, hədiyyədən qazan.',

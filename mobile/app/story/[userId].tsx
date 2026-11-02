@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -69,6 +70,8 @@ export default function StoryViewer() {
     <View style={{ flex: 1, backgroundColor: colors.night }}>
       <StatusBar style="light" />
       {story.mediaType === 'VIDEO' ? <StoryVideo key={story.id} uri={story.mediaUrl} onEnd={next} /> : <Image source={{ uri: story.mediaUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />}
+      <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0)']} style={styles.scrimTop} />
+      <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)']} style={styles.scrimBottom} />
       <View style={styles.tap}>
         <Pressable style={{ flex: 1 }} onPress={() => setI(Math.max(0, i - 1))} />
         <Pressable style={{ flex: 2 }} onPress={next} />
@@ -106,6 +109,8 @@ export default function StoryViewer() {
 
 const styles = StyleSheet.create({
   tap: { ...StyleSheet.absoluteFill, flexDirection: 'row' },
+  scrimTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 150 },
+  scrimBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 160 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 12, paddingTop: 8 },
   bars: { flexDirection: 'row', gap: 4 },
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },

@@ -57,3 +57,15 @@ export function dayLabel(iso: string): string {
   if (same(d, y)) return i18n.t('common.yesterday');
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
 }
+
+/** Tarix və saat: 07.11.2026, 19:33 */
+export function dateTime(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** Tarix: 07.11.2026 */
+export function dateOnly(iso: string): string {
+  return dateTime(iso).split(',')[0];
+}

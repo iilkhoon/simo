@@ -152,7 +152,7 @@ const en: Dict = {
     commission: 'Commission (30 days)', week: 'Week', month: 'Month', pending: 'Waiting for admin approval',
     joinSent: "Request sent! We'll let you know when the agency approves.", leave: 'Leave agency', approveHost: 'Make host',
     inviteCode: 'Your invite code: {{code}}', yourAgency: 'Your agency: {{name}}',
-    pitch: 'Agencies bring hosts together, support them and earn an extra {{n}}% on every host’s earnings.',
+    pitch: 'Agencies bring hosts together and help them grow. 30% of earnings is split between the host and the agency; as the agency grows, its share rises from 15% to 20%.',
     hostPitch: 'Join an agency — training, support and higher earnings!',
   },
   match: {
@@ -173,7 +173,7 @@ const en: Dict = {
   settings: {
     title: 'Settings', language: 'Language', discovery: 'Discovery settings', ageRange: 'Age range: {{min}}–{{max}}',
     distance: 'Max distance: {{n}} km', interestedIn: 'Show me', everyone: 'Everyone', men: 'Men', women: 'Women',
-    incognito: 'Incognito mode (VIP Gold+)', blockList: 'Blocked users', terms: 'Terms of Use', privacy: 'Privacy Policy',
+    incognito: 'Incognito mode (VIP Gold+)', blockList: 'Blocked users', blockEmpty: 'No blocked users', blockEmptySub: 'People you block will show up here', terms: 'Terms of Use', privacy: 'Privacy Policy',
     support: 'Support', logout: 'Log out', deleteAccount: 'Delete account', deleteConfirm: 'Your account and all data will be permanently deleted. Are you sure?',
     version: 'Version {{v}}',
   },
@@ -185,8 +185,8 @@ const en: Dict = {
     reportTitle: 'Reason for report', reported: 'Report received. Thank you!', blocked: 'User blocked',
     reasons: { SPAM: 'Spam', FAKE: 'Fake profile', NUDITY: 'Nudity', HARASSMENT: 'Harassment', UNDERAGE: 'Under 18', SCAM: 'Scam', VIOLENCE: 'Violence', OTHER: 'Other' },
   },
-  likes: { title: 'Who likes you', locked: '{{n}} people liked you! Get VIP Gold to see them.', unlock: 'Unlock' },
-  visitors: { title: 'Profile visitors', locked: '{{n}} people viewed your profile! Go VIP to see who.' },
+  likes: { title: 'Who likes you', empty: 'No likes yet', emptySub: 'Add great photos and stay active in discovery', locked: '{{n}} people liked you! Get VIP Gold to see them.', unlock: 'Unlock' },
+  visitors: { title: 'Profile visitors', empty: 'No visitors yet', emptySub: 'Post stories and go live so more people see you', locked: '{{n}} people viewed your profile! Go VIP to see who.' },
   leaderboard: { title: 'Leaderboard', charm: 'Fame', wealth: 'Generosity', day: 'Day', week: 'Week', month: 'Month' },
   hostApply: {
     title: 'Become a Simo host', sub: 'Chat, go live and earn from every message, call and gift.',

@@ -9,6 +9,7 @@ import { Avatar } from '@/components/Avatar';
 import { CoinAmount, DiamondAmount, HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
 import { useStore } from '@/store';
+import { dateOnly } from '@/lib/format';
 import { WEB_URL } from '@/config';
 
 function Progress({ label, level, xp, next, color }: { label: string; level: number; xp: number; next: number; color: string }) {
@@ -94,7 +95,7 @@ export default function MeTab() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.vipTitle, { color: me.vip ? vipColor(me.vip.tier).fg : colors.bg }]}>{t('vip.title')}</Text>
           <Text style={[styles.vipSub, { color: me.vip ? vipColor(me.vip.tier).fg : colors.nightMuted }]} numberOfLines={2}>
-            {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: new Date(me.vipUntil).toLocaleDateString() }) : t('vip.subtitle')}
+            {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: dateOnly(me.vipUntil) }) : t('vip.subtitle')}
           </Text>
         </View>
         <Icon name="chevron" size={18} color={me.vip ? vipColor(me.vip.tier).fg : colors.bg} />

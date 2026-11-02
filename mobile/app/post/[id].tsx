@@ -30,7 +30,29 @@ export default function PostView() {
   const [p, setP] = useState<Post | null>(null);
   const [likers, setLikers] = useState<PublicUser[] | null>(null);
   useEffect(() => { void api<{ video: Post }>(`/videos/${id}`).then((r) => setP(r.video)).catch(() => router.back()); }, [id]);
-  if (!p || !p.url) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
+  if (!p) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
+  if (p.locked || !p.url) {
+    // Private post — abunə olmayana bulanıq örtük və abunə çağırışı
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.night }}>
+        <StatusBar style="light" />
+        {p.thumbnailUrl ? <Image source={{ uri: p.thumbnailUrl }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={40} /> : null}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,14,12,0.55)' }]} />
+        <SafeAreaView edges={['top']} style={styles.top}>
+          <IconBtn name="back" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => router.back()} />
+        </SafeAreaView>
+        <View style={styles.lockedBox}>
+          <View style={styles.lockDisc}><Icon name="lock" size={30} color={colors.ink} /></View>
+          <Text style={styles.lockedTitle}>{t('posts.locked')}</Text>
+          {p.user.privatePrice ? <Text style={styles.lockedSub}>{t('posts.subscribe', { price: p.user.privatePrice })}</Text> : null}
+          <Pressable style={styles.lockedBtn} onPress={() => router.replace({ pathname: '/user/[id]', params: { id: p.user.id, tab: 'private' } })}>
+            <Avatar uri={p.user.avatarUrl} name={p.user.name} size={28} ring={false} />
+            <Text style={styles.lockedBtnText}>{p.user.name} →</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
   const mine = p.user.id === meId;
 
   async function like() {
@@ -97,11 +119,17 @@ export default function PostView() {
 }
 
 const styles = StyleSheet.create({
+  lockedBox: { position: 'absolute', left: 24, right: 24, top: '30%', alignItems: 'center', gap: 12 },
+  lockDisc: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
+  lockedTitle: { color: colors.white, fontFamily: fonts.displayBold, fontSize: 22, textAlign: 'center', ...noPad },
+  lockedSub: { color: 'rgba(255,255,255,0.8)', fontFamily: fonts.semibold, fontSize: 15, textAlign: 'center' },
+  lockedBtn: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.white, borderRadius: 26, paddingVertical: 10, paddingHorizontal: 18 },
+  lockedBtnText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 15 },
   top: { position: 'absolute', top: 0, left: 14, paddingTop: 6 },
   side: { position: 'absolute', right: 12, bottom: 150, gap: 14, alignItems: 'center' },
   sideBtn: { alignItems: 'center', gap: 3 },
   disc: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
-  sideText: { ...noPad, color: colors.white, fontFamily: fonts.black, fontSize: 12, lineHeight: 15 },
+  sideText: { ...noPad, color: colors.white, fontFamily: fonts.black, fontSize: 12, lineHeight: 16, backgroundColor: 'rgba(20,14,12,0.6)', paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9, overflow: 'hidden', marginTop: 3, minWidth: 22, textAlign: 'center' },
   caption: { position: 'absolute', left: 14, right: 80, bottom: 0, paddingBottom: 18, gap: 8 },
   author: { ...noPad, color: colors.white, fontFamily: fonts.bold, fontSize: 15, lineHeight: 19 },
   time: { ...noPad, color: colors.nightMuted, fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },

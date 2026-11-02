@@ -33,7 +33,7 @@ const REASONS = ['SPAM', 'FAKE', 'NUDITY', 'HARASSMENT', 'UNDERAGE', 'SCAM', 'VI
 
 export default function UserProfile() {
   const { t } = useTranslation();
-  const { id, gift } = useLocalSearchParams<{ id: string; gift?: string }>();
+  const { id, gift, tab } = useLocalSearchParams<{ id: string; gift?: string; tab?: string }>();
   const insets = useSafeAreaInsets();
   const { me, toast } = useStore();
   const [p, setP] = useState<Profile | null>(null);
@@ -59,7 +59,7 @@ export default function UserProfile() {
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [badges, setBadges] = useState<{ key: string; label?: string; value?: number }[]>([]);
-  const [postTab, setPostTab] = useState<'posts' | 'private'>('posts');
+  const [postTab, setPostTab] = useState<'posts' | 'private'>(tab === 'private' ? 'private' : 'posts');
   const [subscribed, setSubscribed] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
   const loadPosts = useCallback(() => {
