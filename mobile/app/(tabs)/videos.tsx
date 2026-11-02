@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTabSpace } from '@/components/Glass';
 import { Animated, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View, useWindowDimensions, type ListViewToken } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -113,6 +114,7 @@ function Comments({ video, onClose, onAdded }: { video: Video | null; onClose: (
 
 export default function Videos() {
   const { t } = useTranslation();
+  const tabSpace = useTabSpace();
   const { height: winH } = useWindowDimensions();
   const tabH = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
@@ -239,7 +241,7 @@ export default function Videos() {
                 {item.mediaType === 'PHOTO' ? <Image source={{ uri: item.url }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Player uri={item.url} active={focused && index === active} height={H} onTap={() => onDoubleTap(item)} />}
                 {index === active ? <BigHeart k={heartKey} /> : null}
               </Pressable>
-              <View style={styles.side}>
+              <View style={[styles.side, { bottom: tabSpace + 12 }]}>
                 <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: item.user.id } })} style={{ alignItems: 'center' }}>
                   <Avatar uri={item.user.avatarUrl} name={item.user.name} size={48} ring={false} />
                   {!item.following && item.user.id !== meId ? (
@@ -269,7 +271,7 @@ export default function Videos() {
                   <Text style={styles.sideText}>{compact(item.sharesCount ?? 0)}</Text>
                 </Pressable>
               </View>
-              <View style={styles.caption}>
+              <View style={[styles.caption, { bottom: tabSpace + 12 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={styles.author}>@{item.user.name}</Text>
                   {item.user.verified ? <Icon name="verified" size={15} color={colors.diamond} /> : null}

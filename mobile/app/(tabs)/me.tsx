@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useTabSpace } from '@/components/Glass';
 import { Share, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +31,7 @@ function Progress({ label, level, xp, next, color }: { label: string; level: num
 
 export default function MeTab() {
   const { t } = useTranslation();
+  const tabSpace = useTabSpace();
   const { me, refreshMe, unreadNotifications } = useStore();
 
   useFocusEffect(
@@ -42,7 +44,7 @@ export default function MeTab() {
   const isHost = me.hostStatus === 'APPROVED';
 
   return (
-    <Screen scroll>
+    <Screen scroll bottom={tabSpace}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 12, minHeight: 54 }}>
         <T v="h1" style={{ flex: 1 }}>{t('tabs.me')}</T>
         <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />

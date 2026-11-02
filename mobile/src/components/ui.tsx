@@ -20,14 +20,16 @@ export function T({ v = 'body', color, style, center, ...rest }: TextProps & { v
 }
 
 /* ───────────── Ekran ───────────── */
-export function Screen({ children, edges = ['top'], scroll, style, padded = true, night, bg, keyboard }: {
+export function Screen({ children, edges = ['top'], scroll, style, padded = true, night, bg, keyboard, bottom = 48 }: {
   children: React.ReactNode; edges?: Edge[]; scroll?: boolean; style?: StyleProp<ViewStyle>; padded?: boolean; night?: boolean; bg?: string;
   /** Sürüşməyən formalar: klaviatura açılanda məzmun (və altdakı düymə) yuxarı qalxır */
   keyboard?: boolean;
+  /** Sürüşən məzmunun alt boşluğu (üzən tab paneli olan ekranlarda böyük) */
+  bottom?: number;
 }) {
   const inner = scroll ? (
     // Klaviatura açılanda fokusdakı sahə və altdakı düymələr görünən qalır
-    <KeyboardAwareScrollView bottomOffset={24} contentContainerStyle={[padded && { paddingHorizontal: 16, paddingBottom: 48 }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <KeyboardAwareScrollView bottomOffset={24} contentContainerStyle={[padded && { paddingHorizontal: 16, paddingBottom: bottom }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {children}
     </KeyboardAwareScrollView>
   ) : keyboard ? (

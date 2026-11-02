@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTabSpace } from '@/components/Glass';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ import type { Me, PublicUser } from '@/lib/types';
 /** `embedded` — Ana ekranın "Kəşf" bölməsi kimi (öz başlığı və Screen-i olmadan) */
 export default function Discover({ embedded }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
+  const tabSpace = useTabSpace();
   const { me, toast, setMe, unreadNotifications } = useStore();
   const [deck, setDeck] = useState<PublicUser[]>([]);
   const [daily, setDaily] = useState<PublicUser[]>([]);
@@ -81,7 +83,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
   const nextReward = me ? me.checkin.rewards[me.checkin.streak % me.checkin.rewards.length] : 0;
 
   return (
-    <Wrap embedded={embedded}>
+    <Wrap embedded={embedded} pad={tabSpace}>
       {!embedded ? (
         <View style={styles.top}>
           <T v="h1" style={{ flex: 1 }}>{t('tabs.discover')}</T>
@@ -171,8 +173,8 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
   );
 }
 
-function Wrap({ embedded, children }: { embedded?: boolean; children: React.ReactNode }) {
-  return embedded ? <View style={{ flex: 1 }}>{children}</View> : <Screen>{children}</Screen>;
+function Wrap({ embedded, children, pad }: { embedded?: boolean; children: React.ReactNode; pad: number }) {
+  return embedded ? <View style={{ flex: 1, paddingBottom: pad - 6 }}>{children}</View> : <Screen style={{ paddingBottom: pad - 6 }}>{children}</Screen>;
 }
 
 const styles = StyleSheet.create({

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { colors, elev, fonts, glow } from '@/theme';
+import { colors, fonts } from '@/theme';
+import { Glass, TAB_BAR_H as BAR_H } from '@/components/Glass';
 import { Icon, type IconName } from '@/components/Icon';
 import { Badge, tap } from '@/components/ui';
 import { useStore } from '@/store';
@@ -16,7 +17,7 @@ const ICONS: Record<string, [IconName, IconName]> = {
   chats: ['chat', 'chatsOutline'],
   me: ['person', 'personOutline'],
 };
-/** Panel: 2 tab · [+] · 2 tab (simmetrik). "Kəşf" Ana ekranın içindədir. */
+/** Panel: 4 tab şüşə kapsulda + ayrıca "+" dairəsi. "Kəşf" Ana ekranın içindədir. */
 const LEFT = ['index', 'videos'];
 const RIGHT = ['chats', 'me'];
 
@@ -26,60 +27,81 @@ type BarProps = {
   navigation: { emit: (e: { type: 'tabPress'; target: string; canPreventDefault: true }) => { defaultPrevented: boolean }; navigate: (name: string) => void };
 };
 
+
 /**
- * Üzən tab paneli: ağ kapsul + yumşaq kölgə, 2 tab · ortada qaldırılmış "+" (yaratma menyusu) · 2 tab.
- * Aktiv tab — ikon + ad + nar nöqtəsi. Video lentində panel tünd rejimə keçir.
+ * iOS 27 üslubunda üzən şüşə tab paneli:
+ * — şüşə kapsulda 4 tab, aktiv tabın arxasında "linza" yay effekti ilə sürüşür (toxunanda bir az şişir);
+ * — sağda ayrıca şüşə dairə: "+" (yaratma menyusu), iOS-dakı ayrıca axtarış düyməsi kimi;
+ * — məzmun panelin altından keçir (şüşə arxasında bulanır). Video lentində panel tünd şüşəyə keçir.
  */
 function TabBar({ state, descriptors, navigation }: BarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const unread = useStore((s) => s.unreadChats);
   const night = state.routes[state.index]?.name === 'videos';
-  const item = (route: { key: string; name: string }, i: number) => {
-    const focused = state.index === i;
-    const [on, off] = ICONS[route.name] ?? ['heart', 'heartOutline'];
-    const label = descriptors[route.key]?.options.title ?? route.name;
-    const badge = route.name === 'chats' ? unread : 0;
-    const fg = focused ? (night ? colors.white : colors.ink) : night ? colors.nightMuted : colors.textDim;
-    return (
-      <Pressable
-        key={route.key}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: focused }}
-        accessibilityLabel={label}
-        onPress={() => {
-          tap();
-          const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
-        }}
-        style={styles.item}
-      >
-        <Icon name={focused ? on : off} size={23} color={fg} />
-        <Text style={[styles.label, { color: fg }]} numberOfLines={1}>{label}</Text>
-        {focused ? <View style={styles.dot} /> : null}
-        {badge ? <Badge n={badge} style={{ position: 'absolute', top: 4, right: '18%' }} /> : null}
-      </Pressable>
-    );
-  };
+  const order = [...LEFT, ...RIGHT];
+  const activeName = state.routes[state.index]?.name;
+  const activePos = Math.max(0, order.indexOf(activeName === 'discover' ? 'index' : activeName));
+  const [w, setW] = useState(0);
+  const tabW = w / order.length;
+  const x = useRef(new Animated.Value(0)).current;
+  const sx = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!tabW) return;
+    Animated.parallel([
+      Animated.spring(x, { toValue: activePos * tabW, useNativeDriver: true, damping: 16, stiffness: 190, mass: 0.9 }),
+      // "maye" effekt: sürüşərkən linza enlənir, sonra yerinə oturur
+      Animated.sequence([
+        Animated.timing(sx, { toValue: 1.18, duration: 110, useNativeDriver: true }),
+        Animated.spring(sx, { toValue: 1, useNativeDriver: true, damping: 9, stiffness: 220 }),
+      ]),
+    ]).start();
+  }, [activePos, tabW, x, sx]);
   const [create, setCreate] = useState(false);
-  const idx = (name: string) => state.routes.findIndex((r) => r.name === name);
-  const side = (names: string[]) => names.map((n) => (idx(n) >= 0 ? item(state.routes[idx(n)], idx(n)) : null));
+  const fgOn = colors.brand;
+  const fgOff = night ? 'rgba(255,255,255,0.72)' : 'rgba(26,21,18,0.62)';
   return (
-    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: night ? colors.night : colors.bg }]} pointerEvents="box-none">
-      <View style={[styles.bar, night ? { backgroundColor: colors.night2 } : [{ backgroundColor: colors.card }, elev(3)]]}>
-        {side(LEFT)}
-        <View style={styles.centerSlot}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('create.title')}
-            onPress={() => { tap(); setCreate(true); }}
-            style={({ pressed }) => [styles.center, glow(colors.brand), night && { borderColor: colors.night }, pressed && { transform: [{ scale: 0.92 }] }]}
-          >
-            <Icon name="add" size={32} color={colors.white} />
-          </Pressable>
+    <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
+      <Glass radius={BAR_H / 2} dark={night} style={styles.bar} interactive>
+        <View style={styles.row} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+          {tabW ? (
+            <Animated.View pointerEvents="none" style={[styles.lens, { width: tabW - 8, transform: [{ translateX: Animated.add(x, new Animated.Value(4)) }, { scaleX: sx }] }, night ? styles.lensNight : null]} />
+          ) : null}
+          {order.map((name) => {
+            const i = state.routes.findIndex((r) => r.name === name);
+            if (i < 0) return null;
+            const route = state.routes[i];
+            const focused = order[activePos] === name;
+            const [on, off] = ICONS[name] ?? ['heart', 'heartOutline'];
+            const label = descriptors[route.key]?.options.title ?? name;
+            const badge = name === 'chats' ? unread : 0;
+            const fg = focused ? fgOn : fgOff;
+            return (
+              <Pressable
+                key={route.key}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: focused }}
+                accessibilityLabel={label}
+                onPress={() => {
+                  tap();
+                  const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                  if (!e.defaultPrevented && state.index !== i) navigation.navigate(name);
+                }}
+                style={styles.item}
+              >
+                <Icon name={focused ? on : off} size={24} color={fg} />
+                <Text style={[styles.label, { color: fg }, focused && styles.labelOn]} numberOfLines={1}>{label}</Text>
+                {badge ? <Badge n={badge} style={{ position: 'absolute', top: 5, right: '20%' }} /> : null}
+              </Pressable>
+            );
+          })}
         </View>
-        {side(RIGHT)}
-      </View>
+      </Glass>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('create.title')} onPress={() => { tap(); setCreate(true); }} style={({ pressed }) => [pressed && { transform: [{ scale: 0.9 }] }]}>
+        <Glass radius={BAR_H / 2} dark={night} tint="rgba(242,52,79,0.88)" style={styles.plus} interactive>
+          <Icon name="add" size={30} color={colors.white} />
+        </Glass>
+      </Pressable>
       <CreateSheet visible={create} onClose={() => setCreate(false)} />
     </View>
   );
@@ -102,11 +124,13 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 12, paddingTop: 4 },
-  bar: { flexDirection: 'row', height: 66, borderRadius: 33, alignItems: 'center', paddingHorizontal: 4 },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 10.5, maxWidth: 70 },
-  dot: { position: 'absolute', bottom: 5, width: 4, height: 4, borderRadius: 2, backgroundColor: colors.brand },
-  centerSlot: { width: 76, alignItems: 'center' },
-  center: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: -26, borderWidth: 5, borderColor: colors.bg },
+  wrap: { position: 'absolute', left: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bar: { flex: 1, height: BAR_H },
+  row: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 0 },
+  lens: { position: 'absolute', left: 0, top: 5, bottom: 5, borderRadius: (BAR_H - 10) / 2, backgroundColor: 'rgba(242,52,79,0.09)', borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(255,255,255,0.95)', shadowColor: '#2A140F', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  lensNight: { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.18)' },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'center', height: BAR_H, gap: 1 },
+  label: { fontFamily: fonts.semibold, fontSize: 10.5, maxWidth: 74 },
+  labelOn: { fontFamily: fonts.black },
+  plus: { width: BAR_H, height: BAR_H, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useTabSpace } from '@/components/Glass';
 import { Dimensions, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -30,6 +31,7 @@ export interface StoryGroup { user: PublicUser; liveRoomId: string | null; unsee
 export default function LiveHub() {
   const [mode, setMode] = useState<Mode>('live');
   const { t } = useTranslation();
+  const tabSpace = useTabSpace();
   const me = useStore((s) => s.me);
   const unreadN = useStore((s) => s.unreadNotifications);
   const [tab, setTab] = useState<Tab>('popular');
@@ -143,7 +145,7 @@ export default function LiveHub() {
         keyExtractor={(r) => r.id}
         numColumns={voice ? 1 : 2}
         columnWrapperStyle={voice ? undefined : { gap: 12 }}
-        contentContainerStyle={{ gap: 12, paddingBottom: 90, flexGrow: 1 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: tabSpace + 8, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={header}
         refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(tab); setRefreshing(false); }} />}

@@ -54,7 +54,7 @@ const az = {
     shopping: '🛍️ Alış-veriş', anime: '🌸 Anime', poetry: '✒️ Poeziya',
   },
   tabs: { home: 'Ana', feed: 'Akış', discover: 'Kəşf et', live: 'Canlı', videos: 'Videolar', chats: 'Mesajlar', me: 'Mən', profile: 'Profil' },
-  stories: { mine: 'Sənin hekayən', new: 'Yeni hekayə', pick: 'Foto və ya video seç', hint: '24 saat görünəcək', share: 'Paylaş', published: 'Hekayə paylaşıldı ✨', reply: '{{name}}-ə yaz…' },
+  stories: { mine: 'Hekayən', new: 'Yeni hekayə', pick: 'Foto və ya video seç', hint: '24 saat görünəcək', share: 'Paylaş', published: 'Hekayə paylaşıldı ✨', reply: '{{name}}-ə yaz…' },
   noble: { title: 'Zadəganlıq', sub: 'Status, hörmət və diqqət: otağa girişdə xüsusi effekt, profil çərçivəsi, rəngli çat qabarcığı və eksklüziv hədiyyələr.', until: '{{d}} tarixinədək aktivdir', days: 'gün', buy: 'Əldə et', extend: 'Uzat', tiers: { BEY: 'Bəy', XAN: 'Xan', SAH: 'Şah' } as Record<string, string>, perks: { frame: 'Profil çərçivəsi', badge: 'Status nişanı', entry: 'Giriş effekti', bubble: 'Rəngli çat qabarcığı', mount: 'Giriş nəqliyyatı', gifts: 'Eksklüziv hədiyyələr', top: 'Siyahılarda yuxarıda', antikick: 'Otaqdan çıxarılmır' } as Record<string, string> },
   badges: { tenure: '{{n}} il Simo-da', verified: 'Təsdiqlənib' },
   hostTasks: { title: 'Host olmaq yolu', ready: 'Hazırsan! Agentliyə müraciət et 🎉', progress: '{{done}}/{{total}} tamamlandı', sub: 'Tapşırıqları tamamla, sonra agentliyə müraciət et və qazanmağa başla.', items: { accountAge: 'Hesabı ən az {{n}} gün istifadə et', chatPartners: '{{n}} nəfərlə söhbət et', profile: 'Profili tamamla ({{n}} foto + haqqında)', firstPost: 'İlk postunu paylaş', kyc: 'Şəxsiyyətini təsdiqlə' } as Record<string, string> },

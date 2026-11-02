@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useTabSpace } from '@/components/Glass';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,7 @@ interface CallRow extends Call { createdAt: string; endedAt: string | null; peer
 
 export default function Chats() {
   const { t } = useTranslation();
+  const tabSpace = useTabSpace();
   const setUnread = useStore((s) => s.setUnreadChats);
   const myId = useStore((s) => s.me?.id);
   const [tab, setTab] = useState<'chats' | 'calls'>('chats');
@@ -84,7 +86,7 @@ export default function Chats() {
             data={items.filter((c) => c.lastMessageText)}
             keyExtractor={(c) => c.id}
             refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={refresh} />}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: tabSpace }}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
               matches.length ? (
@@ -135,7 +137,7 @@ export default function Chats() {
           data={calls.filter((c) => c.peer)}
           keyExtractor={(c) => c.id}
           refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={refresh} />}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: tabSpace }}
           ListEmptyComponent={<EmptyState icon="call" title={t('chat.noCalls')} sub={t('chat.noCallsSub')} tint={colors.diamondSoft} action={<Btn full={false} size="md" kind="primary" icon="videocam" title={t('live.quickVideo')} onPress={() => router.push({ pathname: '/match', params: { type: 'VIDEO' } })} />} />}
           renderItem={({ item }) => {
             const out = item.callerId === myId;
