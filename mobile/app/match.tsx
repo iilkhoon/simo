@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, tintFor } from '@/theme';
 import { Box, Btn, GlassPill, Header, IconBtn, Screen, T, Tabs } from '@/components/ui';
-import { Mascot } from '@/components/Logo';
+import { Mascot } from '@/components/Mascot';
 import { Avatar } from '@/components/Avatar';
 import { CoinAmount, CoinPill, LevelBadge, VerifiedBadge } from '@/components/Badges';
 import { api } from '@/lib/api';
@@ -95,7 +95,7 @@ export default function Match() {
           </View>
         ) : st.s === 'none' ? (
           <View style={styles.center}>
-            <Mascot size={120} mood="wow" />
+            <Mascot size={150} pose="search" />
             <T v="h2" color={colors.white} center style={{ marginTop: 18 }}>{t('match.none')}</T>
             <T v="small" color={colors.nightMuted} center style={{ marginTop: 4, maxWidth: 280 }}>{t('match.noneSub')}</T>
             <Btn full={false} kind="light" icon="refresh" title={t('common.retry')} style={{ marginTop: 18 }} onPress={() => void search(kind)} />

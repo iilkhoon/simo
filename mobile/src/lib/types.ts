@@ -24,6 +24,11 @@ export interface PublicUser {
   videoCallPrice: number;
   voiceCallPrice: number;
   distanceKm: number | null;
+  nobleTier?: 'NONE' | 'BEY' | 'XAN' | 'SAH';
+  privatePrice?: number | null;
+  freeChat?: boolean;
+  msgPrice?: number | null;
+  joinedAt?: string;
 }
 
 export interface VipPlan {
@@ -58,6 +63,13 @@ export interface Me extends PublicUser {
   incognito: boolean;
   locale: string;
   firstRechargeDone: boolean;
+  promoCoins?: number;
+  kycStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  noble?: { tier: 'BEY' | 'XAN' | 'SAH'; priceCoins: number; days: number; perks: string[] } | null;
+  nobleUntil?: string | null;
+  hellosLeft?: number;
+  superLikesLeft?: number;
+  filterChangesLeft?: number | null;
   referralCode: string;
   agency: { id: string; name: string; code: string } | null;
   ownedAgency: { id: string; name: string; code: string; status: string } | null;

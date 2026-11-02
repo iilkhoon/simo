@@ -14,14 +14,31 @@ export async function pickImage(opts: { camera?: boolean; front?: boolean } = {}
   return r.url;
 }
 
-export async function pickVideo(onProgress?: (p: number) => void): Promise<{ url: string; localUri: string } | null> {
+/** Maksimum video uzunluğu (saniyə) — server də yoxlayır */
+export const MAX_VIDEO_SEC = 90;
+
+export async function pickVideo(onProgress?: (p: number) => void): Promise<{ url: string; localUri: string; durationSec: number } | null> {
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) return null;
-  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], videoMaxDuration: 120, quality: 1 });
+  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], videoMaxDuration: MAX_VIDEO_SEC, allowsEditing: true, quality: 1 });
   if (res.canceled || !res.assets[0]) return null;
   const a = res.assets[0];
+  const durationSec = Math.round((a.duration ?? 0) / 1000);
+  if (durationSec > MAX_VIDEO_SEC) throw new Error('VIDEO_TOO_LONG');
   const r = await upload(a.uri, a.mimeType ?? 'video/mp4', onProgress);
-  return { url: r.url, localUri: a.uri };
+  return { url: r.url, localUri: a.uri, durationSec };
+}
+
+/** Story üçün foto və ya video (kəsmədən) */
+export async function pickStoryMedia(): Promise<{ url: string; localUri: string; type: 'PHOTO' | 'VIDEO' } | null> {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) return null;
+  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], videoMaxDuration: 30, quality: 0.85 });
+  if (res.canceled || !res.assets[0]) return null;
+  const a = res.assets[0];
+  const isVideo = a.type === 'video';
+  const r = await upload(a.uri, a.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'));
+  return { url: r.url, localUri: a.uri, type: isVideo ? 'VIDEO' : 'PHOTO' };
 }
 
 /** Yerləşməni serverə göndərir (yaxınlıqdakılar və məsafə üçün). Dəqiq koordinat başqalarına göstərilmir. */

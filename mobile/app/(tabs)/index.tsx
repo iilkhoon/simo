@@ -5,11 +5,13 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, palette, radius, tintFor } from '@/theme';
-import { EmptyState, GlassPill, IconBtn, LiveDot, Loader, PressBox, Screen, Segmented, T, Tag } from '@/components/ui';
+import { EmptyState, GlassPill, IconBtn, LiveDot, Loader, PressBox, Screen, Segmented, T, Tabs, Tag } from '@/components/ui';
+import Discover from './discover';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { CoinPill, LevelBadge } from '@/components/Badges';
-import { Mascot, Wordmark } from '@/components/Logo';
+import { Wordmark } from '@/components/Logo';
+import { Mascot } from '@/components/Mascot';
 import { compact } from '@/lib/format';
 import { api } from '@/lib/api';
 import { useStore } from '@/store';
@@ -22,7 +24,11 @@ const SW = Dimensions.get('window').width;
 const W = (SW - 32 - 12) / 2;
 
 /** Canlı mərkəz: təsadüfi video/səsli tanışlıq + video yayınlar + səsli otaqlar */
+type Mode = 'live' | 'discover';
+export interface StoryGroup { user: PublicUser; liveRoomId: string | null; unseen: boolean; stories: { id: string; mediaUrl: string; mediaType: 'PHOTO' | 'VIDEO'; createdAt: string; seen: boolean }[] }
+
 export default function LiveHub() {
+  const [mode, setMode] = useState<Mode>('live');
   const { t } = useTranslation();
   const me = useStore((s) => s.me);
   const unreadN = useStore((s) => s.unreadNotifications);
@@ -31,10 +37,13 @@ export default function LiveHub() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [liveNow, setLiveNow] = useState<Room[] | null>(null);
+  const [stories, setStories] = useState<StoryGroup[]>([]);
+  const myStory = stories.find((s) => s.user.id === me?.id && s.stories.length);
   const load = useCallback(async (k: Tab) => {
     try {
       const r = await api<{ items: Room[] }>(`/live?tab=${k}`);
       setRooms(r.items);
+      void api<{ items: StoryGroup[] }>('/stories/feed').then((x) => setStories(x.items)).catch(() => {});
       if (k === 'popular') setLiveNow(r.items);
       else void api<{ items: Room[] }>('/live?tab=popular').then((x) => setLiveNow(x.items)).catch(() => {});
     } catch {
@@ -53,29 +62,28 @@ export default function LiveHub() {
   const voice = tab === 'voice';
   const open = (r: Room) => router.push({ pathname: '/live/[id]', params: { id: r.id } });
 
-  const stories = (liveNow ?? []).slice(0, 12);
   const header = (
     <View>
-      <View style={styles.top}>
-        <Wordmark size={30} />
-        <View style={{ flex: 1 }} />
-        <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
-        <IconBtn name="bell" size={42} badge={unreadN} onPress={() => router.push('/notifications')} />
-      </View>
 
-      {/* Canlıdakılar — story sırası */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingBottom: 6 }}>
-        <Pressable style={styles.story} onPress={() => router.push('/live/start')}>
+      {/* Story sırası: əvvəl canlıda olanlar, sonra izlədiklərin story-ləri */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 6 }}>
+        <Pressable style={styles.story} onPress={() => router.push(myStory ? { pathname: '/story/[userId]', params: { userId: me!.id } } : '/story/new')}>
           <View style={styles.storyAdd}>
-            <Avatar uri={me?.avatarUrl} name={me?.name} size={56} ring={false} />
-            <View style={styles.storyPlus}><Icon name="add" size={16} color={colors.white} /></View>
+            <View style={[styles.storyRing, { borderColor: myStory ? colors.brand : 'transparent' }]}>
+              <Avatar uri={me?.avatarUrl} name={me?.name} size={56} ring={false} />
+            </View>
+            <Pressable onPress={() => router.push('/story/new')} style={styles.storyPlus} hitSlop={6}><Icon name="add" size={16} color={colors.white} /></Pressable>
           </View>
-          <Text style={styles.storyName} numberOfLines={1}>{t('live.goLiveShort')}</Text>
+          <Text style={styles.storyName} numberOfLines={1}>{t('stories.mine')}</Text>
         </Pressable>
-        {stories.map((r) => (
-          <Pressable key={r.id} style={styles.story} onPress={() => open(r)}>
-            <Avatar uri={r.host.avatarUrl} name={r.host.name} size={66} live />
-            <Text style={styles.storyName} numberOfLines={1}>{r.host.name}</Text>
+        {stories.filter((s) => s.user.id !== me?.id).map((s) => (
+          <Pressable key={s.user.id} style={styles.story} onPress={() => (s.liveRoomId ? router.push({ pathname: '/live/[id]', params: { id: s.liveRoomId } }) : router.push({ pathname: '/story/[userId]', params: { userId: s.user.id } }))}>
+            {s.liveRoomId ? <Avatar uri={s.user.avatarUrl} name={s.user.name} size={66} live /> : (
+              <View style={[styles.storyRing, { borderColor: s.unseen ? colors.brand : 'rgba(26,21,18,0.15)' }]}>
+                <Avatar uri={s.user.avatarUrl} name={s.user.name} size={56} ring={false} />
+              </View>
+            )}
+            <Text style={styles.storyName} numberOfLines={1}>{s.user.name}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -83,7 +91,7 @@ export default function LiveHub() {
       {/* Təsadüfi tanışlıq — əsas giriş nöqtəsi (düz rəng blokları) */}
       <View style={styles.quickRow}>
         <Pressable style={({ pressed }) => [styles.quick, { backgroundColor: colors.brand }, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/match', params: { type: 'VIDEO' } })}>
-          <View style={styles.quickMascot}><Mascot size={74} mood="wink" color={palette.orange} /></View>
+          <View style={styles.quickMascot}><Mascot size={92} pose="call" float={false} /></View>
           <View style={styles.quickIcon}><Icon name="videocam" size={20} color={colors.brand} /></View>
           <Text style={[styles.quickTitle, { color: colors.white }]}>{t('live.quickVideo')}</Text>
           <Text style={[styles.quickSub, { color: 'rgba(255,255,255,0.9)' }]}>{t('live.quickVideoSub')}</Text>
@@ -119,6 +127,16 @@ export default function LiveHub() {
 
   return (
     <Screen>
+      <View style={styles.top}>
+        <Wordmark size={28} />
+        <View style={{ flex: 1 }} />
+        <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
+        <IconBtn name="bell" size={42} badge={unreadN} onPress={() => router.push('/notifications')} />
+      </View>
+      <View style={{ marginBottom: 12 }}>
+        <Tabs<Mode> value={mode} onChange={setMode} options={[{ key: 'live', label: t('tabs.live') }, { key: 'discover', label: t('tabs.discover') }]} />
+      </View>
+      {mode === 'discover' ? <Discover embedded /> : (
       <FlatList
         key={voice ? 'list' : 'grid'}
         data={rooms ?? []}
@@ -132,6 +150,7 @@ export default function LiveHub() {
         ListEmptyComponent={rooms === null ? <Loader /> : <EmptyState icon={voice ? 'mic' : 'live'} title={t('live.empty')} tint={voice ? colors.diamondSoft : colors.brandSoft} />}
         renderItem={({ item, index }) => (voice ? <VoiceRow room={item} onPress={() => open(item)} /> : <VideoCard room={item} rank={tab === 'popular' ? index : -1} onPress={() => open(item)} />)}
       />
+      )}
     </Screen>
   );
 }
@@ -188,13 +207,14 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 12, minHeight: 54 },
   story: { width: 68, alignItems: 'center', gap: 8 },
   storyAdd: { width: 66, height: 66, alignItems: 'center', justifyContent: 'center' },
+  storyRing: { width: 66, height: 66, borderRadius: 33, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   storyPlus: { position: 'absolute', right: 2, bottom: 2, width: 24, height: 24, borderRadius: 12, backgroundColor: colors.brand, borderWidth: 2.5, borderColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   storyName: { fontFamily: fonts.semibold, fontSize: 11.5, lineHeight: 14, color: colors.ink, maxWidth: 68, textAlign: 'center' },
   quickRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   quick: { flex: 1.15, padding: 16, height: 180, borderRadius: radius.xl, justifyContent: 'flex-end', overflow: 'hidden' },
   quickSmall: { flex: 1, borderRadius: 24, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
   pressed: { transform: [{ scale: 0.97 }] },
-  quickMascot: { position: 'absolute', right: -10, top: -8, transform: [{ rotate: '12deg' }] },
+  quickMascot: { position: 'absolute', right: -14, top: -10 },
   quickIcon: { position: 'absolute', top: 14, left: 14, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   quickTitle: { fontFamily: fonts.displayBlack, fontSize: 21, lineHeight: 23, letterSpacing: -0.7 },
   quickTitleSm: { fontFamily: fonts.display, fontSize: 14, lineHeight: 17, letterSpacing: -0.3, color: colors.ink },

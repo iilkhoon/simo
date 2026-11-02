@@ -51,7 +51,7 @@ export default function Otp() {
   }
 
   return (
-    <Screen>
+    <Screen keyboard>
       <Header />
       <T v="h1">{t('auth.otpTitle')}</T>
       <T v="body" color={colors.textMuted} style={{ marginTop: 8 }}>{t('auth.otpSub', { phone })}</T>

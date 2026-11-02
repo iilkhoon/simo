@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, webNoOutline } from '@/theme';
@@ -78,7 +79,7 @@ export default function Onboarding() {
       {step > 0 ? (
         <IconBtn name="back" size={40} style={{ marginVertical: 10 }} onPress={() => setStep(step - 1)} />
       ) : <View style={{ height: 62 }} />}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
           {step === 0 && (
             <>

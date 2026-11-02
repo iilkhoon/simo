@@ -76,13 +76,13 @@ export default function MeTab() {
       {/* Balanslar */}
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
         <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
-          <T v="label">Simo Coin</T>
+          <T v="label">{t('common.coins')}</T>
           <CoinAmount n={me.coins.toLocaleString('en-US')} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
           {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={48} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
         </PressBox>
         <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
-          <T v="label">Simo Almaz</T>
+          <T v="label">{t('common.diamonds')}</T>
           <DiamondAmount n={me.diamonds.toLocaleString('en-US')} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
         </PressBox>
@@ -100,8 +100,8 @@ export default function MeTab() {
         <Icon name="chevron" size={18} color={me.vip ? vipColor(me.vip.tier).fg : colors.bg} />
       </PressBox>
 
-      {!isHost && me.gender === 'FEMALE' ? (
-        <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={colors.highlight} onPress={() => router.push('/host-apply')} inner={styles.vip}>
+      {!isHost ? (
+        <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={colors.highlight} onPress={() => router.push('/host-tasks')} inner={styles.vip}>
           <View style={[styles.vipIcon, { backgroundColor: colors.card }]}><Icon name="sparkles" size={20} color={colors.ink} /></View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.vipTitle, { color: colors.ink }]}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost')}</Text>
@@ -115,11 +115,16 @@ export default function MeTab() {
         <MenuRow icon="heart" label={t('me.likes')} tint={colors.brandSoft} onPress={() => router.push('/likes')} />
         <MenuRow icon="eye" label={t('me.visitors')} tint={colors.lilac} onPress={() => router.push('/visitors')} />
         <MenuRow icon="gift" label={t('me.rewards')} tint={colors.coinSoft} onPress={() => router.push('/rewards')} />
-        <MenuRow icon="trophy" label={t('me.leaderboard')} tint={colors.highlight} onPress={() => router.push('/leaderboard')} last />
+        <MenuRow icon="trophy" label={t('me.leaderboard')} tint={colors.highlight} onPress={() => router.push('/leaderboard')} />
+        <MenuRow icon="crown" label={t('noble.title')} tint={colors.coinSoft} onPress={() => router.push('/noble')} />
+        <MenuRow icon="sparkles" label={t('raffles.title')} tint={colors.lilac} onPress={() => router.push('/raffles')} last />
       </Card>
       <Card style={{ marginTop: 12 }}>
         {isHost || me.diamonds > 0 ? <MenuRow icon="cash" label={t('me.earnings')} tint={colors.diamondSoft} onPress={() => router.push('/earnings')} /> : null}
         <MenuRow icon="business" label={t('me.agency')} tint={colors.lilac} value={me.agency?.name ?? me.ownedAgency?.name} onPress={() => router.push('/agency')} />
+        <MenuRow icon="search" label={t('agency.browse')} tint={colors.skySoft} onPress={() => router.push('/agencies')} />
+        <MenuRow icon="shield" label={t('kyc.title')} tint={colors.onlineSoft} value={t(`kyc.status.${me.kycStatus ?? 'NONE'}`)} onPress={() => router.push('/verify')} />
+        <MenuRow icon="bookmark" label={t('me.saved')} tint={colors.coinSoft} onPress={() => router.push('/saved')} />
         <MenuRow icon="video" label={t('me.myVideos')} tint={colors.brandSoft} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} />
         <MenuRow
           icon="share"

@@ -55,18 +55,21 @@ function Card({ user, myInterests }: { user: PublicUser; myInterests: string[] }
             <View style={{ flex: 1 }} />
             <View style={styles.more}><Icon name="arrowUp" size={18} color={colors.white} /></View>
           </View>
-          {user.city ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-              <Icon name="location" size={13} color={colors.nightMuted} />
-              <Text style={styles.city}>{user.city}</Text>
-            </View>
-          ) : null}
-          {user.bio ? <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text> : null}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-            {user.isHost ? <GlassPill label={t('profile.host')} icon="sparkles" bg={colors.brand} /> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            {user.city ? (
+              <>
+                <Icon name="location" size={13} color={colors.nightMuted} />
+                <Text style={styles.city} numberOfLines={1}>{user.city}</Text>
+              </>
+            ) : null}
+            {user.isHost ? <GlassPill label={t('profile.host')} icon="mic" bg={colors.brand} /> : null}
             {user.vipTier !== 'NONE' ? <GlassPill label={t(`vip.tiers.${user.vipTier}`)} icon="crown" bg={vipColor(user.vipTier).bg} color={vipColor(user.vipTier).fg} /> : null}
+          </View>
+          {user.bio ? <Text style={styles.bio} numberOfLines={1}>{user.bio}</Text> : null}
+          {/* Maraqlar: bir sıra, foto örtülməsin */}
+          <View style={styles.chips}>
             {shared.slice(0, 3).map((i) => <GlassPill key={i} label={t(`interests.${i}`)} icon="heart" bg="rgba(255,255,255,0.92)" color={colors.ink} />)}
-            {rest.slice(0, Math.max(0, 4 - shared.length)).map((i) => <GlassPill key={i} label={t(`interests.${i}`)} bg={colors.glassLight} />)}
+            {rest.slice(0, Math.max(0, 3 - shared.length)).map((i) => <GlassPill key={i} label={t(`interests.${i}`)} bg={colors.glassLight} />)}
           </View>
         </Pressable>
       </View>
@@ -149,7 +152,8 @@ export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]
 const styles = StyleSheet.create({
   card: { flex: 1, borderRadius: radius.xl, marginBottom: 4 },
   clip: { flex: 1, borderRadius: radius.xl, overflow: 'hidden' },
-  scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '62%' },
+  scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '42%' },
+  chips: { flexDirection: 'row', gap: 6, marginTop: 10, overflow: 'hidden', height: 26 },
   bars: { position: 'absolute', top: 12, left: 14, right: 14, flexDirection: 'row', gap: 4 },
   bar: { flex: 1, height: 3.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.4)' },
   topTags: { position: 'absolute', top: 26, left: 14, flexDirection: 'row', gap: 6 },
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
   info: { position: 'absolute', left: 18, right: 18, bottom: 18 },
   match: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: colors.highlight, paddingHorizontal: 10, height: 26, borderRadius: 13, marginBottom: 10 },
   matchText: { fontFamily: fonts.black, fontSize: 12, color: colors.ink },
-  name: { color: colors.white, fontSize: 30, fontFamily: fonts.display, letterSpacing: -1, flexShrink: 1 },
+  name: { color: colors.white, fontSize: 28, fontFamily: fonts.display, letterSpacing: -1, flexShrink: 1 },
   age: { fontFamily: fonts.displayMedium, fontSize: 26, color: 'rgba(255,255,255,0.85)' },
   city: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 13 },
   more: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.glassLight, alignItems: 'center', justifyContent: 'center' },

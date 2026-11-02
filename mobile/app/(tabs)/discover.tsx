@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, palette, radius, tintFor } from '@/theme';
 import { Box, Btn, EmptyState, IconBtn, Loader, PressBox, Screen, SpeechBlock, T, Tag } from '@/components/ui';
-import { Mascot } from '@/components/Logo';
+import { Mascot } from '@/components/Mascot';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { CoinPill } from '@/components/Badges';
@@ -16,7 +16,8 @@ import { syncLocation } from '@/lib/media';
 import { useStore } from '@/store';
 import type { Me, PublicUser } from '@/lib/types';
 
-export default function Discover() {
+/** `embedded` — Ana ekranın "Kəşf" bölməsi kimi (öz başlığı və Screen-i olmadan) */
+export default function Discover({ embedded }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const { me, toast, setMe, unreadNotifications } = useStore();
   const [deck, setDeck] = useState<PublicUser[]>([]);
@@ -80,13 +81,15 @@ export default function Discover() {
   const nextReward = me ? me.checkin.rewards[me.checkin.streak % me.checkin.rewards.length] : 0;
 
   return (
-    <Screen>
-      <View style={styles.top}>
-        <T v="h1" style={{ flex: 1 }}>{t('tabs.discover')}</T>
-        <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
-        <IconBtn name="location" size={40} onPress={() => router.push('/nearby')} />
-        <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />
-      </View>
+    <Wrap embedded={embedded}>
+      {!embedded ? (
+        <View style={styles.top}>
+          <T v="h1" style={{ flex: 1 }}>{t('tabs.discover')}</T>
+          <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
+          <IconBtn name="location" size={40} onPress={() => router.push('/nearby')} />
+          <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />
+        </View>
+      ) : null}
 
       {me && !me.checkin.doneToday ? (
         <PressBox onPress={claim} disabled={claiming} bg={colors.highlight} r={radius.pill} sh={0} style={{ marginBottom: 12 }} inner={styles.checkin}>
@@ -146,7 +149,7 @@ export default function Discover() {
             <Box r={28} sh={3} bg={tintFor(match?.user.name)} style={{ transform: [{ rotate: '8deg' }], marginLeft: -26, marginTop: 20 }} inner={{ width: 136, height: 172, borderWidth: 4, borderColor: colors.white }}>
               {match?.user.avatarUrl ? <Image source={{ uri: match.user.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
             </Box>
-            <View style={{ position: 'absolute', alignSelf: 'center', left: 96, top: 62 }}><Mascot size={84} mood="love" color={palette.orange} /></View>
+            <View style={{ position: 'absolute', alignSelf: 'center', left: 96, top: 62 }}><Mascot size={96} pose="love" /></View>
           </View>
           <View style={{ width: '100%', gap: 10 }}>
             <Btn
@@ -164,8 +167,12 @@ export default function Discover() {
           </View>
         </View>
       </Modal>
-    </Screen>
+    </Wrap>
   );
+}
+
+function Wrap({ embedded, children }: { embedded?: boolean; children: React.ReactNode }) {
+  return embedded ? <View style={{ flex: 1 }}>{children}</View> : <Screen>{children}</Screen>;
 }
 
 const styles = StyleSheet.create({

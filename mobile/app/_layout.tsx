@@ -14,6 +14,7 @@ import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { Toasts } from '@/components/Toasts';
 import { useFonts } from 'expo-font';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Geologica_600SemiBold, Geologica_700Bold, Geologica_800ExtraBold, Geologica_900Black } from '@expo-google-fonts/geologica';
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { IncomingCall } from '@/components/IncomingCall';
@@ -115,6 +116,7 @@ export default function RootLayout() {
   if (!fontsReady) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <KeyboardProvider>
       <SafeAreaProvider>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }}>
@@ -124,10 +126,12 @@ export default function RootLayout() {
           <Stack.Screen name="live/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="match" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="vip" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="story/[userId]" options={{ animation: 'fade', gestureEnabled: true }} />
         </Stack>
         <IncomingCall />
         <Toasts />
       </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

@@ -32,7 +32,7 @@ export default function StartLive() {
   }
 
   return (
-    <Screen edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']} keyboard>
       <Header title={t('live.goLive')} />
       <View style={{ gap: 16, flex: 1, paddingTop: 6 }}>
         <View style={{ flexDirection: 'row', gap: 8 }}>

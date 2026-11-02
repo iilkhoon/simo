@@ -4,10 +4,13 @@ import {
   type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { blocks, colors, elev, fonts, glow, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';
 import { Icon, type IconName } from './Icon';
+import { Mascot, type MascotPose } from './Mascot';
+import { MASCOT } from './mascotAssets';
 
 export const tap = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
@@ -17,13 +20,18 @@ export function T({ v = 'body', color, style, center, ...rest }: TextProps & { v
 }
 
 /* ───────────── Ekran ───────────── */
-export function Screen({ children, edges = ['top'], scroll, style, padded = true, night, bg }: {
+export function Screen({ children, edges = ['top'], scroll, style, padded = true, night, bg, keyboard }: {
   children: React.ReactNode; edges?: Edge[]; scroll?: boolean; style?: StyleProp<ViewStyle>; padded?: boolean; night?: boolean; bg?: string;
+  /** Sürüşməyən formalar: klaviatura açılanda məzmun (və altdakı düymə) yuxarı qalxır */
+  keyboard?: boolean;
 }) {
   const inner = scroll ? (
-    <ScrollView contentContainerStyle={[padded && { paddingHorizontal: 16, paddingBottom: 48 }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    // Klaviatura açılanda fokusdakı sahə və altdakı düymələr görünən qalır
+    <KeyboardAwareScrollView bottomOffset={24} contentContainerStyle={[padded && { paddingHorizontal: 16, paddingBottom: 48 }, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
+  ) : keyboard ? (
+    <KeyboardAvoidingView behavior="padding" style={[{ flex: 1 }, padded && { paddingHorizontal: 16 }, style]}>{children}</KeyboardAvoidingView>
   ) : (
     <View style={[{ flex: 1 }, padded && { paddingHorizontal: 16 }, style]}>{children}</View>
   );
@@ -280,12 +288,22 @@ export function Loader({ full, night }: { full?: boolean; night?: boolean }) {
   );
 }
 
-export function EmptyState({ icon = 'heart', title, sub, action, tint = colors.brandSoft }: { icon?: IconName; title: string; sub?: string; action?: React.ReactNode; tint?: string }) {
+/** Boş vəziyyətlərdə ikon əvəzinə maskot pozası */
+const EMPTY_POSE: Partial<Record<IconName, MascotPose>> = {
+  heart: 'heart', chat: 'wave', call: 'call', video: 'dance', location: 'search', compass: 'search', bell: 'sleep',
+  live: 'sing', mic: 'sing', ban: 'cool', people: 'welcome', gift: 'gift', eye: 'shy', trophy: 'trophy', time: 'think',
+};
+
+export function EmptyState({ icon = 'heart', title, sub, action, tint = colors.brandSoft, pose }: { icon?: IconName; title: string; sub?: string; action?: React.ReactNode; tint?: string; pose?: MascotPose }) {
+  const p = pose ?? EMPTY_POSE[icon];
+  const hasMascot = !!(p && MASCOT[p]);
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12, flex: 1 }}>
-      <View style={{ width: 96, height: 96, borderRadius: 34, backgroundColor: tint, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
-        <Icon name={icon} size={40} color={colors.ink} />
-      </View>
+      {hasMascot ? <Mascot pose={p} size={150} /> : (
+        <View style={{ width: 96, height: 96, borderRadius: 34, backgroundColor: tint, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
+          <Icon name={icon} size={40} color={colors.ink} />
+        </View>
+      )}
       <T v="h3" center style={{ marginTop: 6 }}>{title}</T>
       {sub ? <T v="small" color={colors.textMuted} center>{sub}</T> : null}
       {action}

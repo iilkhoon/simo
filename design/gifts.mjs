@@ -128,6 +128,10 @@ ${[12, 52].map((x) => `<rect x="${x - 3}" y="40" width="6" height="8" rx="3" fil
 };
 
 /** Simo Coin ikonu */
+/** Nar (valyuta) — nar təsvirli qızıl sikkə; Ləl — qırmızı yaqut. Hazır düz SVG. */
+export const NAR_COIN = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><circle cx=\"32\" cy=\"33.5\" r=\"28\" fill=\"#D98A00\"/><circle cx=\"32\" cy=\"31\" r=\"28\" fill=\"#FFC23D\"/><circle cx=\"32\" cy=\"31\" r=\"22.5\" fill=\"#FFD66B\"/><path d=\"M32 17.5c-1.6 0-2.3-2.8-2.3-2.8l-1.5 2.1-2.3-.8.9 2.7c-4.1 1.8-6.8 5.5-6.8 9.8 0 6.1 5.4 11 12 11s12-4.9 12-11c0-4.3-2.7-8-6.8-9.8l.9-2.7-2.3.8-1.5-2.1s-.7 2.8-2.3 2.8z\" fill=\"#F2344F\"/><path d=\"M32 36s-5.5-3.4-5.5-7c0-1.8 1.4-3.1 3-3.1 1.15 0 2 .6 2.5 1.5.5-.9 1.35-1.5 2.5-1.5 1.6 0 3 1.3 3 3.1C37.5 32.6 32 36 32 36z\" fill=\"#FFFFFF\"/><path d=\"M14 22c2.5-6 8-10 14.5-10.8\" stroke=\"#FFF3C4\" stroke-width=\"3\" stroke-linecap=\"round\" fill=\"none\"/></svg>";
+export const LAL_RUBY = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><path d=\"M16 12h32l12 15-28 31L4 27z\" fill=\"#C8203B\"/><path d=\"M16 12h32l-6 15H22z\" fill=\"#FF5A72\"/><path d=\"M4 27h18l10 31z\" fill=\"#E02848\"/><path d=\"M60 27H42L32 58z\" fill=\"#A3152D\"/><path d=\"M22 27h20L32 58z\" fill=\"#F2344F\"/><path d=\"M16 12l6 15L4 27zM48 12l-6 15h18z\" fill=\"#E8344F\"/><path d=\"M21 15h8l-4 8z\" fill=\"#FFFFFF\" opacity=\".55\"/></svg>";
+
 export const COIN = `<defs>${lg('co_g', [[0, '#FFE58F'], [1, '#F2A100']])}${lg('co_i', [[0, '#FFF3C4'], [1, '#F7B733']])}</defs>
 <circle cx="32" cy="32" r="28" fill="url(#co_g)"/><circle cx="32" cy="32" r="22" fill="url(#co_i)" stroke="#E08E00" stroke-width="2"/>
 <path d="M32 44S18 36 18 27c0-4 3-7 7-7 3 0 5 2 7 4 2-2 4-4 7-4 4 0 7 3 7 7 0 9-14 17-14 17z" fill="#E0115F" opacity=".9"/>${shine(22, 18, 6, 3)}`;
@@ -169,7 +173,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     fs.writeFileSync(path.join(root, 'gifts', `${id}.svg`), wrap(body));
     fs.writeFileSync(path.join(webDir, `${id}.svg`), wrap(body));
   }
-  const ts = `// AVTOMATİK YARADILIB: node design/gifts.mjs — əl ilə dəyişməyin\nexport const GIFT_SVGS: Record<string, string> = ${JSON.stringify(Object.fromEntries(Object.entries(GIFTS).map(([k, v]) => [k, wrap(v)])), null, 2)};\n\nexport const COIN_SVG = ${JSON.stringify(wrap(COIN))};\nexport const DIAMOND_SVG = ${JSON.stringify(wrap(DIAMOND))};\n`;
+  const ts = `// AVTOMATİK YARADILIB: node design/gifts.mjs — əl ilə dəyişməyin\nexport const GIFT_SVGS: Record<string, string> = ${JSON.stringify(Object.fromEntries(Object.entries(GIFTS).map(([k, v]) => [k, wrap(v)])), null, 2)};\n\nexport const COIN_SVG = ${JSON.stringify(NAR_COIN)};\nexport const DIAMOND_SVG = ${JSON.stringify(LAL_RUBY)};\n`;
   const mobileDir = path.join(root, '..', 'mobile', 'src', 'assets');
   fs.mkdirSync(mobileDir, { recursive: true });
   fs.writeFileSync(path.join(mobileDir, 'giftSvgs.ts'), ts);

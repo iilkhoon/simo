@@ -3,7 +3,7 @@ import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, font, fonts, radius } from '@/theme';
-import { Box, Btn, Card, Header, Input, Loader, Screen, T, Tabs, Tag } from '@/components/ui';
+import { Box, Btn, Card, Header, Input, Loader, PressBox, Screen, T, Tabs, Tag } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { DiamondAmount } from '@/components/Badges';
@@ -25,6 +25,7 @@ export default function Agency() {
   const [dash, setDash] = useState<Dash | null>(null);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [form, setForm] = useState({ city: '', contactName: '', contactPhone: '', expectedHosts: '', experience: '', description: '' });
   const [mode, setMode] = useState<'join' | 'create'>('join');
   const [busy, setBusy] = useState(false);
   const [myReq, setMyReq] = useState<{ status: string; agency: { name: string } } | null>(null);
@@ -142,13 +143,38 @@ export default function Agency() {
       </View>
       {mode === 'join' ? (
         <View style={{ gap: 12 }}>
+          <Btn title={t('agency.browse')} icon="search" onPress={() => router.push('/agencies')} />
+          <PressBox r={radius.lg} sh={1} onPress={() => router.push('/host-tasks')} inner={styles.taskRow}>
+            <Icon name="checkmark" size={18} color={colors.online} />
+            <T v="bodyStrong" style={{ flex: 1 }}>{t('hostTasks.title')}</T>
+            <Icon name="chevron" size={16} color={colors.textDim} />
+          </PressBox>
+          <T v="label" color={colors.textMuted} style={{ marginTop: 8 }}>{t('agency.orCode')}</T>
           <Input label={t('agency.code')} value={code} onChangeText={(v) => setCode(v.toUpperCase())} autoCapitalize="characters" placeholder="ABC123" />
-          <Btn title={t('agency.join')} loading={busy} disabled={code.length < 4} onPress={() => void act(() => api('/agencies/join', { body: { code } }), t('agency.joinSent'))} />
+          <Btn kind="dark" title={t('agency.join')} loading={busy} disabled={code.length < 4} onPress={() => void act(() => api('/agencies/join', { body: { code } }), t('agency.joinSent'))} />
         </View>
       ) : (
         <View style={{ gap: 12 }}>
+          <T v="small" color={colors.textMuted}>{t('agency.createInfo')}</T>
+          {me.kycStatus !== 'PENDING' && me.kycStatus !== 'APPROVED' ? (
+            <PressBox r={radius.lg} sh={0} bg={colors.skySoft} onPress={() => router.push('/verify')} inner={styles.taskRow}>
+              <Icon name="shield" size={18} color={colors.diamond} />
+              <T v="bodyStrong" style={{ flex: 1 }}>{t('earnings.needKyc')}</T>
+            </PressBox>
+          ) : null}
           <Input label={t('agency.name')} value={name} onChangeText={setName} maxLength={40} />
-          <Btn title={t('agency.create')} loading={busy} disabled={name.trim().length < 3} onPress={() => void act(() => api('/agencies', { body: { name: name.trim() } }), t('agency.pending'))} />
+          <Input label={t('agency.city')} value={form.city} onChangeText={(v) => setForm({ ...form, city: v })} maxLength={40} />
+          <Input label={t('agency.contactName')} value={form.contactName} onChangeText={(v) => setForm({ ...form, contactName: v })} maxLength={80} />
+          <Input label={t('agency.contactPhone')} value={form.contactPhone} onChangeText={(v) => setForm({ ...form, contactPhone: v })} keyboardType="phone-pad" placeholder="+994 50 000 00 00" />
+          <Input label={t('agency.expectedHosts')} value={form.expectedHosts} onChangeText={(v) => setForm({ ...form, expectedHosts: v.replace(/\D/g, '') })} keyboardType="number-pad" placeholder="10" />
+          <Input label={t('agency.experience')} value={form.experience} onChangeText={(v) => setForm({ ...form, experience: v })} multiline maxLength={500} />
+          <Input label={t('agency.description')} value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} multiline maxLength={500} />
+          <Btn
+            title={t('agency.submit')}
+            loading={busy}
+            disabled={name.trim().length < 3 || form.city.trim().length < 2 || form.contactName.trim().length < 3 || form.contactPhone.trim().length < 7 || !Number(form.expectedHosts)}
+            onPress={() => void act(() => api('/agencies', { body: { name: name.trim(), city: form.city.trim(), contactName: form.contactName.trim(), contactPhone: form.contactPhone.trim(), expectedHosts: Number(form.expectedHosts), experience: form.experience, description: form.description } }), t('agency.pending'))}
+          />
         </View>
       )}
     </Screen>
@@ -156,6 +182,7 @@ export default function Agency() {
 }
 
 const styles = StyleSheet.create({
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   hero: { padding: 20, gap: 12 },
   heroIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   statsRow: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, paddingVertical: 12 },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts } from '@/theme';
 import { Btn, Header, Input, Screen, T, Tabs } from '@/components/ui';
@@ -35,7 +36,7 @@ export default function Email() {
   return (
     <Screen>
       <Header />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, gap: 14 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, gap: 14 }}>
         <T v="h1">{mode === 'login' ? t('auth.login') : t('auth.register')}</T>
         <Tabs value={mode} onChange={setMode} options={[{ key: 'register', label: t('auth.register') }, { key: 'login', label: t('auth.login') }]} />
         <Input label={t('auth.email')} placeholder="ad@mail.az" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,14 +8,17 @@ import { colors, elev, fonts, glow } from '@/theme';
 import { Icon, type IconName } from '@/components/Icon';
 import { Badge, tap } from '@/components/ui';
 import { useStore } from '@/store';
+import { CreateSheet } from '@/components/CreateSheet';
 
 const ICONS: Record<string, [IconName, IconName]> = {
-  index: ['live', 'liveOutline'],
-  discover: ['compass', 'compassOutline'],
+  index: ['home', 'homeOutline'],
   videos: ['video', 'playOutline'],
   chats: ['chat', 'chatsOutline'],
   me: ['person', 'personOutline'],
 };
+/** Panel: 2 tab · [+] · 2 tab (simmetrik). "Kəşf" Ana ekranın içindədir. */
+const LEFT = ['index', 'videos'];
+const RIGHT = ['chats', 'me'];
 
 type BarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
@@ -24,7 +27,7 @@ type BarProps = {
 };
 
 /**
- * Üzən tab paneli: ağ kapsul + yumşaq kölgə, ortada qaldırılmış "Tanışlıq" düyməsi (təsadüfi video zəng).
+ * Üzən tab paneli: ağ kapsul + yumşaq kölgə, 2 tab · ortada qaldırılmış "+" (yaratma menyusu) · 2 tab.
  * Aktiv tab — ikon + ad + nar nöqtəsi. Video lentində panel tünd rejimə keçir.
  */
 function TabBar({ state, descriptors, navigation }: BarProps) {
@@ -58,23 +61,26 @@ function TabBar({ state, descriptors, navigation }: BarProps) {
       </Pressable>
     );
   };
-  const routes = state.routes;
+  const [create, setCreate] = useState(false);
+  const idx = (name: string) => state.routes.findIndex((r) => r.name === name);
+  const side = (names: string[]) => names.map((n) => (idx(n) >= 0 ? item(state.routes[idx(n)], idx(n)) : null));
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: night ? colors.night : colors.bg }]} pointerEvents="box-none">
       <View style={[styles.bar, night ? { backgroundColor: colors.night2 } : [{ backgroundColor: colors.card }, elev(3)]]}>
-        {routes.slice(0, 2).map((r, i) => item(r, i))}
+        {side(LEFT)}
         <View style={styles.centerSlot}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t('live.quickVideo')}
-            onPress={() => { tap(); router.push({ pathname: '/match', params: { type: 'VIDEO' } }); }}
-            style={({ pressed }) => [styles.center, glow(colors.brand), night && { borderColor: colors.night }, pressed && { transform: [{ scale: 0.94 }] }]}
+            accessibilityLabel={t('create.title')}
+            onPress={() => { tap(); setCreate(true); }}
+            style={({ pressed }) => [styles.center, glow(colors.brand), night && { borderColor: colors.night }, pressed && { transform: [{ scale: 0.92 }] }]}
           >
-            <Icon name="videocam" size={26} color={colors.white} />
+            <Icon name="add" size={32} color={colors.white} />
           </Pressable>
         </View>
-        {routes.slice(2).map((r, i) => item(r, i + 2))}
+        {side(RIGHT)}
       </View>
+      <CreateSheet visible={create} onClose={() => setCreate(false)} />
     </View>
   );
 }
@@ -86,11 +92,11 @@ export default function TabsLayout() {
       tabBar={(p) => <TabBar {...(p as unknown as BarProps)} />}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
     >
-      <Tabs.Screen name="index" options={{ title: t('tabs.live') }} />
-      <Tabs.Screen name="discover" options={{ title: t('tabs.discover') }} />
-      <Tabs.Screen name="videos" options={{ title: t('tabs.videos') }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
+      <Tabs.Screen name="videos" options={{ title: t('tabs.feed') }} />
       <Tabs.Screen name="chats" options={{ title: t('tabs.chats') }} />
-      <Tabs.Screen name="me" options={{ title: t('tabs.me') }} />
+      <Tabs.Screen name="me" options={{ title: t('tabs.profile') }} />
+      <Tabs.Screen name="discover" options={{ title: t('tabs.discover'), href: null }} />
     </Tabs>
   );
 }
@@ -101,6 +107,6 @@ const styles = StyleSheet.create({
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 },
   label: { fontFamily: fonts.bold, fontSize: 10.5, maxWidth: 70 },
   dot: { position: 'absolute', bottom: 5, width: 4, height: 4, borderRadius: 2, backgroundColor: colors.brand },
-  centerSlot: { width: 70, alignItems: 'center' },
-  center: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: -26, borderWidth: 5, borderColor: colors.bg },
+  centerSlot: { width: 76, alignItems: 'center' },
+  center: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: -26, borderWidth: 5, borderColor: colors.bg },
 });

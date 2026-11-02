@@ -20,7 +20,7 @@ const MAP = {
   chatsOutline: 'chatbubbles-outline', playOutline: 'play-circle-outline', liveOutline: 'radio-outline', headset: 'headset',
   micOutline: 'mic-outline', videocamOutline: 'videocam-outline', callOutline: 'call-outline', end: 'call', hand: 'hand-left',
   sofa: 'cafe', globe: 'earth', male: 'male', female: 'female', heartDislike: 'close', sparklesOutline: 'sparkles-outline',
-  attach: 'add', pin: 'location-outline', dots: 'ellipsis-vertical', check2: 'checkmark-done', tv: 'tv-outline', dot: 'ellipse', home: 'home', homeOutline: 'home-outline', nazar: 'eye-outline', bolt: 'flash-outline', users: 'people-outline',
+  attach: 'add', pin: 'location-outline', dots: 'ellipsis-vertical', check2: 'checkmark-done', tv: 'tv-outline', dot: 'ellipse', home: 'home', homeOutline: 'home-outline', nazar: 'eye-outline', bolt: 'flash-outline', users: 'people-outline', bookmark: 'bookmark', bookmarkOutline: 'bookmark-outline', lockOpen: 'lock-open', send2: 'paper-plane-outline', swords: 'flash', stats: 'stats-chart', mute: 'volume-mute', userAdd: 'person-add',
 } as const;
 
 export type IconName = keyof typeof MAP;
