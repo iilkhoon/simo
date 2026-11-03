@@ -114,7 +114,7 @@ const en: Dict = {
   wallet: {
     usage1: 'Messages', usage2: 'Calls', usage3: 'Gifts', secure: 'Payments are processed securely via App Store / Google Play or Epoint', noHistory: 'No transactions yet',
     promoPart: '{{n}} of them are bonus Nar (spent first)',
-    title: 'Wallet', balance: 'Nar balance', recharge: 'Buy Nar', firstBonus: 'FIRST TOP-UP: UP TO 300 BONUS NAR', firstGift: '+{{n}} bonus', promoNote: 'Bonus Nar come from rewards and are spent first.',
+    title: 'Wallet', balance: 'Nar balance', recharge: 'Buy Nar', firstBonus: 'First top-up: up to 300 bonus Nar', firstGift: '+{{n}} bonus', promoNote: 'Bonus Nar come from rewards and are spent first.',
     history: 'Transactions', bonus: '+{{n}} bonus', popular: 'Popular', success: '+{{n}} Nar added! 🎉',
     pending: 'Verifying payment…', failed: 'Payment failed', storeUnavailable: 'Store payments unavailable',
     webTopup: 'Top up on the website (simo.az/topup)',
@@ -137,7 +137,7 @@ const en: Dict = {
     tiers: { SILVER: 'Silver', GOLD: 'Gold', DIAMOND: 'Brilliant' },
   },
   earnings: {
-    available: 'Available', held: 'On hold ({{n}} days)', needAgency: 'Join an agency to start earning →', needKyc: 'Verify your identity to withdraw →', weekly: '1 withdrawal per week, new earnings held 7 days', kycRule: 'Identity verification required',
+    available: 'Available', held: 'On hold ({{n}} days)', exchangeBtn: 'Exchange', needAgency: 'Join an agency to start earning', needKyc: 'Verify your identity to withdraw', weekly: '1 withdrawal per week, new earnings held 7 days', kycRule: 'Identity verification required',
     title: 'My earnings', diamonds: 'Diamond balance', cashValue: '≈ {{azn}} ₼', exchange: 'Exchange to Nar', exchangeSub: '1 Diamond = {{rate}} Nar', fee: '{{n}}% service fee',
     withdraw: 'Withdraw', min: 'Minimum {{n}} Diamonds (50 ₼)', method: 'Method', account: 'Card number / account', amount: 'Diamonds',
     methods: { CARD: 'Bank card', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Via agency' },

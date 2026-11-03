@@ -14,7 +14,7 @@ export default function Blocked() {
   useEffect(load, [load]);
   return (
     <Screen>
-      <Header title={t('settings.blockEmpty')} sub={t('settings.blockEmptySub')} />
+      <Header title={t('settings.blockList')} />
       <FlatList
         data={users}
         keyExtractor={(u) => u.id}

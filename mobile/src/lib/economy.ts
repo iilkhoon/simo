@@ -23,6 +23,7 @@ export const ECON = {
 /** Daxili vahid → Almaz (ekranda göstərmək üçün): 125 → "12.5", 5000 → "500" */
 export function fmtAlmaz(units: number): string {
   const a = units / ECON.almazUnit;
+  if (a >= 100_000) return a >= 1_000_000 ? `${(a / 1_000_000).toFixed(1).replace(/\.0$/, '')}M` : `${Math.round(a / 1000)}K`;
   return a.toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
 /** İstifadəçinin yazdığı Almaz → daxili vahid */

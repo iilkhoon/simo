@@ -10,7 +10,7 @@ import { Avatar } from '@/components/Avatar';
 import { CoinAmount, DiamondAmount, HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
 import { useStore } from '@/store';
-import { dateOnly } from '@/lib/format';
+import { dateOnly, big } from '@/lib/format';
 import { WEB_URL } from '@/config';
 
 function Progress({ label, level, xp, next, color }: { label: string; level: number; xp: number; next: number; color: string }) {
@@ -80,7 +80,7 @@ export default function MeTab() {
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
         <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
           <T v="label">{t('common.coins')}</T>
-          <CoinAmount n={me.coins.toLocaleString('en-US')} size={24} />
+          <CoinAmount n={big(me.coins)} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
           {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={48} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
         </PressBox>

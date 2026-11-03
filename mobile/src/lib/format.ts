@@ -40,10 +40,16 @@ export function azn(qepik: number): string {
 }
 
 export function compact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  const trim = (v: string) => v.replace(/\.0$/, '');
+  if (n >= 1_000_000) return `${trim((n / 1_000_000).toFixed(1))}M`;
   if (n >= 10_000) return `${Math.round(n / 1000)}K`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  if (n >= 1000) return `${trim((n / 1000).toFixed(1))}K`;
   return String(n);
+}
+
+/** Balans: 99,999-a qədər tam (1,250), daha böyük — qısa (125K, 1.2M), kartlara sığsın */
+export function big(n: number): string {
+  return Math.abs(n) < 100_000 ? n.toLocaleString('en-US') : compact(n);
 }
 
 /** Çatda tarix ayırıcısı: Bu gün / Dünən / 12.03 */

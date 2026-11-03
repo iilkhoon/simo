@@ -214,7 +214,7 @@ export function GlassPill({ label, icon, color = colors.white, bg = colors.glass
 
 export function Segmented<T extends string>({ options, value, onChange, style }: { options: { key: T; label: string; icon?: IconName }[]; value: T; onChange: (k: T) => void; style?: StyleProp<ViewStyle> }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, style]} contentContainerStyle={{ gap: 8, paddingVertical: 4, paddingRight: 8 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0, flexShrink: 0 }, style]} contentContainerStyle={{ gap: 8, paddingVertical: 4, paddingRight: 8 }}>
       {options.map((o) => (
         <Chip key={o.key} icon={o.icon} label={o.label} active={o.key === value} onPress={() => { tap(); onChange(o.key); }} />
       ))}

@@ -112,7 +112,7 @@ const az = {
   wallet: {
     usage1: 'Mesajlar', usage2: 'Zənglər', usage3: 'Hədiyyələr', secure: 'Ödənişlər App Store / Google Play və ya Epoint vasitəsilə təhlükəsiz həyata keçirilir', noHistory: 'Hələ əməliyyat yoxdur',
     promoPart: 'Bunun {{n}}-i hədiyyə Nar-dır (birinci xərclənir)',
-    title: 'Pul kisəsi', balance: 'Nar balansı', recharge: 'Nar yüklə', firstBonus: 'İLK YÜKLƏMƏDƏ 300-dək HƏDİYYƏ NAR', firstGift: '+{{n}} hədiyyə', promoNote: 'Hədiyyə coinlər bonuslardan gəlir və birinci xərclənir.',
+    title: 'Pul kisəsi', balance: 'Nar balansı', recharge: 'Nar yüklə', firstBonus: 'İlk yükləmədə 300 Nar-dək hədiyyə', firstGift: '+{{n}} hədiyyə', promoNote: 'Hədiyyə Nar-lar bonuslardan gəlir və birinci xərclənir.',
     history: 'Əməliyyatlar', bonus: '+{{n}} bonus', popular: 'Populyar', success: '+{{n}} Nar yükləndi! 🎉',
     pending: 'Ödəniş yoxlanılır…', failed: 'Ödəniş alınmadı', storeUnavailable: 'Mağaza ödənişi əlçatan deyil',
     webTopup: 'Veb saytdan yüklə (simo.az/topup)',
@@ -135,7 +135,7 @@ const az = {
     tiers: { SILVER: 'Gümüş', GOLD: 'Qızıl', DIAMOND: 'Brilyant' } as Record<string, string>,
   },
   earnings: {
-    available: 'Çıxarıla bilər', held: 'Gözləmədə ({{n}} gün)', needAgency: 'Qazanmaq üçün agentliyə qoşul →', needKyc: 'Pul çıxarmaq üçün şəxsiyyətini təsdiqlə →', weekly: 'Həftədə 1 çıxarış, yeni qazanc 7 gün gözləyir', kycRule: 'Şəxsiyyət təsdiqi tələb olunur',
+    available: 'Çıxarıla bilər', held: 'Gözləmədə ({{n}} gün)', exchangeBtn: 'Dəyiş', needAgency: 'Qazanmaq üçün agentliyə qoşul', needKyc: 'Pul çıxarmaq üçün şəxsiyyətini təsdiqlə', weekly: 'Həftədə 1 çıxarış, yeni qazanc 7 gün gözləyir', kycRule: 'Şəxsiyyət təsdiqi tələb olunur',
     title: 'Qazancım', diamonds: 'Almaz balansı', cashValue: '≈ {{azn}} ₼', exchange: 'Nar-a dəyiş', exchangeSub: '1 Almaz = {{rate}} Nar', fee: 'Xidmət haqqı {{n}}%',
     withdraw: 'Pul çıxar', min: 'Minimum {{n}} Almaz (50 ₼)', method: 'Üsul', account: 'Kart nömrəsi / hesab', amount: 'Almaz miqdarı',
     methods: { CARD: 'Bank kartı', M10: 'm10', EMANAT: 'eManat', AGENCY: 'Agentlik vasitəsilə' } as Record<string, string>,

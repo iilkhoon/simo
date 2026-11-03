@@ -8,7 +8,7 @@ import { Btn, Card, Chip, Header, Input, PressBox, Screen, T, Tag } from '@/comp
 import { Icon } from '@/components/Icon';
 import { CoinIcon, DiamondIcon } from '@/components/GiftIcon';
 import { api } from '@/lib/api';
-import { errorText, timeAgo } from '@/lib/format';
+import { big, errorText, timeAgo } from '@/lib/format';
 import { useStore } from '@/store';
 import type { Me } from '@/lib/types';
 
@@ -89,7 +89,7 @@ export default function Earnings() {
             <T v="label" color={colors.nightMuted}>{t('earnings.diamonds')}</T>
             <Text style={styles.heroNum} numberOfLines={1}>{fmtAlmaz(me.diamonds)}</Text>
           </View>
-          <View style={styles.cash}><Text style={styles.cashText}>≈ {diamondsToAzn(me.diamonds, false).toFixed(2)} ₼</Text></View>
+          <View style={styles.cash}><Text style={styles.cashText}>≈ {big(Math.round(diamondsToAzn(available, false)))} ₼</Text></View>
         </View>
         <View style={styles.split}>
           <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.available')}</T><Text style={styles.splitNum}>{fmtAlmaz(available)}</Text></View>
@@ -137,7 +137,7 @@ export default function Earnings() {
         <Text style={font.small}>{t('earnings.exchangeSub', { rate: ECON.almazUnit })}</Text>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}><Input value={exchange} onChangeText={(v) => setExchange(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="10" /></View>
-          <Btn full={false} size="lg" kind="coin" iconRight={<CoinIcon size={18} />} title={`${almazToUnits(Number(exchange || 0))}`} onPress={doExchange} />
+          <Btn full={false} size="lg" kind="coin" iconRight={<CoinIcon size={18} />} title={exchange ? `${almazToUnits(Number(exchange)).toLocaleString('en-US')}` : t('earnings.exchangeBtn')} onPress={doExchange} />
         </View>
       </Card>
 

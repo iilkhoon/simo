@@ -101,7 +101,7 @@ export default function Wallet() {
             <Text style={styles.heroNum} numberOfLines={1}>{coins.toLocaleString('en-US')}</Text>
           </View>
         </View>
-        {promo > 0 ? <T v="tiny" color={colors.nightMuted} style={{ marginTop: 6 }}>{t('wallet.promoPart', { n: promo })}</T> : null}
+        {promo > 0 ? <T v="tiny" color={colors.nightMuted} style={{ marginTop: 6 }}>{t('wallet.promoPart', { n: promo.toLocaleString('en-US') })}</T> : null}
         <View style={styles.usage}>
           {([['chat', 'usage1'], ['videocam', 'usage2'], ['gift', 'usage3']] as const).map(([ic, k]) => (
             <View key={k} style={styles.usageItem}><Icon name={ic} size={14} color={colors.white} /><Text style={styles.usageText}>{t(`wallet.${k}`)}</Text></View>

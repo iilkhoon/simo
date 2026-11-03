@@ -46,7 +46,7 @@ export default function Vip() {
   }
 
   const perks = (p: VipPlan) => [
-    `✔︎ ${t('trust.vipVerified')} — ${t('trust.vipInfo')}`,
+    `${t('trust.vipVerified')} — ${t('trust.vipInfo')}`,
     t('vip.perks.unlimitedLikes'),
     t('vip.perks.freeMessages', { n: p.freeMessagesPerDay }),
     t('vip.perks.callDiscount', { n: Math.round(p.callDiscount * 100) }),
