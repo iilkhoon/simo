@@ -4,7 +4,7 @@ import {
   type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from '../lib/keyboard';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { blocks, colors, elev, fonts, glow, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';

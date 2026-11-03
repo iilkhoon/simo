@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '../../src/lib/keyboard';
 import { Box } from '@/components/ui';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';

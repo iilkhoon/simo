@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '../../src/lib/keyboard';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts } from '@/theme';
 import { Btn, Header, Input, Screen, T, Tabs } from '@/components/ui';

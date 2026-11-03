@@ -16,7 +16,7 @@ import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { Toasts } from '@/components/Toasts';
 import { useFonts } from 'expo-font';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { KeyboardProvider } from '../src/lib/keyboard';
 import { Geologica_600SemiBold, Geologica_700Bold, Geologica_800ExtraBold, Geologica_900Black } from '@expo-google-fonts/geologica';
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { IncomingCall } from '@/components/IncomingCall';

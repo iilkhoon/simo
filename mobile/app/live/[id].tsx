@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fmtAlmaz } from '@/lib/economy';
 import { Alert, Dimensions, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, Share } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '../../src/lib/keyboard';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';

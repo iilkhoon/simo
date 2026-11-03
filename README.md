@@ -61,6 +61,22 @@ Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
   - Blok və şikayət imkanı var.
   - Moderasiya, KYC, agentlik və çəkilişlər admin paneldən idarə olunur.
 
+
+## Windows-da test (Expo Go)
+
+Lazımdır: [Node.js 20+](https://nodejs.org), [Docker Desktop](https://www.docker.com/products/docker-desktop) (və ya lokal PostgreSQL: istifadəçi/parol/baza `simo`), telefonda **Expo Go**. Telefon və kompüter eyni Wi-Fi-da olmalıdır.
+
+| Fayl | Nə edir |
+|---|---|
+| `1-QURASDIR.bat` | Bir dəfə: `.env`, paketlər, baza cədvəlləri, hədiyyələr və demo profillər |
+| `BASLAT.bat` | Backend və Expo-nu iki pəncərədə açır (QR kodu Expo Go ilə skan edin) |
+| `2-BACKEND.bat` / `3-EXPO-GO.bat` | Ayrı-ayrılıqda başlatmaq üçün |
+| `FIREWALL-AC.bat` | Telefon qoşula bilmirsə: 4000 və 8081 portlarını açır (administrator) |
+| `DB-SIFIRLA.bat` | Bazanı silib demo məlumatlarla yenidən yaradır |
+
+Tətbiq backend ünvanını Expo-dan özü tapır (`http://<kompüter-IP>:4000`). OTP kodu `DEV_MODE=true` olduğu üçün ekranda görünür.
+Expo Go-da işləməyənlər (native modul tələb edir, dev build lazımdır): zəng/canlı yayın videosu (Agora), sistem zəng ekranı (CallKit), mağaza ödənişi, Android-də push bildirişləri.
+
 ## Lokal işə salma
 
 ### 1. Verilənlər bazası və API
