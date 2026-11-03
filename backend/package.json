@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "postinstall": "prisma generate",
     "build": "prisma generate && tsc",
     "start": "node dist/src/index.js",
     "db:migrate": "prisma migrate deploy",
