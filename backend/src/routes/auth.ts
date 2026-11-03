@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { issueTokens, requireAuth, sha256, uid } from '../lib/auth.js';
 import { sendSms } from '../services/sms.js';
-import { isTestPhone, refillTester } from '../services/tester.js';
+import { ensureTesterUser, isTestPhone, refillTester } from '../services/tester.js';
 
 /** Azərbaycan nömrəsi: +994 XX XXX XX XX (50, 51, 55, 60, 70, 77, 99, 10, 12 və s.) */
 export function normalizePhone(input: string): string {
@@ -72,7 +72,8 @@ export default async function authRoutes(app: FastifyInstance) {
       }
       await prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
     }
-    let user = await prisma.user.findUnique({ where: { phone } });
+    // Test hesabı: hazır profil (onboarding tələb olunmur)
+    let user = tester ? await ensureTesterUser(phone) : await prisma.user.findUnique({ where: { phone } });
     if (user?.deletedAt) throw err.forbidden('ACCOUNT_DELETED');
     if (user?.banned) throw err.forbidden('BANNED');
     let isNew = false;
@@ -83,10 +84,7 @@ export default async function authRoutes(app: FastifyInstance) {
       });
       isNew = true;
     }
-    if (tester) {
-      if (!user.isTester) user = await prisma.user.update({ where: { id: user.id }, data: { isTester: true } });
-      await refillTester(user.id);
-    }
+    if (tester) await refillTester(user.id);
     return sessionFor(user.id, user.role, isNew || !user.onboarded);
   });
 
