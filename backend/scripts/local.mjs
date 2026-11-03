@@ -121,6 +121,27 @@ if (existsSync(pidFile)) {
   }
   if (!reuse && existsSync(pidFile)) rmSync(pidFile, { force: true });
 }
+/**
+ * Bizim PostgreSQL-in bütün qalıq prosesləri (Windows-da postmaster öləndə köməkçi postgres.exe-lər
+ * qala bilir və paylaşılan yaddaşı tutur: "pre-existing shared memory block is still in use").
+ * Yalnız bu layihənin node_modules-dakı postgres-ə aid proseslər bağlanır.
+ */
+async function killLeftovers() {
+  const binDir = path.join(root, 'node_modules', '@embedded-postgres');
+  if (win) {
+    const ps = `Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith('${binDir.replace(/'/g, "''")}', [System.StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $_.ProcessId }`;
+    const r = spawnSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf8' });
+    const n = (r.stdout ?? '').split(/\s+/).filter(Boolean).length;
+    log(`qalıq postgres prosesləri: ${n} ${r.stderr ?? ''}`);
+    if (n) { say(`Əvvəlki açılışdan qalan ${n} baza prosesi bağlandı.`); await sleep(1500); }
+  } else {
+    const r = spawnSync('pkill', ['-9', '-f', `${binDir}.*postgres -D ${dataDir}`]);
+    if (r.status === 0) await sleep(1500);
+  }
+  if (existsSync(pidFile)) rmSync(pidFile, { force: true });
+}
+if (!reuse) await killLeftovers();
+
 // Port başqa proqramdadırsa (məs. kompüterdə ayrıca PostgreSQL) — növbəti boş portu götürürük
 if (!reuse) {
   const first = PORT;
@@ -142,7 +163,17 @@ if (!reuse) {
   try {
     if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
     say('Verilənlər bazası açılır...');
-    await db.start();
+    try {
+      await db.start();
+    } catch (e) {
+      // Qalıq proses yaddaşı hələ buraxmayıbsa — bir dəfə təmizləyib yenidən cəhd
+      if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e;
+      say('Köhnə baza prosesləri təmizlənir və yenidən cəhd edilir...');
+      await killLeftovers();
+      await sleep(2000);
+      pgLog.length = 0;
+      await db.start();
+    }
   } catch (e) {
     const out = pgLog.join('');
     const hint = /administrative permissions|administrator/i.test(out)
