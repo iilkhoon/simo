@@ -7,7 +7,7 @@
  * Xəta olsa hər şey backend/xeta.log faylına yazılır.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LOG = path.join(root, 'xeta.log');
-const PORT = 5433;
+let PORT = 5433;
 const API_PORT = 4000;
 const reset = process.argv.includes('--reset');
 const win = process.platform === 'win32';
@@ -89,13 +89,47 @@ if (win) {
   }
 }
 
-const DATABASE_URL = `postgresql://simo:simo@127.0.0.1:${PORT}/simo`;
-// Pəncərə birdən bağlanıbsa PostgreSQL arxa planda qala bilər — onda onu işlədirik
-async function canConnect() {
-  const c = new pg.Client({ connectionString: DATABASE_URL.replace(/\/simo$/, '/postgres'), connectionTimeoutMillis: 2000 });
-  try { await c.connect(); await c.end(); return true; } catch { return false; }
+const dbUrl = (port, name = 'simo') => `postgresql://simo:simo@127.0.0.1:${port}/${name}`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function canConnect(port, tries = 1) {
+  for (let i = 0; i < tries; i++) {
+    const c = new pg.Client({ connectionString: dbUrl(port, 'postgres'), connectionTimeoutMillis: 3000 });
+    try { await c.connect(); await c.end(); return true; } catch (e) { log(`qoşulma cəhdi ${port}: ${e.message}`); }
+    if (i < tries - 1) await sleep(1000);
+  }
+  return false;
 }
-const reuse = await canConnect();
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+function killTree(pid) {
+  if (win) spawnSync('taskkill', ['/PID', String(pid), '/F', '/T'], { stdio: 'ignore' });
+  else try { process.kill(pid, 'SIGKILL'); } catch { /* */ }
+}
+
+// Əvvəlki açılışdan qalan PostgreSQL (pəncərə birdən bağlananda arxa planda qalır)
+let reuse = false;
+const pidFile = path.join(dataDir, 'postmaster.pid');
+if (existsSync(pidFile)) {
+  const [pidLine, , , portLine] = readFileSync(pidFile, 'utf8').split(/\r?\n/);
+  const oldPid = Number(pidLine), oldPort = Number(portLine) || PORT;
+  if (oldPid && alive(oldPid)) {
+    if (await canConnect(oldPort, 10)) { PORT = oldPort; reuse = true; say('Verilənlər bazası artıq işləyir — ondan istifadə olunur.'); }
+    else {
+      say('Əvvəlki açılışdan ilişib qalmış verilənlər bazası bağlanır...');
+      killTree(oldPid);
+      for (let i = 0; i < 10 && alive(oldPid); i++) await sleep(500);
+    }
+  }
+  if (!reuse && existsSync(pidFile)) rmSync(pidFile, { force: true });
+}
+// Port başqa proqramdadırsa (məs. kompüterdə ayrıca PostgreSQL) — növbəti boş portu götürürük
+if (!reuse) {
+  const first = PORT;
+  while (await portBusy(PORT)) {
+    if (++PORT > first + 30) fail('Verilənlər bazası üçün boş port tapılmadı.', 'Kompüteri yenidən başladın.');
+  }
+  if (PORT !== first) say(`${first} portu məşğuldur — baza ${PORT} portunda açılır.`);
+}
+const DATABASE_URL = dbUrl(PORT);
 const db = new EmbeddedPostgres({
   databaseDir: dataDir, user: 'simo', password: 'simo', port: PORT, persistent: true,
   // Windows sistemin kodlaşdırmasını (WIN1252 və s.) götürür — "ə, ş" yazıla bilmir. Həmişə UTF-8.
@@ -105,7 +139,6 @@ const db = new EmbeddedPostgres({
 });
 const fresh = !existsSync(path.join(dataDir, 'PG_VERSION'));
 if (!reuse) {
-  if (await portBusy(PORT)) fail(`${PORT} portu başqa proqram tərəfindən tutulub.`, 'Kompüteri yenidən başladın.');
   try {
     if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
     say('Verilənlər bazası açılır...');
@@ -121,13 +154,13 @@ if (!reuse) {
           : 'DB-SIFIRLA.bat ilə bazanı yenidən yaradın.';
     fail('Verilənlər bazası (PostgreSQL) açılmadı.', hint, e ?? new Error('postgres prosesi dayandı'));
   }
-  if (!(await canConnect())) fail('Verilənlər bazasına qoşulmaq olmadı.', 'Kompüteri yenidən başladın və təkrar cəhd edin.');
+  if (!(await canConnect(PORT, 5))) fail('Verilənlər bazasına qoşulmaq olmadı.', 'Kompüteri yenidən başladın və təkrar cəhd edin.');
 }
 const stopDb = () => (reuse ? Promise.resolve() : db.stop().catch(() => {}));
 
 /** "simo" bazası UTF-8 olmalıdır; köhnə (səhv kodlaşdırmalı) baza varsa yenidən yaradılır */
 async function ensureDatabase() {
-  const admin = new pg.Client({ connectionString: DATABASE_URL.replace(/\/simo$/, '/postgres') });
+  const admin = new pg.Client({ connectionString: dbUrl(PORT, 'postgres') });
   await admin.connect();
   try {
     const { rows } = await admin.query("SELECT pg_encoding_to_char(encoding) AS enc FROM pg_database WHERE datname = 'simo'");
