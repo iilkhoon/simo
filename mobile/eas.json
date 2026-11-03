@@ -8,7 +8,11 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.10:4000"
+        "EXPO_PUBLIC_API_URL": "https://api.13-140-206-78.sslip.io",
+        "EXPO_PUBLIC_WEB_URL": "https://13-140-206-78.sslip.io"
+      },
+      "ios": {
+        "simulator": false
       }
     },
     "preview": {

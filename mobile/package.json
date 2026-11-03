@@ -12,6 +12,7 @@
     "expo-blur": "~58.0.5",
     "expo-build-properties": "~58.0.12",
     "expo-constants": "~58.0.14",
+    "expo-dev-client": "~58.0.17",
     "expo-device": "~58.0.5",
     "expo-font": "~58.0.11",
     "expo-gl": "~58.0.0",
