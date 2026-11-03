@@ -44,11 +44,15 @@ const portBusy = (port) => new Promise((res) => {
 
 // Windows-da PostgreSQL qeyri-latın hərfli (ə, ş, ı...) və ya boşluqlu yollarda çökə bilir
 const asciiSafe = (p) => /^[\x21-\x7e]+$/.test(p);
-let dataDir = path.join(root, '.localdb');
+// Cari baza qovluğu (ilişib qalan köhnə qovluqdan təzəsinə keçəndə dəyişir)
+const pointer = path.join(root, '.localdb.json');
+let dbName = '.localdb';
+try { dbName = JSON.parse(readFileSync(pointer, 'utf8')).dir || dbName; } catch { /* */ }
+let dataDir = path.join(root, dbName);
 if (win && !asciiSafe(dataDir)) {
   const base = 'C:\\SimoDB';
   mkdirSync(path.join(base, 'tmp'), { recursive: true });
-  dataDir = path.join(base, 'db');
+  dataDir = path.join(base, dbName === '.localdb' ? 'db' : dbName);
   process.env.TEMP = process.env.TMP = path.join(base, 'tmp');
   say(`Qovluq yolunda xüsusi hərf/boşluq var — baza ${dataDir} qovluğunda saxlanılır.`);
 }
@@ -127,18 +131,31 @@ if (existsSync(pidFile)) {
  * Yalnız bu layihənin node_modules-dakı postgres-ə aid proseslər bağlanır.
  */
 async function killLeftovers() {
-  const binDir = path.join(root, 'node_modules', '@embedded-postgres');
   if (win) {
-    const ps = `Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith('${binDir.replace(/'/g, "''")}', [System.StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $_.ProcessId }`;
-    const r = spawnSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf8' });
-    const n = (r.stdout ?? '').split(/\s+/).filter(Boolean).length;
-    log(`qalıq postgres prosesləri: ${n} ${r.stderr ?? ''}`);
-    if (n) { say(`Əvvəlki açılışdan qalan ${n} baza prosesi bağlandı.`); await sleep(1500); }
+    const ps = `$ErrorActionPreference='SilentlyContinue'
+$own = @(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -ge 5433 -and $_.LocalPort -le 5463 } | ForEach-Object { @{ port = $_.LocalPort; pid = $_.OwningProcess } })
+$procs = @(Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | ForEach-Object { @{ pid = $_.ProcessId; ppid = $_.ParentProcessId; path = "$($_.ExecutablePath)"; cmd = "$($_.CommandLine)" } })
+@{ ports = $own; procs = $procs } | ConvertTo-Json -Depth 4 -Compress`;
+    const r = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { encoding: 'utf8' });
+    log(`postgres prosesləri (PowerShell status ${r.status}): ${r.stdout ?? ''} ${r.stderr ?? ''}`);
+    let info = { ports: [], procs: [] };
+    try { info = JSON.parse(r.stdout || '{}'); } catch { /* */ }
+    const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []);
+    const procs = arr(info.procs);
+    const lc = (x) => String(x ?? '').toLowerCase();
+    // Bizimkilər: embedded-postgres binarı (istənilən simo qovluğundan) və ya bizim baza qovluğumuz
+    const ours = procs.filter((p) => lc(p.path).includes('@embedded-postgres') || lc(p.cmd).includes(lc(dataDir)) || lc(p.path).includes(lc(root)));
+    const ids = new Set(ours.map((p) => p.pid));
+    // Onların uşaq prosesləri (Windows-da --forkchild)
+    for (const p of procs) if (ids.has(p.ppid)) ids.add(p.pid);
+    for (const id of ids) spawnSync('taskkill', ['/PID', String(id), '/F', '/T'], { stdio: 'ignore' });
+    log(`bağlanan postgres prosesləri: ${[...ids].join(', ') || 'yoxdur'} · portlar: ${JSON.stringify(arr(info.ports))}`);
+    if (ids.size) { say(`Əvvəlki açılışdan qalan ${ids.size} baza prosesi bağlandı.`); await sleep(2000); }
   } else {
-    const r = spawnSync('pkill', ['-9', '-f', `${binDir}.*postgres -D ${dataDir}`]);
+    const r = spawnSync('pkill', ['-9', '-f', `@embedded-postgres.*postgres -D ${dataDir}`]);
     if (r.status === 0) await sleep(1500);
   }
-  if (existsSync(pidFile)) rmSync(pidFile, { force: true });
+  if (existsSync(path.join(dataDir, 'postmaster.pid'))) rmSync(path.join(dataDir, 'postmaster.pid'), { force: true });
 }
 if (!reuse) await killLeftovers();
 
@@ -150,15 +167,16 @@ if (!reuse) {
   }
   if (PORT !== first) say(`${first} portu məşğuldur — baza ${PORT} portunda açılır.`);
 }
-const DATABASE_URL = dbUrl(PORT);
-const db = new EmbeddedPostgres({
+let DATABASE_URL = dbUrl(PORT);
+const makeDb = () => new EmbeddedPostgres({
   databaseDir: dataDir, user: 'simo', password: 'simo', port: PORT, persistent: true,
   // Windows sistemin kodlaşdırmasını (WIN1252 və s.) götürür — "ə, ş" yazıla bilmir. Həmişə UTF-8.
   initdbFlags: ['--encoding=UTF8', '--locale=C'],
   onLog: (m) => { pgLog.push(m); if (pgLog.length > 300) pgLog.shift(); },
   onError: (m) => { pgLog.push(`[ERR] ${m instanceof Error ? m.message : m}\n`); },
 });
-const fresh = !existsSync(path.join(dataDir, 'PG_VERSION'));
+let db = makeDb();
+let fresh = !existsSync(path.join(dataDir, 'PG_VERSION'));
 if (!reuse) {
   try {
     if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
@@ -172,7 +190,23 @@ if (!reuse) {
       await killLeftovers();
       await sleep(2000);
       pgLog.length = 0;
-      await db.start();
+      try {
+        await db.start();
+      } catch (e2) {
+        if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e2;
+        // Köhnə qovluq Windows tərəfindən hələ də tutulub — test bazasını təzə qovluqda qururuq
+        const next = `.localdb-${Date.now().toString(36)}`;
+        say(`Köhnə baza qovluğu kilidlidir — təzə baza yaradılır (${next}). Demo məlumatlar yenidən yazılacaq.`);
+        dataDir = path.join(path.dirname(dataDir), next);
+        writeFileSync(pointer, JSON.stringify({ dir: next }));
+        while (await portBusy(PORT)) PORT++;
+        DATABASE_URL = dbUrl(PORT);
+        pgLog.length = 0;
+        db = makeDb();
+        fresh = true;
+        await db.initialise();
+        await db.start();
+      }
     }
   } catch (e) {
     const out = pgLog.join('');
