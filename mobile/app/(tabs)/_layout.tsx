@@ -65,7 +65,7 @@ function TabBar({ state, descriptors, navigation }: BarProps) {
       <Glass radius={BAR_H / 2} dark={night} style={styles.bar} interactive>
         <View style={styles.row} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
           {tabW ? (
-            <Animated.View pointerEvents="none" style={[styles.lens, { width: tabW - 8, transform: [{ translateX: Animated.add(x, new Animated.Value(4)) }, { scaleX: sx }] }, night ? styles.lensNight : null]} />
+            <Animated.View pointerEvents="none" style={[styles.lens, { width: tabW - 8, transform: [{ translateX: x }, { scaleX: sx }] }, night ? styles.lensNight : null]} />
           ) : null}
           {order.map((name) => {
             const i = state.routes.findIndex((r) => r.name === name);
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   wrap: { position: 'absolute', left: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   bar: { flex: 1, height: BAR_H },
   row: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 0 },
-  lens: { position: 'absolute', left: 0, top: 5, bottom: 5, borderRadius: (BAR_H - 10) / 2, backgroundColor: 'rgba(242,52,79,0.09)', borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(255,255,255,0.95)', shadowColor: '#2A140F', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  lens: { position: 'absolute', left: 4, top: 5, bottom: 5, borderRadius: (BAR_H - 10) / 2, backgroundColor: 'rgba(242,52,79,0.09)', borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(255,255,255,0.95)', shadowColor: '#2A140F', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   lensNight: { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.18)' },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', height: BAR_H, gap: 1 },
   label: { fontFamily: fonts.semibold, fontSize: 10.5, maxWidth: 74 },

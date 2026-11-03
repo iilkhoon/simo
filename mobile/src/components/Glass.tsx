@@ -24,8 +24,12 @@ export function Glass({ children, style, radius, dark, tint, interactive }: {
   }
   return (
     <View style={[{ borderRadius: radius, overflow: 'hidden' }, shadow, style]}>
-      <BlurView intensity={Platform.OS === 'android' ? 40 : 60} tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? (dark ? 'rgba(28,24,22,0.55)' : 'rgba(255,255,255,0.62)') }]} />
+      {/* Android-da real bulanıqlıq (dimezis) hər kadrda bütün ekranı yenidən çəkir — video altında
+          tətbiqi dondururdu. Android-da sıx yarımşəffaf fon istifadə olunur. */}
+      {Platform.OS === 'android' ? null : (
+        <BlurView intensity={60} tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} style={StyleSheet.absoluteFill} />
+      )}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? (Platform.OS === 'android' ? (dark ? 'rgba(28,24,22,0.86)' : 'rgba(255,255,255,0.92)') : (dark ? 'rgba(28,24,22,0.55)' : 'rgba(255,255,255,0.62)')) }]} />
       {/* Yuxarıdan düşən işıq — şüşənin qalınlığı hissi */}
       <LinearGradient colors={dark ? ['rgba(255,255,255,0.16)', 'rgba(255,255,255,0)'] : ['rgba(255,255,255,0.85)', 'rgba(255,255,255,0)']} style={[StyleSheet.absoluteFill, { bottom: '45%' }]} />
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.9)' }]} />
