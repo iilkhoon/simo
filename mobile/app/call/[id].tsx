@@ -19,7 +19,7 @@ import { getSocket } from '@/lib/socket';
 import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
-import { endNative, markConnected, startNativeOutgoing } from '@/lib/nativeCall';
+import { endNative, markConnected } from '@/lib/nativeCall';
 
 function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
@@ -51,6 +51,7 @@ export default function CallScreen() {
   const [rtcError, setRtcError] = useState(false);
   const overlay = useRef<GiftOverlayHandle>(null);
   const ended = useRef(false);
+  const channel = useRef<string | undefined>(undefined);
 
   const isVideo = call?.type === 'VIDEO';
   const isCaller = call?.callerId === me?.id;
@@ -58,7 +59,7 @@ export default function CallScreen() {
   function close(reason?: string) {
     if (ended.current) return;
     ended.current = true;
-    rtc.leave();
+    rtc.leave(channel.current);
     if (reason) toast(t(`call.reasons.${reason}`, { defaultValue: t('call.ended') }));
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
@@ -77,8 +78,9 @@ export default function CallScreen() {
         if (!alive) return;
         setCall(r.call);
         setPeer(r.peer);
-        // Gedən zəng sistemə bildirilir (iOS "Son zənglər", qulaqlıq düymələri)
-        if (r.role === 'caller' && r.call.status === 'RINGING') startNativeOutgoing(r.call.id, r.peer.name, r.call.type === 'VIDEO');
+        channel.current = r.call.channel;
+        // Gedən zəng üçün sistem zəng ekranı (CallKit) istifadə olunmur: tətbiqin öz ekranı (profil şəkli ilə) göstərilir,
+        // CallKit-in öz-özünə bitirmə hadisələri isə zəngi kəsmir
         let creds = r.rtc;
         if (r.role === 'callee' && accept === '1' && r.call.status === 'RINGING') {
           const a = await api<{ call: Call; rtc: RtcCreds }>(`/calls/${id}/accept`, { body: {} });
@@ -106,7 +108,7 @@ export default function CallScreen() {
     return () => {
       alive = false;
       unsub();
-      rtc.leave();
+      rtc.leave(channel.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);

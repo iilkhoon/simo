@@ -25,6 +25,7 @@ type Listener = {
 
 let engine: AgoraTypes.IRtcEngine | null = null;
 let currentAppId = '';
+let currentChannel: string | null = null;
 const listeners = new Set<Listener>();
 
 export const rtcAvailable = () => !!agora;
@@ -80,6 +81,7 @@ export async function join(creds: RtcCreds, opts: JoinOpts) {
     e.disableVideo();
   }
   e.enableAudio();
+  currentChannel = creds.channel;
   e.joinChannel(creds.token ?? '', creds.channel, creds.uid, {
     clientRoleType: opts.publish ? agora.ClientRoleType.ClientRoleBroadcaster : agora.ClientRoleType.ClientRoleAudience,
     publishMicrophoneTrack: opts.publish,
@@ -101,7 +103,10 @@ export function setPublishing(creds: RtcCreds, publish: boolean, video = false) 
   });
 }
 
-export function leave() {
+/** Kanaldan çıxır. `channel` verilsə — yalnız hazırda həmin kanaldadırsa (köhnə ekran yenisinin zəngini kəsməsin) */
+export function leave(channel?: string) {
+  if (channel && currentChannel && channel !== currentChannel) return;
+  currentChannel = null;
   try {
     engine?.stopPreview();
     engine?.leaveChannel();

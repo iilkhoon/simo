@@ -1,6 +1,7 @@
 import '@/i18n';
 import React, { useEffect } from 'react';
 import { Stack, router, usePathname, useSegments } from 'expo-router';
+import { AppState } from 'react-native';
 import { trackScreen } from '@/lib/track';
 import { displayIncoming, endNative, registerCallPushTask, setupNativeCalls } from '@/lib/nativeCall';
 import { StatusBar } from 'expo-status-bar';
@@ -67,8 +68,11 @@ function useRealtime(authed: boolean) {
     s.on('wallet:update', (p: { coins?: number }) => {
       if (typeof p.coins === 'number') st().patchMe({ coins: p.coins });
     });
-    // Sistem zəng ekranı (CallKit / ConnectionService) göstərilə bilirsə — tətbiqdaxili modal açılmır
-    s.on('call:incoming', (p: { call: Call; caller: PublicUser }) => { if (!displayIncoming(p.call, p.caller)) st().setIncomingCall(p); });
+    // Tətbiq açıqdırsa — öz gələn zəng ekranımız (zəng edənin profil şəkli ilə);
+    // fonda/kilid ekranında isə sistem zəng ekranı (CallKit / ConnectionService)
+    s.on('call:incoming', (p: { call: Call; caller: PublicUser }) => {
+      if (AppState.currentState === 'active' || !displayIncoming(p.call, p.caller)) st().setIncomingCall(p);
+    });
     s.on('call:ended', (p: { callId: string }) => {
       endNative(p.callId);
       if (st().incomingCall?.call.id === p.callId) st().setIncomingCall(null);

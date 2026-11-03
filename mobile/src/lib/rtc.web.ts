@@ -14,7 +14,7 @@ export async function join(_creds: RtcCreds, _opts: { video: boolean; publish: b
   throw new Error('RTC_UNAVAILABLE');
 }
 export function setPublishing(_creds: RtcCreds, _publish: boolean, _video = false) {}
-export function leave() {}
+export function leave(_channel?: string) {}
 export const controls = {
   mute: (_m: boolean) => {},
   camera: (_on: boolean) => {},

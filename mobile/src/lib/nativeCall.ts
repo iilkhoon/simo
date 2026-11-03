@@ -10,7 +10,7 @@
  *    bu modul "answerCall"/"endCall" hadisələrini emal edir. VoIP tokeni /me/voip-token ilə serverə gedir.
  * Expo Go-da və webdə native modul yoxdur — hər şey səssizcə söndürülür (tətbiqdaxili IncomingCall işləyir).
  */
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
@@ -52,7 +52,7 @@ export async function setupNativeCalls(labels: { title: string; desc: string; ca
   }
   RNCallKeep.addEventListener('answerCall', ({ callUUID }) => {
     const c = byUuid.get(callUUID);
-    if (!c) return;
+    if (!c || answered.has(c.callId)) return; // eyni zəng iki dəfə açılmasın
     answered.add(c.callId);
     RNCallKeep?.backToForeground();
     useStore.getState().setIncomingCall(null);
@@ -65,7 +65,9 @@ export async function setupNativeCalls(labels: { title: string; desc: string; ca
     useStore.getState().setIncomingCall(null);
     // Qəbul olunmamış zəngi sistem düyməsi ilə rədd etmək = serverdə rədd
     if (!answered.has(c.callId)) void api(`/calls/${c.callId}/reject`, { method: 'POST', body: {} }).catch(() => {});
-    else void api(`/calls/${c.callId}/end`, { method: 'POST', body: {} }).catch(() => {});
+    // Danışıq gedərkən: yalnız istifadəçi sistem ekranında (tətbiq fonda/kilidli) "bitir" basanda.
+    // Tətbiq açıqdırsa zəngi tətbiqin öz düyməsi idarə edir — iOS-un öz-özünə göndərdiyi endCall zəngi kəsmir.
+    else if (AppState.currentState !== 'active') void api(`/calls/${c.callId}/end`, { method: 'POST', body: {} }).catch(() => {});
   });
   // iOS: PushKit VoIP tokeni (yalnız native build-də)
   if (Platform.OS === 'ios') {

@@ -131,7 +131,13 @@ export default async function callRoutes(app: FastifyInstance) {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const res = await prisma.call.updateMany({ where: { id, calleeId: me, status: 'RINGING' }, data: { status: 'ACTIVE', startedAt: new Date() } });
-    if (res.count === 0) throw err.badRequest('CALL_NOT_RINGING');
+    if (res.count === 0) {
+      // Təkrar qəbul (məs. sistem ekranı və tətbiq eyni anda): artıq aktiv zəngi qaytar, xəta vermə
+      const cur = await prisma.call.findFirst({ where: { id, calleeId: me, status: 'ACTIVE' } });
+      if (!cur) throw err.badRequest('CALL_NOT_RINGING');
+      const callee = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } });
+      return { call: cur, rtc: rtcToken(cur.channel, callee.shortId, true) };
+    }
     clearRingTimeout(id);
     const ok = await chargeMinute(id);
     if (!ok) {
