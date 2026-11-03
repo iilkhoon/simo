@@ -75,157 +75,172 @@ try {
 }
 
 // PostgreSQL proqramı bu kompüterdə işləyə bilirmi? (Visual C++ runtime yoxdursa Windows onu açmır)
-if (win) {
-  let bin;
-  try { bin = await import(`@embedded-postgres/windows-${os.arch()}`); } catch (e) {
-    fail(`Bu prosessor (${os.arch()}) üçün PostgreSQL yoxdur.`, 'Portativ x64 Node ilə işlədin: .tools qovluğunu silin və BASLAT.bat-ı yenidən açın.', e);
-  }
-  const check = () => spawnSync(bin.postgres, ['-V'], { encoding: 'utf8' });
-  let r = check();
-  log(`postgres -V → status ${r.status} ${r.stdout ?? ''} ${r.stderr ?? ''} ${r.error ?? ''}`);
-  if (r.status !== 0) {
-    say('PostgreSQL üçün Microsoft Visual C++ komponenti çatışmır — avtomatik quraşdırılır (Windows icazə soruşacaq, "Bəli" deyin)...');
-    const exe = path.join(os.tmpdir(), 'vc_redist.x64.exe');
-    const dl = spawnSync('powershell', ['-NoProfile', '-Command', `$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -OutFile '${exe}'`], { stdio: 'inherit' });
-    if (dl.status === 0) spawnSync('powershell', ['-NoProfile', '-Command', `Start-Process -FilePath '${exe}' -ArgumentList '/install','/quiet','/norestart' -Verb RunAs -Wait`], { stdio: 'inherit' });
-    r = check();
-    if (r.status !== 0) fail('PostgreSQL bu kompüterdə açılmır.', 'Bu linkdən Visual C++ paketini quraşdırın: https://aka.ms/vs/17/release/vc_redist.x64.exe və BASLAT.bat-ı yenidən açın.', r.error ?? new Error(`status ${r.status}`));
+// Kompüterdə quraşdırılmış PostgreSQL varsa (backend/.env-dəki DATABASE_URL ilə qoşulmaq olursa) — ondan istifadə edirik.
+// Yoxdursa layihənin içindəki (embedded) PostgreSQL açılır.
+let DATABASE_URL, stopDb;
+let SYSTEM = false;
+{
+  const { parse } = await import('dotenv');
+  const url = parse(readFileSync(path.join(root, '.env'))).DATABASE_URL;
+  if (url && !process.argv.includes('--embedded')) {
+    const c = new pg.Client({ connectionString: url.replace(/\/[^/?]+(\?.*)?$/, '/postgres$1'), connectionTimeoutMillis: 3000 });
+    try { await c.connect(); await c.end(); SYSTEM = true; } catch (e) { log(`Quraşdırılmış PostgreSQL yoxdur və ya qoşulmur (${url.replace(/:[^:@/]+@/, ':***@')}): ${e.message}`); }
+    if (SYSTEM) { DATABASE_URL = url; stopDb = async () => {}; say('Kompüterdə quraşdırılmış PostgreSQL istifadə olunur.'); }
   }
 }
-
-const dbUrl = (port, name = 'simo') => `postgresql://simo:simo@127.0.0.1:${port}/${name}`;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function canConnect(port, tries = 1) {
-  for (let i = 0; i < tries; i++) {
-    const c = new pg.Client({ connectionString: dbUrl(port, 'postgres'), connectionTimeoutMillis: 3000 });
-    try { await c.connect(); await c.end(); return true; } catch (e) { log(`qoşulma cəhdi ${port}: ${e.message}`); }
-    if (i < tries - 1) await sleep(1000);
-  }
-  return false;
-}
-const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
-function killTree(pid) {
-  if (win) spawnSync('taskkill', ['/PID', String(pid), '/F', '/T'], { stdio: 'ignore' });
-  else try { process.kill(pid, 'SIGKILL'); } catch { /* */ }
-}
-
-// Əvvəlki açılışdan qalan PostgreSQL (pəncərə birdən bağlananda arxa planda qalır)
-let reuse = false;
-const pidFile = path.join(dataDir, 'postmaster.pid');
-if (existsSync(pidFile)) {
-  const [pidLine, , , portLine] = readFileSync(pidFile, 'utf8').split(/\r?\n/);
-  const oldPid = Number(pidLine), oldPort = Number(portLine) || PORT;
-  if (oldPid && alive(oldPid)) {
-    if (await canConnect(oldPort, 10)) { PORT = oldPort; reuse = true; say('Verilənlər bazası artıq işləyir — ondan istifadə olunur.'); }
-    else {
-      say('Əvvəlki açılışdan ilişib qalmış verilənlər bazası bağlanır...');
-      killTree(oldPid);
-      for (let i = 0; i < 10 && alive(oldPid); i++) await sleep(500);
+if (!SYSTEM) {
+  if (win) {
+    let bin;
+    try { bin = await import(`@embedded-postgres/windows-${os.arch()}`); } catch (e) {
+      fail(`Bu prosessor (${os.arch()}) üçün PostgreSQL yoxdur.`, 'Portativ x64 Node ilə işlədin: .tools qovluğunu silin və BASLAT.bat-ı yenidən açın.', e);
+    }
+    const check = () => spawnSync(bin.postgres, ['-V'], { encoding: 'utf8' });
+    let r = check();
+    log(`postgres -V → status ${r.status} ${r.stdout ?? ''} ${r.stderr ?? ''} ${r.error ?? ''}`);
+    if (r.status !== 0) {
+      say('PostgreSQL üçün Microsoft Visual C++ komponenti çatışmır — avtomatik quraşdırılır (Windows icazə soruşacaq, "Bəli" deyin)...');
+      const exe = path.join(os.tmpdir(), 'vc_redist.x64.exe');
+      const dl = spawnSync('powershell', ['-NoProfile', '-Command', `$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -OutFile '${exe}'`], { stdio: 'inherit' });
+      if (dl.status === 0) spawnSync('powershell', ['-NoProfile', '-Command', `Start-Process -FilePath '${exe}' -ArgumentList '/install','/quiet','/norestart' -Verb RunAs -Wait`], { stdio: 'inherit' });
+      r = check();
+      if (r.status !== 0) fail('PostgreSQL bu kompüterdə açılmır.', 'Bu linkdən Visual C++ paketini quraşdırın: https://aka.ms/vs/17/release/vc_redist.x64.exe və BASLAT.bat-ı yenidən açın.', r.error ?? new Error(`status ${r.status}`));
     }
   }
-  if (!reuse && existsSync(pidFile)) rmSync(pidFile, { force: true });
-}
-/**
- * Bizim PostgreSQL-in bütün qalıq prosesləri (Windows-da postmaster öləndə köməkçi postgres.exe-lər
- * qala bilir və paylaşılan yaddaşı tutur: "pre-existing shared memory block is still in use").
- * Yalnız bu layihənin node_modules-dakı postgres-ə aid proseslər bağlanır.
- */
-async function killLeftovers() {
-  if (win) {
-    const ps = `$ErrorActionPreference='SilentlyContinue'
-$own = @(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -ge 5433 -and $_.LocalPort -le 5463 } | ForEach-Object { @{ port = $_.LocalPort; pid = $_.OwningProcess } })
-$procs = @(Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | ForEach-Object { @{ pid = $_.ProcessId; ppid = $_.ParentProcessId; path = "$($_.ExecutablePath)"; cmd = "$($_.CommandLine)" } })
-@{ ports = $own; procs = $procs } | ConvertTo-Json -Depth 4 -Compress`;
-    const r = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { encoding: 'utf8' });
-    log(`postgres prosesləri (PowerShell status ${r.status}): ${r.stdout ?? ''} ${r.stderr ?? ''}`);
-    let info = { ports: [], procs: [] };
-    try { info = JSON.parse(r.stdout || '{}'); } catch { /* */ }
-    const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []);
-    const procs = arr(info.procs);
-    const lc = (x) => String(x ?? '').toLowerCase();
-    // Bizimkilər: embedded-postgres binarı (istənilən simo qovluğundan) və ya bizim baza qovluğumuz
-    const ours = procs.filter((p) => lc(p.path).includes('@embedded-postgres') || lc(p.cmd).includes(lc(dataDir)) || lc(p.path).includes(lc(root)));
-    const ids = new Set(ours.map((p) => p.pid));
-    // Onların uşaq prosesləri (Windows-da --forkchild)
-    for (const p of procs) if (ids.has(p.ppid)) ids.add(p.pid);
-    for (const id of ids) spawnSync('taskkill', ['/PID', String(id), '/F', '/T'], { stdio: 'ignore' });
-    log(`bağlanan postgres prosesləri: ${[...ids].join(', ') || 'yoxdur'} · portlar: ${JSON.stringify(arr(info.ports))}`);
-    if (ids.size) { say(`Əvvəlki açılışdan qalan ${ids.size} baza prosesi bağlandı.`); await sleep(2000); }
-  } else {
-    const r = spawnSync('pkill', ['-9', '-f', `@embedded-postgres.*postgres -D ${dataDir}`]);
-    if (r.status === 0) await sleep(1500);
-  }
-  if (existsSync(path.join(dataDir, 'postmaster.pid'))) rmSync(path.join(dataDir, 'postmaster.pid'), { force: true });
-}
-if (!reuse) await killLeftovers();
 
-// Port başqa proqramdadırsa (məs. kompüterdə ayrıca PostgreSQL) — növbəti boş portu götürürük
-if (!reuse) {
-  const first = PORT;
-  while (await portBusy(PORT)) {
-    if (++PORT > first + 30) fail('Verilənlər bazası üçün boş port tapılmadı.', 'Kompüteri yenidən başladın.');
+  const dbUrl = (port, name = 'simo') => `postgresql://simo:simo@127.0.0.1:${port}/${name}`;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function canConnect(port, tries = 1) {
+    for (let i = 0; i < tries; i++) {
+      const c = new pg.Client({ connectionString: dbUrl(port, 'postgres'), connectionTimeoutMillis: 3000 });
+      try { await c.connect(); await c.end(); return true; } catch (e) { log(`qoşulma cəhdi ${port}: ${e.message}`); }
+      if (i < tries - 1) await sleep(1000);
+    }
+    return false;
   }
-  if (PORT !== first) say(`${first} portu məşğuldur — baza ${PORT} portunda açılır.`);
-}
-let DATABASE_URL = dbUrl(PORT);
-const makeDb = () => new EmbeddedPostgres({
-  databaseDir: dataDir, user: 'simo', password: 'simo', port: PORT, persistent: true,
-  // Windows sistemin kodlaşdırmasını (WIN1252 və s.) götürür — "ə, ş" yazıla bilmir. Həmişə UTF-8.
-  initdbFlags: ['--encoding=UTF8', '--locale=C'],
-  onLog: (m) => { pgLog.push(m); if (pgLog.length > 300) pgLog.shift(); },
-  onError: (m) => { pgLog.push(`[ERR] ${m instanceof Error ? m.message : m}\n`); },
-});
-let db = makeDb();
-let fresh = !existsSync(path.join(dataDir, 'PG_VERSION'));
-if (!reuse) {
-  try {
-    if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
-    say('Verilənlər bazası açılır...');
-    try {
-      await db.start();
-    } catch (e) {
-      // Qalıq proses yaddaşı hələ buraxmayıbsa — bir dəfə təmizləyib yenidən cəhd
-      if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e;
-      say('Köhnə baza prosesləri təmizlənir və yenidən cəhd edilir...');
-      await killLeftovers();
-      await sleep(2000);
-      pgLog.length = 0;
-      try {
-        await db.start();
-      } catch (e2) {
-        if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e2;
-        // Köhnə qovluq Windows tərəfindən hələ də tutulub — test bazasını təzə qovluqda qururuq
-        const next = `.localdb-${Date.now().toString(36)}`;
-        say(`Köhnə baza qovluğu kilidlidir — təzə baza yaradılır (${next}). Demo məlumatlar yenidən yazılacaq.`);
-        dataDir = path.join(path.dirname(dataDir), next);
-        writeFileSync(pointer, JSON.stringify({ dir: next }));
-        while (await portBusy(PORT)) PORT++;
-        DATABASE_URL = dbUrl(PORT);
-        pgLog.length = 0;
-        db = makeDb();
-        fresh = true;
-        await db.initialise();
-        await db.start();
+  const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  function killTree(pid) {
+    if (win) spawnSync('taskkill', ['/PID', String(pid), '/F', '/T'], { stdio: 'ignore' });
+    else try { process.kill(pid, 'SIGKILL'); } catch { /* */ }
+  }
+
+  // Əvvəlki açılışdan qalan PostgreSQL (pəncərə birdən bağlananda arxa planda qalır)
+  let reuse = false;
+  const pidFile = path.join(dataDir, 'postmaster.pid');
+  if (existsSync(pidFile)) {
+    const [pidLine, , , portLine] = readFileSync(pidFile, 'utf8').split(/\r?\n/);
+    const oldPid = Number(pidLine), oldPort = Number(portLine) || PORT;
+    if (oldPid && alive(oldPid)) {
+      if (await canConnect(oldPort, 10)) { PORT = oldPort; reuse = true; say('Verilənlər bazası artıq işləyir — ondan istifadə olunur.'); }
+      else {
+        say('Əvvəlki açılışdan ilişib qalmış verilənlər bazası bağlanır...');
+        killTree(oldPid);
+        for (let i = 0; i < 10 && alive(oldPid); i++) await sleep(500);
       }
     }
-  } catch (e) {
-    const out = pgLog.join('');
-    const hint = /administrative permissions|administrator/i.test(out)
-      ? 'BASLAT.bat-ı "Run as administrator" ilə YOX, adi iki kliklə açın.'
-      : /lock file|postmaster\.pid|already in use/i.test(out)
-        ? 'Kompüteri yenidən başladın və təkrar cəhd edin.'
-        : fresh
-          ? `Baza yaradıla bilmədi. "${dataDir}" qovluğunu silib yenidən cəhd edin.`
-          : 'DB-SIFIRLA.bat ilə bazanı yenidən yaradın.';
-    fail('Verilənlər bazası (PostgreSQL) açılmadı.', hint, e ?? new Error('postgres prosesi dayandı'));
+    if (!reuse && existsSync(pidFile)) rmSync(pidFile, { force: true });
   }
-  if (!(await canConnect(PORT, 5))) fail('Verilənlər bazasına qoşulmaq olmadı.', 'Kompüteri yenidən başladın və təkrar cəhd edin.');
+  /**
+   * Bizim PostgreSQL-in bütün qalıq prosesləri (Windows-da postmaster öləndə köməkçi postgres.exe-lər
+   * qala bilir və paylaşılan yaddaşı tutur: "pre-existing shared memory block is still in use").
+   * Yalnız bu layihənin node_modules-dakı postgres-ə aid proseslər bağlanır.
+   */
+  async function killLeftovers() {
+    if (win) {
+      const ps = `$ErrorActionPreference='SilentlyContinue'
+  $own = @(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -ge 5433 -and $_.LocalPort -le 5463 } | ForEach-Object { @{ port = $_.LocalPort; pid = $_.OwningProcess } })
+  $procs = @(Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" | ForEach-Object { @{ pid = $_.ProcessId; ppid = $_.ParentProcessId; path = "$($_.ExecutablePath)"; cmd = "$($_.CommandLine)" } })
+  @{ ports = $own; procs = $procs } | ConvertTo-Json -Depth 4 -Compress`;
+      const r = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { encoding: 'utf8' });
+      log(`postgres prosesləri (PowerShell status ${r.status}): ${r.stdout ?? ''} ${r.stderr ?? ''}`);
+      let info = { ports: [], procs: [] };
+      try { info = JSON.parse(r.stdout || '{}'); } catch { /* */ }
+      const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []);
+      const procs = arr(info.procs);
+      const lc = (x) => String(x ?? '').toLowerCase();
+      // Bizimkilər: embedded-postgres binarı (istənilən simo qovluğundan) və ya bizim baza qovluğumuz
+      const ours = procs.filter((p) => lc(p.path).includes('@embedded-postgres') || lc(p.cmd).includes(lc(dataDir)) || lc(p.path).includes(lc(root)));
+      const ids = new Set(ours.map((p) => p.pid));
+      // Onların uşaq prosesləri (Windows-da --forkchild)
+      for (const p of procs) if (ids.has(p.ppid)) ids.add(p.pid);
+      for (const id of ids) spawnSync('taskkill', ['/PID', String(id), '/F', '/T'], { stdio: 'ignore' });
+      log(`bağlanan postgres prosesləri: ${[...ids].join(', ') || 'yoxdur'} · portlar: ${JSON.stringify(arr(info.ports))}`);
+      if (ids.size) { say(`Əvvəlki açılışdan qalan ${ids.size} baza prosesi bağlandı.`); await sleep(2000); }
+    } else {
+      const r = spawnSync('pkill', ['-9', '-f', `@embedded-postgres.*postgres -D ${dataDir}`]);
+      if (r.status === 0) await sleep(1500);
+    }
+    if (existsSync(path.join(dataDir, 'postmaster.pid'))) rmSync(path.join(dataDir, 'postmaster.pid'), { force: true });
+  }
+  if (!reuse) await killLeftovers();
+
+  // Port başqa proqramdadırsa (məs. kompüterdə ayrıca PostgreSQL) — növbəti boş portu götürürük
+  if (!reuse) {
+    const first = PORT;
+    while (await portBusy(PORT)) {
+      if (++PORT > first + 30) fail('Verilənlər bazası üçün boş port tapılmadı.', 'Kompüteri yenidən başladın.');
+    }
+    if (PORT !== first) say(`${first} portu məşğuldur — baza ${PORT} portunda açılır.`);
+  }
+  DATABASE_URL = dbUrl(PORT);
+  const makeDb = () => new EmbeddedPostgres({
+    databaseDir: dataDir, user: 'simo', password: 'simo', port: PORT, persistent: true,
+    // Windows sistemin kodlaşdırmasını (WIN1252 və s.) götürür — "ə, ş" yazıla bilmir. Həmişə UTF-8.
+    initdbFlags: ['--encoding=UTF8', '--locale=C'],
+    onLog: (m) => { pgLog.push(m); if (pgLog.length > 300) pgLog.shift(); },
+    onError: (m) => { pgLog.push(`[ERR] ${m instanceof Error ? m.message : m}\n`); },
+  });
+  let db = makeDb();
+  let fresh = !existsSync(path.join(dataDir, 'PG_VERSION'));
+  if (!reuse) {
+    try {
+      if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
+      say('Verilənlər bazası açılır...');
+      try {
+        await db.start();
+      } catch (e) {
+        // Qalıq proses yaddaşı hələ buraxmayıbsa — bir dəfə təmizləyib yenidən cəhd
+        if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e;
+        say('Köhnə baza prosesləri təmizlənir və yenidən cəhd edilir...');
+        await killLeftovers();
+        await sleep(2000);
+        pgLog.length = 0;
+        try {
+          await db.start();
+        } catch (e2) {
+          if (!/shared memory|postmaster\.pid|lock file/i.test(pgLog.join(''))) throw e2;
+          // Köhnə qovluq Windows tərəfindən hələ də tutulub — test bazasını təzə qovluqda qururuq
+          const next = `.localdb-${Date.now().toString(36)}`;
+          say(`Köhnə baza qovluğu kilidlidir — təzə baza yaradılır (${next}). Demo məlumatlar yenidən yazılacaq.`);
+          dataDir = path.join(path.dirname(dataDir), next);
+          writeFileSync(pointer, JSON.stringify({ dir: next }));
+          while (await portBusy(PORT)) PORT++;
+          DATABASE_URL = dbUrl(PORT);
+          pgLog.length = 0;
+          db = makeDb();
+          fresh = true;
+          await db.initialise();
+          await db.start();
+        }
+      }
+    } catch (e) {
+      const out = pgLog.join('');
+      const hint = /administrative permissions|administrator/i.test(out)
+        ? 'BASLAT.bat-ı "Run as administrator" ilə YOX, adi iki kliklə açın.'
+        : /lock file|postmaster\.pid|already in use/i.test(out)
+          ? 'Kompüteri yenidən başladın və təkrar cəhd edin.'
+          : fresh
+            ? `Baza yaradıla bilmədi. "${dataDir}" qovluğunu silib yenidən cəhd edin.`
+            : 'DB-SIFIRLA.bat ilə bazanı yenidən yaradın.';
+      fail('Verilənlər bazası (PostgreSQL) açılmadı.', hint, e ?? new Error('postgres prosesi dayandı'));
+    }
+    if (!(await canConnect(PORT, 5))) fail('Verilənlər bazasına qoşulmaq olmadı.', 'Kompüteri yenidən başladın və təkrar cəhd edin.');
+  }
+  stopDb = () => (reuse ? Promise.resolve() : db.stop().catch(() => {}));
 }
-const stopDb = () => (reuse ? Promise.resolve() : db.stop().catch(() => {}));
 
 /** "simo" bazası UTF-8 olmalıdır; köhnə (səhv kodlaşdırmalı) baza varsa yenidən yaradılır */
 async function ensureDatabase() {
-  const admin = new pg.Client({ connectionString: dbUrl(PORT, 'postgres') });
+  const admin = new pg.Client({ connectionString: DATABASE_URL.replace(/\/[^/?]+(\?.*)?$/, '/postgres$1') });
   await admin.connect();
   try {
     const { rows } = await admin.query("SELECT pg_encoding_to_char(encoding) AS enc FROM pg_database WHERE datname = 'simo'");
@@ -234,7 +249,7 @@ async function ensureDatabase() {
       await admin.query('DROP DATABASE simo WITH (FORCE)');
     }
     if (!rows[0] || rows[0].enc !== 'UTF8') {
-      await admin.query("CREATE DATABASE simo OWNER simo ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0");
+      await admin.query("CREATE DATABASE simo ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0");
     }
   } finally { await admin.end(); }
   // Yarımçıq qalmış miqrasiya (əvvəlki uğursuz cəhd) — test bazasıdır, təmizləyib yenidən qururuq
