@@ -67,7 +67,8 @@
     "typecheck": "tsc --noEmit",
     "build:ios": "eas build -p ios --profile production",
     "build:android": "eas build -p android --profile production",
-    "build:huawei": "eas build -p android --profile huawei"
+    "build:huawei": "eas build -p android --profile huawei",
+    "postinstall": "node scripts/patch-native.mjs"
   },
   "private": true
 }
