@@ -269,7 +269,8 @@ async function main() {
     await step('Video: yüklə, lent, bəyən, şərh, baxış', async () => {
       const v = await api('POST', '/videos', girl, { url: 'https://x.az/v.mp4', caption: 'Bakı bulvarı #baku #sea' });
       assert.deepEqual(v.data.video.hashtags, ['baku', 'sea']);
-      const feed = await api('GET', '/videos/feed', man);
+      // Test bazasında əvvəlki işlərdən çoxlu təzə video yığılır — lent limiti onları əhatə etsin
+      const feed = await api('GET', '/videos/feed?limit=30', man);
       assert.ok(feed.data.items.some((i: any) => i.id === v.data.video.id));
       await api('POST', `/videos/${v.data.video.id}/like`, man);
       await api('POST', `/videos/${v.data.video.id}/like`, man);
