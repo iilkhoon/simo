@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Tabs } from 'expo-router/js-tabs';
+import { Tabs, type BottomTabBarProps } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
@@ -21,11 +21,7 @@ const ICONS: Record<string, [IconName, IconName]> = {
 const LEFT = ['index', 'videos'];
 const RIGHT = ['chats', 'me'];
 
-type BarProps = {
-  state: { index: number; routes: { key: string; name: string }[] };
-  descriptors: Record<string, { options: { title?: string } }>;
-  navigation: { emit: (e: { type: 'tabPress'; target: string; canPreventDefault: true }) => { defaultPrevented: boolean }; navigate: (name: string) => void };
-};
+type BarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'emitter' | 'navigateToTab'>;
 
 
 /**
@@ -34,7 +30,7 @@ type BarProps = {
  * — sağda ayrıca şüşə dairə: "+" (yaratma menyusu), iOS-dakı ayrıca axtarış düyməsi kimi;
  * — məzmun panelin altından keçir (şüşə arxasında bulanır). Video lentində panel tünd şüşəyə keçir.
  */
-function TabBar({ state, descriptors, navigation }: BarProps) {
+function TabBar({ state, descriptors, emitter, navigateToTab }: BarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const unread = useStore((s) => s.unreadChats);
@@ -84,8 +80,9 @@ function TabBar({ state, descriptors, navigation }: BarProps) {
                 accessibilityLabel={label}
                 onPress={() => {
                   tap();
-                  const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                  if (!e.defaultPrevented && state.index !== i) navigation.navigate(name);
+                  // expo-router SDK 58: tab paneli "navigation" yox, "emitter" + "navigateToTab" alır
+                  const e = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                  if (!e.defaultPrevented && state.index !== i) navigateToTab(route.key);
                 }}
                 style={styles.item}
               >
@@ -111,7 +108,7 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   return (
     <Tabs
-      tabBar={(p) => <TabBar {...(p as unknown as BarProps)} />}
+      tabBar={(p) => <TabBar {...p} />}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
     >
       <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
