@@ -140,8 +140,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://api.simo.az",
-      "webUrl": "https://simo.az",
+      "apiUrl": "https://api.13-140-206-78.sslip.io",
+      "webUrl": "https://13-140-206-78.sslip.io",
       "eas": {
         "projectId": ""
       }

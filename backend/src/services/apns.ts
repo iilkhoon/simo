@@ -5,11 +5,14 @@
  */
 import http2 from 'node:http2';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 
 let cached: { token: string; at: number } | null = null;
 
 function cfg() {
-  const key = process.env.APNS_KEY?.replace(/\\n/g, '\n');
+  // .p8 açarı: ya mətn kimi (APNS_KEY, \n ilə), ya da fayl yolu (APNS_KEY_FILE)
+  const file = process.env.APNS_KEY_FILE;
+  const key = file && fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : process.env.APNS_KEY?.replace(/\\n/g, '\n');
   const keyId = process.env.APNS_KEY_ID;
   const teamId = process.env.APNS_TEAM_ID;
   const bundle = process.env.APNS_BUNDLE_ID ?? 'az.simo.app';

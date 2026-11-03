@@ -24,8 +24,9 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.simo.az",
-        "EXPO_PUBLIC_STORE": "google"
+        "EXPO_PUBLIC_API_URL": "https://api.13-140-206-78.sslip.io",
+        "EXPO_PUBLIC_STORE": "google",
+        "EXPO_PUBLIC_WEB_URL": "https://13-140-206-78.sslip.io"
       },
       "android": {
         "buildType": "app-bundle"
@@ -34,8 +35,9 @@
     "huawei": {
       "extends": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.simo.az",
-        "EXPO_PUBLIC_STORE": "huawei"
+        "EXPO_PUBLIC_API_URL": "https://api.13-140-206-78.sslip.io",
+        "EXPO_PUBLIC_STORE": "huawei",
+        "EXPO_PUBLIC_WEB_URL": "https://13-140-206-78.sslip.io"
       },
       "android": {
         "buildType": "apk"
@@ -44,8 +46,13 @@
   },
   "submit": {
     "production": {
-      "ios": { "ascAppId": "6830305517", "appleTeamId": "36W77TT9ZQ" },
-      "android": { "track": "internal" }
+      "ios": {
+        "ascAppId": "6830305517",
+        "appleTeamId": "36W77TT9ZQ"
+      },
+      "android": {
+        "track": "internal"
+      }
     }
   }
 }

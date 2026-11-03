@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import fs from 'node:fs';
 
 function env(name: string, fallback?: string): string {
   const v = process.env[name] ?? fallback;
@@ -33,7 +34,10 @@ export const config = {
     bundleId: env('APPLE_BUNDLE_ID', 'az.simo.app'),
     issuerId: env('APPLE_ISSUER_ID', ''),
     keyId: env('APPLE_KEY_ID', ''),
-    privateKey: env('APPLE_PRIVATE_KEY', '').replace(/\\n/g, '\n'),
+    // In-App Purchase .p8 açarı: mətn (APPLE_PRIVATE_KEY) və ya fayl yolu (APPLE_PRIVATE_KEY_FILE)
+    privateKey: (process.env.APPLE_PRIVATE_KEY_FILE && fs.existsSync(process.env.APPLE_PRIVATE_KEY_FILE)
+      ? fs.readFileSync(process.env.APPLE_PRIVATE_KEY_FILE, 'utf8')
+      : env('APPLE_PRIVATE_KEY', '')).replace(/\\n/g, '\n'),
   },
   google: {
     packageName: env('GOOGLE_PACKAGE_NAME', 'az.simo.app'),

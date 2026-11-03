@@ -16,8 +16,9 @@ if defined IP (
 if defined NEWIP set "IP=%NEWIP%"
 if not defined IP ( echo IP yazılmadı. & pause & exit /b 1 )
 > ".server" echo %IP%
-set "DOMAIN="
-set /p DOMAIN=Domen (yoxdursa sadəcə Enter): 
+rem Domen yoxdursa IP-dən pulsuz HTTPS ünvanı: 13.140.206.78 → 13-140-206-78.sslip.io (iPhone HTTPS tələb edir)
+set "DOMAIN=%IP:.=-%.sslip.io"
+set /p DOMAIN=Domen [%DOMAIN%] - Enter basın: 
 
 where ssh >nul 2>nul || ( echo [XETA] Windows-da OpenSSH yoxdur: Parametrlər - Proqramlar - Əlavə komponentlər - "OpenSSH Client" & pause & exit /b 1 )
 
