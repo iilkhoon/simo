@@ -19,7 +19,7 @@ import { getSocket } from '@/lib/socket';
 import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
-import { endNative, markConnected } from '@/lib/nativeCall';
+import { endNative, markConnected, startNativeOutgoing } from '@/lib/nativeCall';
 
 function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
@@ -49,6 +49,11 @@ export default function CallScreen() {
   const [lowBalance, setLowBalance] = useState<number | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [rtcError, setRtcError] = useState(false);
+  // WhatsApp kimi: ekrana toxunanda düymələr gizlənir/açılır, kiçik pəncərəyə toxunanda kameralar yer dəyişir
+  const [swap, setSwap] = useState(false);
+  const [uiOn, setUiOn] = useState(true);
+  const ui = useRef(new Animated.Value(1)).current;
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlay = useRef<GiftOverlayHandle>(null);
   const ended = useRef(false);
   const channel = useRef<string | undefined>(undefined);
@@ -79,8 +84,9 @@ export default function CallScreen() {
         setCall(r.call);
         setPeer(r.peer);
         channel.current = r.call.channel;
-        // Gedən zəng üçün sistem zəng ekranı (CallKit) istifadə olunmur: tətbiqin öz ekranı (profil şəkli ilə) göstərilir,
-        // CallKit-in öz-özünə bitirmə hadisələri isə zəngi kəsmir
+        // Gedən zəng sistemə də bildirilir: iPhone-da Dynamic Island / yaşıl göstərici, qulaqlıq düymələri.
+        // Ekran isə tətbiqin özününküdür (profil şəkli ilə); tətbiq açıqkən sistemin endCall hadisəsi zəngi kəsmir.
+        if (r.role === 'caller' && r.call.status === 'RINGING') startNativeOutgoing(r.call.id, r.peer.name, r.call.type === 'VIDEO');
         let creds = r.rtc;
         if (r.role === 'callee' && accept === '1' && r.call.status === 'RINGING') {
           const a = await api<{ call: Call; rtc: RtcCreds }>(`/calls/${id}/accept`, { body: {} });
@@ -154,10 +160,30 @@ export default function CallScreen() {
     close();
   }
 
+  const videoLive = isVideo && !!startedAt && !!rtc.RtcSurfaceView && !rtcError;
+  function showUi(v: boolean) {
+    setUiOn(v);
+    Animated.timing(ui, { toValue: v ? 1 : 0, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    // Görüntülü danışıqda düymələr 4 saniyədən sonra özü gizlənir
+    if (v && videoLive) hideTimer.current = setTimeout(() => showUi(false), 4000);
+  }
+  useEffect(() => {
+    if (videoLive) showUi(true);
+    return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoLive]);
+
   if (!call || !peer) return <View style={{ flex: 1, backgroundColor: colors.night }}><Loader full night /></View>;
   const connected = !!startedAt;
   const Surface = rtc.RtcSurfaceView;
-  const remoteVideo = isVideo && connected && remoteUid != null && !!Surface;
+  // Qarşı tərəfin uid-i = onun qısa ID-si (server tokeni belə verir) — hadisə gecikəndə də görüntü açılır
+  const peerUid = remoteUid ?? peer.shortId;
+  const remoteVideo = videoLive && !!Surface;
+  const bigUid = swap ? 0 : peerUid;
+  const pipUid = swap ? peerUid : 0;
+  const dockStyle = { opacity: ui, transform: [{ translateY: ui.interpolate({ inputRange: [0, 1], outputRange: [220, 0] }) }] };
+  const topStyle = { opacity: ui, transform: [{ translateY: ui.interpolate({ inputRange: [0, 1], outputRange: [-80, 0] }) }] };
   const elapsed = connected ? duration(Math.floor((now - startedAt!) / 1000)) : '';
   const soft = isVideo ? colors.brandSoft : colors.diamondSoft;
 
@@ -167,7 +193,11 @@ export default function CallScreen() {
       {!remoteVideo && peer.avatarUrl ? <Image source={{ uri: peer.avatarUrl }} style={[StyleSheet.absoluteFill, { opacity: 0.45 }]} contentFit="cover" blurRadius={40} /> : null}
       {!remoteVideo ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,14,13,0.55)' }]} /> : null}
       {remoteVideo ? (
-        <Surface style={StyleSheet.absoluteFill} canvas={{ uid: remoteUid! }} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => showUi(!uiOn)}>
+          {bigUid === 0 && !camOn ? <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.night2 }]} /> : (
+            <Surface key={`big-${bigUid}`} style={StyleSheet.absoluteFill} canvas={{ uid: bigUid }} />
+          )}
+        </Pressable>
       ) : (
         <SafeAreaView edges={['top']} style={styles.center}>
           <View style={styles.pills}>
@@ -195,14 +225,22 @@ export default function CallScreen() {
         </SafeAreaView>
       )}
 
-      {isVideo && camOn && Surface && !rtcError ? (
-        <View style={styles.pipWrap}>
-          <View style={styles.pip}>
-            <Surface style={{ flex: 1 }} canvas={{ uid: 0 }} zOrderMediaOverlay />
-          </View>
-        </View>
+      {isVideo && Surface && !rtcError && (remoteVideo || camOn) ? (
+        <Animated.View style={[styles.pipWrap, { transform: [{ translateY: ui.interpolate({ inputRange: [0, 1], outputRange: [-56, 0] }) }] }]}>
+          <Pressable style={styles.pip} disabled={!remoteVideo} onPress={() => { tap(); setSwap((v) => !v); if (videoLive) showUi(true); }}>
+            {remoteVideo ? (
+              pipUid === 0 && !camOn ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Icon name="videocamOff" size={22} color={colors.nightMuted} /></View> : (
+                <Surface key={`pip-${pipUid}`} style={{ flex: 1 }} canvas={{ uid: pipUid }} zOrderMediaOverlay />
+              )
+            ) : (
+              <Surface style={{ flex: 1 }} canvas={{ uid: 0 }} zOrderMediaOverlay />
+            )}
+            {remoteVideo ? <View style={styles.swapHint}><Icon name="flip" size={12} color={colors.white} /></View> : null}
+          </Pressable>
+        </Animated.View>
       ) : null}
 
+      <Animated.View style={[StyleSheet.absoluteFill, remoteVideo ? topStyle : null]} pointerEvents={uiOn ? 'box-none' : 'none'}>
       <SafeAreaView style={styles.top} edges={['top']} pointerEvents="box-none">
         {remoteVideo ? (
           <View style={styles.peerPill}>
@@ -218,6 +256,7 @@ export default function CallScreen() {
         ) : <View />}
         {remoteVideo && call.pricePerMin > 0 && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
       </SafeAreaView>
+      </Animated.View>
 
       {lowBalance != null && isCaller ? (
         <PressBox onPress={() => router.push('/wallet')} bg={colors.coin} r={18} sh={4} style={styles.low} inner={styles.lowInner}>
@@ -227,6 +266,7 @@ export default function CallScreen() {
         </PressBox>
       ) : null}
 
+      <Animated.View style={[styles.controlsWrap, remoteVideo ? dockStyle : null]} pointerEvents={uiOn ? 'box-none' : 'none'}>
       <SafeAreaView edges={['bottom']} style={styles.controls}>
         <View style={styles.dock}>
           <Ctrl icon={muted ? 'micOff' : 'mic'} active={!muted} label={t('call.mic')} onPress={() => { rtc.controls.mute(!muted); setMuted(!muted); }} />
@@ -247,6 +287,7 @@ export default function CallScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
+      </Animated.View>
       <GiftOverlay ref={overlay} />
       <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} receiverName={peer.name} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
     </View>
@@ -309,7 +350,9 @@ const styles = StyleSheet.create({
   lowInner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
   lowText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13, flex: 1 },
   lowCta: { color: colors.bg, backgroundColor: colors.ink, fontFamily: fonts.bold, fontSize: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, overflow: 'hidden' },
-  controls: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 18 },
+  controlsWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  controls: { alignItems: 'center', paddingBottom: 18 },
+  swapHint: { position: 'absolute', right: 6, bottom: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
   dockShadow: { position: 'absolute', top: 4, left: 20, right: 12, height: 86, borderRadius: 28, backgroundColor: colors.ink },
   dock: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginHorizontal: 16, height: 90, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
   ctrl: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },

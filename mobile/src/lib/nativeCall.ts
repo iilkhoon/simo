@@ -25,6 +25,8 @@ try { RNCallKeep = require('react-native-callkeep').default as CallKeep; } catch
 const byUuid = new Map<string, { callId: string; video: boolean }>();
 const byCall = new Map<string, string>();
 const answered = new Set<string>();
+/** Tətbiq ekranında qəbul/rədd edilib, amma sistem zəngi (VoIP push) hələ JS-ə çatmayıb */
+const pendingInApp = new Map<string, 'answer' | 'decline'>();
 let ready = false;
 
 function uuidv4() {
@@ -75,14 +77,49 @@ export async function setupNativeCalls(labels: { title: string; desc: string; ca
       const Voip = require('react-native-voip-push-notification').default;
       Voip.addEventListener('register', (token: string) => void api('/me/voip-token', { method: 'PUT', body: { token } }).catch(() => {}));
       Voip.addEventListener('notification', (n: { callId?: string; uuid?: string; hasVideo?: boolean }) => {
-        if (n.callId && n.uuid) { byUuid.set(n.uuid, { callId: n.callId, video: !!n.hasVideo }); byCall.set(n.callId, n.uuid); }
+        if (n.callId && n.uuid) mapPushCall(n.callId, n.uuid, !!n.hasVideo);
       });
       Voip.addEventListener('didLoadWithEvents', (events: { name: string; data: { callId?: string; uuid?: string; hasVideo?: boolean } }[]) => {
-        events.forEach((e) => { if (e.name === 'RNVoipPushRemoteNotificationReceivedEvent' && e.data.callId && e.data.uuid) { byUuid.set(e.data.uuid, { callId: e.data.callId, video: !!e.data.hasVideo }); byCall.set(e.data.callId, e.data.uuid); } });
+        events.forEach((e) => { if (e.name === 'RNVoipPushRemoteNotificationReceivedEvent' && e.data.callId && e.data.uuid) mapPushCall(e.data.callId, e.data.uuid, !!e.data.hasVideo); });
       });
       Voip.registerVoipToken();
     } catch { /* VoIP modulu yoxdur */ }
   }
+}
+
+/** VoIP push ilə gələn sistem zəngi: əgər istifadəçi artıq tətbiq ekranında cavab veribsə — sistem zəngini də uyğunlaşdır */
+function mapPushCall(callId: string, uuid: string, video: boolean) {
+  byUuid.set(uuid, { callId, video }); byCall.set(callId, uuid);
+  const p = pendingInApp.get(callId);
+  if (!p) return;
+  pendingInApp.delete(callId);
+  if (p === 'answer') answerNativeSilently(callId);
+  else endNative(callId);
+}
+
+function answerNativeSilently(callId: string) {
+  const uuid = byCall.get(callId);
+  if (!uuid || !RNCallKeep) return;
+  answered.add(callId); // answerCall hadisəsi ikinci ekran açmasın
+  try { RNCallKeep.answerIncomingCall(uuid); } catch { /* */ }
+}
+
+/**
+ * Zəng tətbiqin öz ekranında QƏBUL edildi: telefonun sistem zəngi də (CallKit) "cavablanmış" olur —
+ * zəng səsi dayanır, iPhone-da Dynamic Island / yaşıl zəng göstəricisi danışıq vaxtını göstərir.
+ */
+export function answeredInApp(callId: string) {
+  answered.add(callId);
+  if (byCall.has(callId)) answerNativeSilently(callId);
+  else pendingInApp.set(callId, 'answer');
+  setTimeout(() => pendingInApp.delete(callId), 60_000);
+}
+
+/** Zəng tətbiqin öz ekranında RƏDD edildi: sistem zəngi də dərhal susur */
+export function declinedInApp(callId: string) {
+  if (byCall.has(callId)) endNative(callId);
+  else pendingInApp.set(callId, 'decline');
+  setTimeout(() => pendingInApp.delete(callId), 60_000);
 }
 
 /** Gələn zəngi sistem zəng ekranında göstərir. true — göstərildi (tətbiqdaxili ekrana ehtiyac yoxdur) */
@@ -113,12 +150,20 @@ export function startNativeOutgoing(callId: string, name: string, video: boolean
   if (!RNCallKeep || !ready) return;
   const uuid = uuidv4();
   byUuid.set(uuid, { callId, video }); byCall.set(callId, uuid); answered.add(callId);
-  try { RNCallKeep.startCall(uuid, name, name, 'generic', video); } catch { /* */ }
+  try {
+    RNCallKeep.startCall(uuid, name, name, 'generic', video);
+    if (Platform.OS === 'ios') RNCallKeep.reportConnectingOutgoingCallWithUUID(uuid);
+  } catch { /* */ }
 }
 
 export function markConnected(callId: string) {
   const uuid = byCall.get(callId);
-  if (uuid && RNCallKeep) try { RNCallKeep.setCurrentCallActive(uuid); } catch { /* */ }
+  if (!uuid || !RNCallKeep) return;
+  try {
+    // iOS: gedən zəng "qoşuldu" — Dynamic Island-da taymer başlayır
+    if (Platform.OS === 'ios') RNCallKeep.reportConnectedOutgoingCallWithUUID(uuid);
+    else RNCallKeep.setCurrentCallActive(uuid);
+  } catch { /* */ }
 }
 
 /** Android: tətbiq bağlı olanda gələn zəng data-push-u → sistem zəng ekranı (fon tapşırığı) */

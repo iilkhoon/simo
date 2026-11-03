@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { errorText } from '../lib/format';
+import { answeredInApp, declinedInApp } from '../lib/nativeCall';
 import { colors, fonts, tintFor } from '../theme';
 import { GlassPill, IconBtn, T } from './ui';
 import { LevelBadge, VerifiedBadge } from './Badges';
@@ -40,10 +41,12 @@ export function IncomingCall() {
 
   function accept() {
     setIncoming(null);
+    answeredInApp(call.id);
     router.push({ pathname: '/call/[id]', params: { id: call.id, accept: '1' } });
   }
   async function decline() {
     setIncoming(null);
+    declinedInApp(call.id);
     try {
       await api(`/calls/${call.id}/reject`, { method: 'POST', body: {} });
     } catch (e) {

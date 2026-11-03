@@ -48,6 +48,10 @@ function ensureEngine(appId: string) {
     onJoinChannelSuccess: () => listeners.forEach((l) => l.onJoined?.()),
     onUserJoined: (_c, uid) => listeners.forEach((l) => l.onRemoteJoined?.(uid)),
     onUserOffline: (_c, uid) => listeners.forEach((l) => l.onRemoteLeft?.(uid)),
+    // Qarşı tərəfin kamerası işə düşəndə (bəzən onUserJoined-dan sonra/gec gəlir)
+    onRemoteVideoStateChanged: (_c, uid, state) => {
+      if (state === 1 || state === 2) listeners.forEach((l) => l.onRemoteJoined?.(uid));
+    },
     onAudioVolumeIndication: (_c, speakers) =>
       listeners.forEach((l) => l.onVolume?.(speakers.map((s) => ({ uid: s.uid ?? 0, volume: s.volume ?? 0 })))),
     onError: (code) => listeners.forEach((l) => l.onError?.(code)),
