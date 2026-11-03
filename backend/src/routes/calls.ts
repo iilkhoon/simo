@@ -26,7 +26,8 @@ async function callPrice(callerId: string, calleeId: string, type: 'VIDEO' | 'VO
   // Adi istifadəçilər arasında zəng pulsuzdur, lakin yalnız qarşılıqlı uyğunluq olduqda
   const [a, b] = [callerId, calleeId].sort();
   const match = await prisma.match.findUnique({ where: { userAId_userBId: { userAId: a, userBId: b } } });
-  if (!match && callee.hostStatus !== 'APPROVED') throw err.forbidden('MATCH_REQUIRED');
+  // Test hesabları bir-birinə uyğunluqsuz zəng edə bilir
+  if (!match && callee.hostStatus !== 'APPROVED' && !(caller.isTester && callee.isTester)) throw err.forbidden('MATCH_REQUIRED');
   return { price: 0, caller, callee };
 }
 

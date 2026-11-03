@@ -133,6 +133,7 @@ export default function LiveHub() {
         <Wordmark size={28} />
         <View style={{ flex: 1 }} />
         <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
+        <IconBtn name="search" size={42} onPress={() => router.push('/search')} />
         <IconBtn name="bell" size={42} badge={unreadN} onPress={() => router.push('/notifications')} />
       </View>
       <View style={{ marginBottom: 12 }}>

@@ -9,6 +9,7 @@ import { presentUser, publicUserSelect } from '../lib/present.js';
 import { ECONOMY, activeNoble, activeVip, ageFrom, levelFromXp, todayKey, weekKey, xpForLevel } from '../economy.js';
 import { creditCoins, spendCoins } from '../services/wallet.js';
 import { notify } from '../services/notify.js';
+import { recordEvents } from '../services/taste.js';
 
 export const INTERESTS = [
   'music', 'travel', 'cooking', 'sport', 'fitness', 'movies', 'books', 'art', 'dance', 'gaming',
@@ -435,6 +436,28 @@ export default async function userRoutes(app: FastifyInstance) {
   app.post('/notifications/read', { preHandler: requireAuth }, async (req) => {
     await prisma.notification.updateMany({ where: { userId: uid(req), read: false }, data: { read: true } });
     return { ok: true };
+  });
+
+  /** Hesab axtarışı: ad (hissə) və ya ID (shortId). Bloklananlar, silinənlər göstərilmir */
+  app.get('/users/search', { preHandler: requireAuth, config: { rateLimit: { max: 60, timeWindow: '1 minute' } } }, async (req) => {
+    const me = uid(req);
+    const { q } = z.object({ q: z.string().max(40).default('') }).parse(req.query);
+    const term = q.trim().replace(/^@|^#|^id:?/i, '').trim();
+    if (term.length < 2 && !/^\d+$/.test(term)) return { items: [] };
+    const blocks = await prisma.block.findMany({ where: { OR: [{ blockerId: me }, { blockedId: me }] }, select: { blockerId: true, blockedId: true } });
+    const hidden = [me, ...blocks.map((b) => (b.blockerId === me ? b.blockedId : b.blockerId))];
+    const or: object[] = [{ name: { contains: term, mode: 'insensitive' } }];
+    if (/^\d{1,9}$/.test(term)) or.unshift({ shortId: Number(term) });
+    const users = await prisma.user.findMany({
+      where: { id: { notIn: hidden }, deletedAt: null, banned: false, onboarded: true, OR: or },
+      select: { ...publicUserSelect, photos: true },
+      orderBy: [{ online: 'desc' }, { lastSeenAt: 'desc' }],
+      take: 30,
+    });
+    const exact = /^\d+$/.test(term) ? Number(term) : null;
+    users.sort((a, b) => Number(b.shortId === exact) - Number(a.shortId === exact));
+    if (term) void recordEvents(me, [{ kind: 'search', meta: { q: term, users: true } }]).catch(() => {});
+    return { items: users.map((u) => presentUser(u)) };
   });
 
   app.get('/leaderboard', { preHandler: requireAuth }, async (req) => {

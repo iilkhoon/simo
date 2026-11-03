@@ -88,6 +88,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
         <View style={styles.top}>
           <T v="h1" style={{ flex: 1 }}>{t('tabs.discover')}</T>
           <CoinPill n={me?.coins ?? 0} onPress={() => router.push('/wallet')} />
+          <IconBtn name="search" size={40} onPress={() => router.push('/search')} />
           <IconBtn name="location" size={40} onPress={() => router.push('/nearby')} />
           <IconBtn name="bell" size={40} badge={unreadNotifications} onPress={() => router.push('/notifications')} />
         </View>

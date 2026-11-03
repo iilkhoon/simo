@@ -344,7 +344,7 @@ export default function Videos() {
         <View style={{ width: 210 }}>
           <Tabs night value={tab} onChange={setTab} options={[{ key: 'following', label: t('videos.following') }, { key: 'foryou', label: t('videos.forYou') }]} />
         </View>
-        <IconBtn name="search" size={40} bg="rgba(15,13,12,0.45)" color={colors.white} style={styles.upload} onPress={() => router.push('/hashtag')} />
+        <IconBtn name="search" size={40} bg="rgba(15,13,12,0.45)" color={colors.white} style={styles.upload} onPress={() => router.push({ pathname: '/search', params: { tab: 'tags' } })} />
       </View>
       <GiftOverlay ref={overlay} />
       <Comments video={commentsFor} onClose={() => setCommentsFor(null)} onAdded={(d) => commentsFor && patch(commentsFor.id, { commentsCount: Math.max(0, commentsFor.commentsCount + d) })} />

@@ -83,6 +83,7 @@ const az = {
   calls2: { permTitle: 'Zənglər üçün icazə', permDesc: 'Simo zəngləri telefonun öz zəng ekranında göstərmək üçün icazə istəyir', channel: 'Simo zəngləri' },
   menu2: { services: 'Xidmətlərim', orders: 'Sifarişlər', callSettings: 'Zəng və status', notifSettings: 'Bildirişlər', taste: 'Alqoritm səni belə tanıyır' },
   profile2: { about: 'Haqqında', services: 'Xidmətlər', more: 'Ətraflı' },
+  find: { title: 'Axtarış', users: 'Hesablar', tags: 'Heşteqlər', usersPh: 'Ad və ya ID yaz', hint: 'Adı və ya ID nömrəsini yaz', none: 'Hesab tapılmadı', host: 'Host' },
   notifTypes: {
     visit_digest: 'Profilinə {{n}} nəfər baxdı', like_digest: '{{n}} nəfər səni bəyəndi', offer: 'Sənə özəl təklif bitmək üzrədir', picks: 'Sənə uyğun {{n}} yeni profil',
     order: 'Xidmətinə yeni sifariş: {{title}}', order_update: 'Sifariş yeniləndi: {{title}}', comment: 'Postuna şərh yazdı', post_live: 'Planlanmış postun paylaşıldı',
@@ -171,6 +172,7 @@ const ru: ExtraDict = {
   calls2: { permTitle: 'Разрешение для звонков', permDesc: 'Simo просит разрешение показывать звонки на системном экране вызова', channel: 'Звонки Simo' },
   menu2: { services: 'Мои услуги', orders: 'Заказы', callSettings: 'Звонки и статус', notifSettings: 'Уведомления', taste: 'Как тебя знает алгоритм' },
   profile2: { about: 'О себе', services: 'Услуги', more: 'Подробнее' },
+  find: { title: 'Поиск', users: 'Аккаунты', tags: 'Хэштеги', usersPh: 'Имя или ID', hint: 'Введите имя или ID', none: 'Аккаунт не найден', host: 'Хост' },
   notifTypes: {
     visit_digest: 'Твой профиль посмотрели {{n}} чел.', like_digest: 'Ты понравился {{n}} людям', offer: 'Персональное предложение скоро закончится', picks: '{{n}} новых анкет для тебя',
     order: 'Новый заказ: {{title}}', order_update: 'Заказ обновлён: {{title}}', comment: 'Прокомментировал твой пост', post_live: 'Запланированный пост опубликован',
@@ -256,6 +258,7 @@ const en: ExtraDict = {
   calls2: { permTitle: 'Calls permission', permDesc: 'Simo wants to show calls on your phone\'s native call screen', channel: 'Simo calls' },
   menu2: { services: 'My services', orders: 'Orders', callSettings: 'Calls & status', notifSettings: 'Notifications', taste: 'How the algorithm sees you' },
   profile2: { about: 'About', services: 'Services', more: 'More' },
+  find: { title: 'Search', users: 'Accounts', tags: 'Hashtags', usersPh: 'Name or ID', hint: 'Type a name or ID', none: 'No accounts found', host: 'Host' },
   notifTypes: {
     visit_digest: '{{n}} people viewed your profile', like_digest: '{{n}} people liked you', offer: 'Your personal offer ends soon', picks: '{{n}} new profiles for you',
     order: 'New order: {{title}}', order_update: 'Order updated: {{title}}', comment: 'commented on your post', post_live: 'Your scheduled post is live',
