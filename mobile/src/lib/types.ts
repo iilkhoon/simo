@@ -90,6 +90,8 @@ export interface Me extends PublicUser {
   locale: string;
   firstRechargeDone: boolean;
   promoCoins?: number;
+  /** Test hesabı: limitsiz balans, alış demo, reytinqdən kənar */
+  isTester?: boolean;
   kycStatus?: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
   noble?: { tier: 'BEY' | 'XAN' | 'SAH'; priceCoins: number; days: number; perks: string[] } | null;
   nobleUntil?: string | null;

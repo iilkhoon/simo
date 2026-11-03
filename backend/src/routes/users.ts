@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { refillTester } from '../services/tester.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
@@ -62,6 +63,7 @@ export async function presentMe(userId: string) {
     hellosLeft: Math.max(0, ECONOMY.freeHellosPerDay - (u.helloDate === today ? u.helloUsed : 0)),
     filterChangesLeft: vip ? null : Math.max(0, ECONOMY.freeFilterChangesPerWeek - (u.filterWeek === weekKey() ? u.filterUsed : 0)),
     promoCoins: u.promoCoins,
+    isTester: u.isTester,
     kycStatus: u.kycStatus,
     noble: activeNoble(u),
     nobleUntil: activeNoble(u) ? u.nobleUntil : null,
@@ -139,7 +141,10 @@ const patchSchema = onboardingSchema
 export default async function userRoutes(app: FastifyInstance) {
   app.get('/meta/interests', async () => ({ interests: INTERESTS }));
 
-  app.get('/me', { preHandler: requireAuth }, async (req) => presentMe(uid(req)));
+  app.get('/me', { preHandler: requireAuth }, async (req) => {
+    await refillTester(uid(req));
+    return presentMe(uid(req));
+  });
 
   app.put('/me/onboarding', { preHandler: requireAuth }, async (req) => {
     const id = uid(req);
@@ -442,14 +447,14 @@ export default async function userRoutes(app: FastifyInstance) {
         ? (await prisma.giftTransaction.groupBy({ by: ['senderId'], where, _sum: { coins: true }, orderBy: { _sum: { coins: 'desc' } }, take: 50 })).map((g) => ({ id: g.senderId, _sum: g._sum }))
         : (await prisma.giftTransaction.groupBy({ by: ['receiverId'], where, _sum: { coins: true }, orderBy: { _sum: { coins: 'desc' } }, take: 50 })).map((g) => ({ id: g.receiverId, _sum: g._sum }));
     const ids = grouped.map((g) => g.id);
-    const users = await prisma.user.findMany({ where: { id: { in: ids }, deletedAt: null }, select: { ...publicUserSelect, photos: true } });
+    // Test hesabları reytinqdə göstərilmir
+    const users = await prisma.user.findMany({ where: { id: { in: ids }, deletedAt: null, isTester: false }, select: { ...publicUserSelect, photos: true } });
     const byId = new Map(users.map((u) => [u.id, presentUser(u)]));
-    return {
-      items: grouped.flatMap((g, i) => {
-        const u = byId.get(ids[i]);
-        return u ? [{ rank: i + 1, score: g._sum.coins ?? 0, user: u }] : [];
-      }),
-    };
+    const rows = grouped.flatMap((g, i) => {
+      const u = byId.get(ids[i]);
+      return u ? [{ score: g._sum.coins ?? 0, user: u }] : [];
+    });
+    return { items: rows.map((r, i) => ({ rank: i + 1, ...r })) };
   });
 
   /** Veb yükləmə səhifəsi üçün: ID ilə ad və avatar (minimum məlumat) */

@@ -87,7 +87,7 @@ export function SwipeDeck({ users, myInterests, onSwipe }: { users: PublicUser[]
     if (!u) return;
     void Haptics.impactAsync(action === 'PASS' ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const to = action === 'LIKE' ? { x: W * 1.5, y: 40 } : action === 'PASS' ? { x: -W * 1.5, y: 40 } : { x: 0, y: -900 };
-    Animated.timing(pos, { toValue: to, duration: 260, useNativeDriver: true }).start(() => {
+    Animated.timing(pos, { toValue: to, duration: 260, useNativeDriver: false }).start(() => {
       pos.setValue({ x: 0, y: 0 });
       onSwipe(u, action);
     });

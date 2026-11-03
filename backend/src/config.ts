@@ -48,5 +48,12 @@ export const config = {
     privateKey: env('EPOINT_PRIVATE_KEY', ''),
     apiUrl: env('EPOINT_API_URL', 'https://epoint.az/api/1'),
   },
+  /**
+   * Test hesabları: sabit kodla giriş (SMS getmir), limitsiz promo Nar, reytinqdən kənar, alış demo.
+   * TEST_PHONES=+994990000001,+994990000002  TEST_OTP_CODE=111111
+   * DEV_MODE=true olduqda bu standart dəyərlər avtomatik işləyir; istehsalda env ilə verilməlidir.
+   */
+  testPhones: env('TEST_PHONES', process.env.DEV_MODE === 'true' || !isProd ? '+994990000001,+994990000002' : '').split(',').map((s) => s.trim()).filter(Boolean),
+  testOtpCode: env('TEST_OTP_CODE', process.env.DEV_MODE === 'true' || !isProd ? '111111' : ''),
   adminEmails: env('ADMIN_EMAILS', '').split(',').map((s) => s.trim()).filter(Boolean),
 };

@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { issueTokens, requireAuth, sha256, uid } from '../lib/auth.js';
 import { sendSms } from '../services/sms.js';
+import { isTestPhone, refillTester } from '../services/tester.js';
 
 /** Azərbaycan nömrəsi: +994 XX XXX XX XX (50, 51, 55, 60, 70, 77, 99, 10, 12 və s.) */
 export function normalizePhone(input: string): string {
@@ -41,6 +42,8 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/auth/otp/request', { config: { rateLimit: { max: 5, timeWindow: '10 minutes' } } }, async (req) => {
     const body = z.object({ phone: z.string().min(7), locale: z.string().default('az') }).parse(req.body);
     const phone = normalizePhone(body.phone);
+    // Test hesabı: SMS göndərilmir, sabit kod (TEST_OTP_CODE) ilə daxil olunur
+    if (isTestPhone(phone)) return { ok: true, phone, ...(config.devMode ? { devCode: config.testOtpCode } : {}) };
     const recent = await prisma.otpCode.count({ where: { phone, createdAt: { gte: new Date(Date.now() - 60_000) } } });
     if (recent > 0) throw err.badRequest('OTP_TOO_SOON');
     const code = String(crypto.randomInt(100000, 1000000));
@@ -54,16 +57,21 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/auth/otp/verify', { config: { rateLimit: { max: 10, timeWindow: '10 minutes' } } }, async (req) => {
     const body = z.object({ phone: z.string(), code: z.string().length(6), referralCode: z.string().optional(), locale: z.string().optional() }).parse(req.body);
     const phone = normalizePhone(body.phone);
-    const otp = await prisma.otpCode.findFirst({
-      where: { phone, usedAt: null, expiresAt: { gte: new Date() } },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!otp || otp.attempts >= 5) throw err.badRequest('OTP_INVALID');
-    if (otp.codeHash !== sha256(phone + body.code)) {
-      await prisma.otpCode.update({ where: { id: otp.id }, data: { attempts: { increment: 1 } } });
-      throw err.badRequest('OTP_INVALID');
+    const tester = isTestPhone(phone);
+    if (tester) {
+      if (!crypto.timingSafeEqual(Buffer.from(sha256(body.code)), Buffer.from(sha256(config.testOtpCode)))) throw err.badRequest('OTP_INVALID');
+    } else {
+      const otp = await prisma.otpCode.findFirst({
+        where: { phone, usedAt: null, expiresAt: { gte: new Date() } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (!otp || otp.attempts >= 5) throw err.badRequest('OTP_INVALID');
+      if (otp.codeHash !== sha256(phone + body.code)) {
+        await prisma.otpCode.update({ where: { id: otp.id }, data: { attempts: { increment: 1 } } });
+        throw err.badRequest('OTP_INVALID');
+      }
+      await prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
     }
-    await prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
     let user = await prisma.user.findUnique({ where: { phone } });
     if (user?.deletedAt) throw err.forbidden('ACCOUNT_DELETED');
     if (user?.banned) throw err.forbidden('BANNED');
@@ -74,6 +82,10 @@ export default async function authRoutes(app: FastifyInstance) {
         data: { phone, referredById: ref?.id, locale: body.locale ?? 'az' },
       });
       isNew = true;
+    }
+    if (tester) {
+      if (!user.isTester) user = await prisma.user.update({ where: { id: user.id }, data: { isTester: true } });
+      await refillTester(user.id);
     }
     return sessionFor(user.id, user.role, isNew || !user.onboarded);
   });

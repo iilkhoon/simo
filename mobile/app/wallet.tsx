@@ -61,7 +61,10 @@ export default function Wallet() {
     setBuying(pkg.id);
     try {
       let credited: number;
-      try {
+      if (me.isTester) {
+        // Test hesabı: real ödəniş yoxdur, demo alış
+        credited = (await api<{ credited: number }>('/payments/dev/purchase', { body: { packageId: pkg.id } })).credited;
+      } else try {
         credited = await buyCoins(pkg, me.id);
       } catch (e) {
         // Yalnız inkişaf rejimində: mağaza olmadıqda test alışı

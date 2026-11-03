@@ -34,9 +34,9 @@ export default function StartLive() {
   }
 
   return (
-    <Screen edges={['top', 'bottom']} keyboard>
+    <Screen edges={['top', 'bottom']} scroll bottom={24}>
       <Header title={t('live.goLive')} />
-      <View style={{ gap: 16, flex: 1, paddingTop: 6 }}>
+      <View style={{ gap: 16, paddingTop: 6 }}>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {(['VIDEO', 'VOICE'] as const).map((k) => {
             const on = type === k;
@@ -49,8 +49,8 @@ export default function StartLive() {
             );
           })}
         </View>
-        <PressBox style={{ alignSelf: 'center' }} r={22} sh={4} bg={colors.bgSunken} inner={styles.cover} onPress={async () => { try { const u = await pickImage(); if (u) setCover(u); } catch (e) { toast(errorText(e), 'error'); } }}>
-          {cover ? <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Icon name="image" size={34} color={colors.textMuted} />}
+        <PressBox style={styles.coverWrap} r={22} sh={4} bg={colors.bgSunken} inner={styles.cover} onPress={async () => { try { const u = await pickImage(); if (u) setCover(u); } catch (e) { toast(errorText(e), 'error'); } }}>
+          {cover ? <Image source={{ uri: cover }} style={styles.coverImg} contentFit="cover" /> : <Icon name="image" size={34} color={colors.textMuted} />}
           <View style={styles.coverEdit}><Icon name="camera" size={16} color={colors.ink} /></View>
         </PressBox>
         {type === 'VOICE' ? (
@@ -64,7 +64,6 @@ export default function StartLive() {
           <Icon name="shield" size={18} color={colors.ink} />
           <T v="small" color={colors.textMuted} style={{ flex: 1 }}>{t('live.rules')}</T>
         </View>
-        <View style={{ flex: 1 }} />
         <Btn title={t('live.start')} icon="radio" kind={type === 'VIDEO' ? 'primary' : 'diamond'} loading={loading} onPress={start} style={{ marginBottom: 8 }} />
       </View>
     </Screen>
@@ -74,7 +73,9 @@ export default function StartLive() {
 const styles = StyleSheet.create({
   type: { alignItems: 'center', gap: 6, paddingVertical: 18, paddingHorizontal: 10 },
   typeIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  cover: { width: 140, height: 186, alignItems: 'center', justifyContent: 'center' },
+  coverWrap: { alignSelf: 'center', width: 132, height: 176 },
+  cover: { width: 132, height: 176, alignItems: 'center', justifyContent: 'center' },
+  coverImg: { position: 'absolute', top: 0, left: 0, width: 132, height: 176 },
   coverEdit: { position: 'absolute', right: 8, bottom: 8, backgroundColor: colors.card, borderRadius: 16, padding: 6 },
   tips: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 14, backgroundColor: colors.bgSunken },
 });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { refillTester } from '../services/tester.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { ECONOMY, NOBLE_PLANS, VIP_PLANS, activeNoble, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
@@ -24,8 +25,9 @@ export default async function walletRoutes(app: FastifyInstance) {
 
   app.get('/wallet', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
+    await refillTester(me);
     const [user, history, packages] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, promoCoins: true, diamonds: true, diamondsBought: true, firstRechargeDone: true, hostStatus: true } }),
+      prisma.user.findUniqueOrThrow({ where: { id: me }, select: { coins: true, promoCoins: true, diamonds: true, diamondsBought: true, firstRechargeDone: true, hostStatus: true, isTester: true } }),
       prisma.walletTransaction.findMany({ where: { userId: me }, orderBy: { createdAt: 'desc' }, take: 100 }),
       prisma.coinPackage.findMany({ where: { active: true }, orderBy: { sort: 'asc' } }),
     ]);

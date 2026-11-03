@@ -90,6 +90,8 @@ model User {
   vipTier            VipTier    @default(NONE)
   vipUntil           DateTime?
   firstRechargeDone  Boolean    @default(false)
+  /// Test hesabı: limitsiz promo Nar, reytinqdən kənar, alış demo (TEST_PHONES)
+  isTester           Boolean    @default(false)
   videoCallPrice     Int        @default(80)
   voiceCallPrice     Int        @default(40)
   online             Boolean    @default(false)

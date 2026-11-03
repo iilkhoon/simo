@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { refillTester } from '../services/tester.js';
 import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
@@ -118,8 +119,16 @@ export default async function paymentRoutes(app: FastifyInstance) {
 
   /** YALNIZ inkişaf rejimi: real ödəniş olmadan test üçün coin yükləmə */
   app.post('/payments/dev/purchase', { preHandler: requireAuth }, async (req) => {
-    if (!config.devMode) throw err.notFound();
     const b = z.object({ packageId: z.string() }).parse(req.body);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: uid(req) }, select: { isTester: true } });
+    if (user.isTester) {
+      // Test hesabı: demo alış — real ödəniş yoxdur, balans onsuz da limitsizdir
+      const pkg = await prisma.coinPackage.findUnique({ where: { id: b.packageId } });
+      if (!pkg) throw err.badRequest('PACKAGE_NOT_FOUND');
+      await refillTester(uid(req));
+      return { ok: true, credited: pkg.currency === 'DIAMOND' ? 0 : pkg.coins + pkg.bonusCoins, demo: true };
+    }
+    if (!config.devMode) throw err.notFound();
     const payment = await createPending(uid(req), 'DEV', b.packageId, `dev_${Date.now()}_${Math.random()}`);
     const r = await fulfillPayment(payment.id);
     return { ok: true, credited: r.credited };
