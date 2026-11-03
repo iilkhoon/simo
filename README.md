@@ -64,18 +64,19 @@ Tətbiq 3 dildə işləyir: Azərbaycan, rus və ingilis.
 
 ## Windows-da test (Expo Go)
 
-Lazımdır: [Node.js 20+](https://nodejs.org), [Docker Desktop](https://www.docker.com/products/docker-desktop) (və ya lokal PostgreSQL: istifadəçi/parol/baza `simo`), telefonda **Expo Go**. Telefon və kompüter eyni Wi-Fi-da olmalıdır.
+Heç nə quraşdırmaq lazım deyil: telefonda yalnız **Expo Go**, telefon və kompüter eyni Wi-Fi-da.
+
+1. **`BASLAT.bat`**-a iki dəfə klikləyin. İlk dəfə Node.js (portativ), verilənlər bazası (embedded PostgreSQL) və paketlər layihə qovluğunun içinə yüklənir — 5-10 dəqiqə. Sonrakı dəfələr bir neçə saniyə.
+2. "Simo Expo" pəncərəsindəki QR kodu skan edin (Android — Expo Go, iPhone — Kamera).
 
 | Fayl | Nə edir |
 |---|---|
-| `1-QURASDIR.bat` | Bir dəfə: `.env`, paketlər, baza cədvəlləri, hədiyyələr və demo profillər |
-| `BASLAT.bat` | Backend və Expo-nu iki pəncərədə açır (QR kodu Expo Go ilə skan edin) |
-| `2-BACKEND.bat` / `3-EXPO-GO.bat` | Ayrı-ayrılıqda başlatmaq üçün |
-| `FIREWALL-AC.bat` | Telefon qoşula bilmirsə: 4000 və 8081 portlarını açır (administrator) |
-| `DB-SIFIRLA.bat` | Bazanı silib demo məlumatlarla yenidən yaradır |
+| `BASLAT.bat` | Hər şeyi başladır (backend + baza + Expo) |
+| `FIREWALL-AC.bat` | Telefon qoşula bilmirsə: 4000 və 8081 portlarını açır |
+| `DB-SIFIRLA.bat` | Bazanı təmizləyib demo profillərlə yenidən yaradır |
 
-Tətbiq backend ünvanını Expo-dan özü tapır (`http://<kompüter-IP>:4000`). OTP kodu `DEV_MODE=true` olduğu üçün ekranda görünür.
-Expo Go-da işləməyənlər (native modul tələb edir, dev build lazımdır): zəng/canlı yayın videosu (Agora), sistem zəng ekranı (CallKit), mağaza ödənişi, Android-də push bildirişləri.
+Baza faylları `backend/.localdb`, portativ Node `.tools/` qovluğundadır — silsəniz, növbəti dəfə yenidən yaradılır. Giriş kodu (OTP) `DEV_MODE=true` olduğu üçün ekranda görünür.
+Expo Go-da işləməyənlər (dev build lazımdır): zəng/canlı yayın videosu (Agora), sistem zəng ekranı, mağaza ödənişi, Android push.
 
 ## Lokal işə salma
 

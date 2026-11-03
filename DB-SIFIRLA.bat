@@ -1,18 +1,11 @@
 @echo off
 chcp 65001 >nul
-setlocal
+rem Bazadakı bütün məlumatları silir və demo profillərlə yenidən yaradır, sonra backend-i başladır.
 cd /d "%~dp0"
-title Simo - bazanı sıfırla
-echo DIQQET: verilənlər bazasındakı BÜTÜN məlumatlar silinəcək (hesablar, mesajlar, balanslar)
-echo və demo profillər yenidən yaradılacaq.
-set /p ok=Davam? (h/y): 
+echo DİQQƏT: bütün hesablar, mesajlar və balanslar silinəcək.
+echo Əvvəlcə açıq "Simo Backend" pəncərəsini bağlayın.
+set /p ok=Davam edək? (h/y): 
 if /i not "%ok%"=="h" exit /b 0
-call "%~dp0scripts\windows\db-up.bat"
-if errorlevel 1 ( pause & exit /b 1 )
-pushd backend
-call npx prisma migrate reset --force
-set SEED_DEMO=true
-call npm run db:seed
-popd
-echo Hazırdır.
-pause
+call "%~dp0scripts\windows\node.bat" || ( pause & exit /b 1 )
+call "%~dp0scripts\windows\install.bat" || ( pause & exit /b 1 )
+call "%~dp0scripts\windows\backend.bat" --reset

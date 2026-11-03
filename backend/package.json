@@ -9,7 +9,8 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/e2e.ts"
+    "test": "tsx test/e2e.ts",
+    "local": "node scripts/local.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
@@ -36,6 +37,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
+    "embedded-postgres": "^17.10.0-beta.17",
     "prisma": "^7.10.1",
     "socket.io-client": "^4.8.4",
     "tsx": "^4.23.15",
