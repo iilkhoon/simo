@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad } from '@/theme';
 import { IconBtn, Loader } from '@/components/ui';
+import { openReport } from '@/components/ReportSheet';
 import { Avatar } from '@/components/Avatar';
 import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
@@ -92,7 +93,9 @@ export default function StoryViewer() {
           </Pressable>
           {group.user.id === meId ? (
             <IconBtn name="trash" size={36} sh={0} bg={colors.glass} color={colors.white} onPress={() => void api(`/stories/${story.id}`, { method: 'DELETE' }).then(() => router.back())} />
-          ) : null}
+          ) : (
+            <IconBtn name="flag" size={36} sh={0} bg={colors.glass} color={colors.white} onPress={() => openReport({ targetUserId: group.user.id, targetType: 'STORY', targetId: story.id })} />
+          )}
           <IconBtn name="close" size={36} sh={0} bg={colors.glass} color={colors.white} onPress={() => router.back()} />
         </View>
       </SafeAreaView>

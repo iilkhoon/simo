@@ -187,10 +187,10 @@ const az = {
   visitors: { title: 'Profilinə baxanlar', empty: 'Hələ baxan yoxdur', emptySub: 'Hekayə paylaş və yayına çıx — daha çox insan görsün', locked: '{{n}} nəfər profilinə baxıb! Kim olduğunu görmək üçün VIP ol.' },
   leaderboard: { title: 'Liderlər', charm: 'Şöhrət', wealth: 'Səxavət', day: 'Gün', week: 'Həftə', month: 'Ay' },
   hostApply: {
-    title: 'Simo Host ol', sub: 'Söhbət et, yayın aç və hər mesajdan, zəngdən, hədiyyədən qazan.',
+    title: 'Simo Host ol', sub: 'Canlı yayın aç, izləyicilərinlə ünsiyyət qur və aldığın hədiyyələrə görə mükafat qazan.',
     step1: 'Üzünün aydın göründüyü selfi çək', step2: 'Komandamız 24 saat ərzində yoxlayır', step3: 'Təsdiqdən sonra qazanmağa başla',
     takeSelfie: 'Selfi çək', submit: 'Müraciət göndər', submitted: 'Müraciətin göndərildi! Tezliklə cavab veriləcək.',
-    perks: ['💬 Hər mesajdan qazanc', '📹 Zəng qiymətini özün təyin et', '🎁 Hədiyyələri nağd pula çevir', '🏢 Agentliklə daha çox qazan'],
+    perks: ['🎥 Canlı yayın və video zənglər', '📹 Zəng qiymətini özün təyin et', '🎁 Hədiyyələrdən Almaz mükafatı', '🏢 Agentliklə daha çox qazan'],
   },
   notifications: {
     title: 'Bildirişlər', empty: 'Bildiriş yoxdur',

@@ -189,10 +189,10 @@ const en: Dict = {
   visitors: { title: 'Profile visitors', empty: 'No visitors yet', emptySub: 'Post stories and go live so more people see you', locked: '{{n}} people viewed your profile! Go VIP to see who.' },
   leaderboard: { title: 'Leaderboard', charm: 'Fame', wealth: 'Generosity', day: 'Day', week: 'Week', month: 'Month' },
   hostApply: {
-    title: 'Become a Simo host', sub: 'Chat, go live and earn from every message, call and gift.',
+    title: 'Become a Simo host', sub: 'Go live, connect with your audience and get rewarded for the gifts you receive.',
     step1: 'Take a selfie with your face clearly visible', step2: 'Our team reviews it within 24h', step3: 'Start earning once approved',
     takeSelfie: 'Take selfie', submit: 'Submit application', submitted: "Application sent! We'll reply soon.",
-    perks: ['💬 Earn from every message', '📹 Set your own call price', '🎁 Turn gifts into cash', '🏢 Earn more with an agency'],
+    perks: ['🎥 Live streams and video calls', '📹 Set your own call price', '🎁 Diamond rewards for gifts', '🏢 Earn more with an agency'],
   },
   notifications: {
     title: 'Notifications', empty: 'No notifications',

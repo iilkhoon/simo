@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { Stack, router, usePathname, useSegments } from 'expo-router';
 import { AppState } from 'react-native';
 import { trackScreen } from '@/lib/track';
+import { ReportHost } from '@/components/ReportSheet';
 import { displayIncoming, endNative, registerCallPushTask, setupNativeCalls } from '@/lib/nativeCall';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -141,6 +142,7 @@ export default function RootLayout() {
           <Stack.Screen name="story/[userId]" options={{ animation: 'fade', gestureEnabled: true }} />
         </Stack>
         <IncomingCall />
+        <ReportHost />
         <Toasts />
       </SafeAreaProvider>
       </KeyboardProvider>

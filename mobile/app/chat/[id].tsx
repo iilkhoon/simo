@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { colors, fonts, radius, tintFor, webNoOutline } from '@/theme';
 import { Box, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
 import { Icon } from '@/components/Icon';
+import { openReport } from '@/components/ReportSheet';
 import { Avatar } from '@/components/Avatar';
 import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
@@ -292,6 +293,7 @@ export default function Chat() {
         </Pressable>
         <IconBtn name="call" size={40} bg={colors.diamondSoft} onPress={() => void startCall(u.id, 'VOICE')} />
         <IconBtn name="videocam" size={40} bg={colors.brand} color={colors.white} onPress={() => void startCall(u.id, 'VIDEO')} />
+        <IconBtn name="dots" size={40} onPress={() => openReport({ targetUserId: u.id, targetType: 'USER' })} />
       </SafeAreaView>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -312,7 +314,13 @@ export default function Chat() {
             ) : item.m.type === 'SYSTEM' ? (
               <Text style={styles.safety}>{item.m.text}</Text>
             ) : (
-              <Bubble m={item.m} mine={item.m.senderId === me?.id} read={new Date(item.m.createdAt).getTime() <= readAt} first={item.first} last={item.last} />
+              <Pressable
+                disabled={item.m.senderId === me?.id}
+                delayLongPress={350}
+                onLongPress={() => openReport({ targetUserId: u.id, targetType: 'MESSAGE', targetId: item.m.id })}
+              >
+                <Bubble m={item.m} mine={item.m.senderId === me?.id} read={new Date(item.m.createdAt).getTime() <= readAt} first={item.first} last={item.last} />
+              </Pressable>
             )
           }
         />

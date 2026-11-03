@@ -12,6 +12,7 @@ import { colors, noPad, fonts, webNoOutline } from '@/theme';
 import { Btn, EmptyState, IconBtn, Loader, Tabs, tap } from '@/components/ui';
 import { sheetStyles } from '@/components/ActionSheet';
 import { Icon } from '@/components/Icon';
+import { openReport } from '@/components/ReportSheet';
 import { Avatar } from '@/components/Avatar';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
@@ -143,6 +144,9 @@ export function Comments({ video, onClose, onAdded }: { video: Video | null; onC
               </View>
               {(item.userId ?? item.user?.id) === me?.id || owner ? (
                 <Pressable onPress={() => remove(item.id)} hitSlop={10} style={{ paddingTop: 2 }}><Icon name="trash" size={15} color={colors.textDim} /></Pressable>
+              ) : null}
+              {(item.userId ?? item.user?.id) !== me?.id && (item.userId ?? item.user?.id) ? (
+                <Pressable onPress={() => openReport({ targetUserId: (item.userId ?? item.user?.id)!, targetType: 'COMMENT', targetId: item.id })} hitSlop={10} style={{ paddingTop: 2 }}><Icon name="flag" size={15} color={colors.textDim} /></Pressable>
               ) : null}
             </Pressable>
           )}
@@ -326,6 +330,11 @@ export default function Videos() {
                   <View style={styles.disc}><Icon name="share" size={21} color={colors.ink} /></View>
                   <Text style={styles.sideText}>{compact(item.sharesCount ?? 0)}</Text>
                 </Pressable>
+                {item.user.id !== meId ? (
+                  <Pressable onPress={() => openReport({ targetUserId: item.user.id, targetType: 'VIDEO', targetId: item.id })} style={styles.sideBtn} hitSlop={6}>
+                    <View style={[styles.disc, { width: 36, height: 36 }]}><Icon name="flag" size={17} color={colors.ink} /></View>
+                  </Pressable>
+                ) : null}
               </View>
               <View style={[styles.caption, { bottom: tabSpace + 12 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

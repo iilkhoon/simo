@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { filterProfanity } from '../lib/moderation.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
@@ -52,7 +53,7 @@ export default async function liveRoutes(app: FastifyInstance) {
     const existing = await prisma.liveRoom.findMany({ where: { hostId: me, status: 'LIVE' }, select: { id: true } });
     for (const r of existing) await endLive(r.id, 'RESTARTED');
     const room = await prisma.liveRoom.create({
-      data: { hostId: me, type: b.type, title: b.title, coverUrl: b.coverUrl, seatCount: b.type === 'VOICE' ? b.seatCount : 0, channel: `live_${Date.now()}_${user.shortId}` },
+      data: { hostId: me, type: b.type, title: filterProfanity(b.title.trim()), coverUrl: b.coverUrl, seatCount: b.type === 'VOICE' ? b.seatCount : 0, channel: `live_${Date.now()}_${user.shortId}` },
     });
     initRoom(room.id, me, room.type === 'VOICE', room.seatCount);
     if (room.type === 'VOICE') takeSeat(room.id, me, 0);

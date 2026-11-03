@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -8,6 +8,8 @@ import { LogoMark, Nazar } from '@/components/Logo';
 import { Mascot } from '@/components/Mascot';
 import { GiftIcon } from '@/components/GiftIcon';
 import { Btn, SpeechBlock, T } from '@/components/ui';
+import { Icon } from '@/components/Icon';
+import { useStore } from '@/store';
 import { LANGUAGES } from '@/i18n';
 import { changeLanguage } from '@/lib/session';
 import { WEB_URL } from '@/config';
@@ -30,6 +32,10 @@ function Float({ i, style, children }: { i: number; style: object; children: Rea
 
 export default function Welcome() {
   const { t, i18n } = useTranslation();
+  // App Store 1.2 / EULA: 18+ və Şərtlərə aydın razılıq — işarələnmədən davam etmək olmur
+  const [agree, setAgree] = useState(false);
+  const toast = useStore((s) => s.toast);
+  const go = (path: '/(auth)/phone' | '/(auth)/email') => { if (!agree) { toast(t('consent.need'), 'error'); return; } router.push(path); };
   // Kiçik ekranlarda (360×740) aşağı hissə sığsın deyə yuxarı səhnə hündürlükdən asılıdır
   const topH = Math.max(300, Math.min(H * 0.48, 430));
   const words = t('auth.tagline').split(/(?<=\.)\s+/);
@@ -67,11 +73,21 @@ export default function Welcome() {
         </View>
         <T v="body" color={colors.textMuted} style={{ marginTop: 14 }}>{t('auth.welcomeSub')}</T>
         <View style={{ flex: 1, minHeight: 16 }} />
-        <View style={{ gap: 10 }}>
-          <Btn title={t('auth.continuePhone')} icon="phone" onPress={() => router.push('/(auth)/phone')} />
-          <Btn kind="light" title={t('auth.continueEmail')} icon="mail" onPress={() => router.push('/(auth)/email')} />
+        <Pressable onPress={() => setAgree((v) => !v)} style={styles.consent} hitSlop={6} accessibilityRole="checkbox" accessibilityState={{ checked: agree }}>
+          <View style={[styles.box, agree && styles.boxOn]}>{agree ? <Icon name="checkmark" size={16} color={colors.white} /> : null}</View>
+          <Text style={styles.consentText}>
+            {t('consent.pre')}
+            <Text style={styles.link} onPress={() => void Linking.openURL(`${WEB_URL}/terms.html`)}>{t('consent.terms')}</Text>
+            {t('consent.mid')}
+            <Text style={styles.link} onPress={() => void Linking.openURL(`${WEB_URL}/privacy.html`)}>{t('consent.privacy')}</Text>
+            {t('consent.post')}
+          </Text>
+        </Pressable>
+        <View style={{ gap: 10, opacity: agree ? 1 : 0.5 }}>
+          <Btn title={t('auth.continuePhone')} icon="phone" onPress={() => go('/(auth)/phone')} />
+          <Btn kind="light" title={t('auth.continueEmail')} icon="mail" onPress={() => go('/(auth)/email')} />
         </View>
-        <Text style={styles.terms} onPress={() => void Linking.openURL(`${WEB_URL}/terms.html`)}>{t('auth.terms')}</Text>
+        <Text style={styles.terms}>{t('consent.zero')}</Text>
       </SafeAreaView>
     </View>
   );
@@ -86,5 +102,10 @@ const styles = StyleSheet.create({
   giftDot: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   bottom: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
   words: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6, rowGap: 8 },
+  consent: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
+  box: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  boxOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  consentText: { flex: 1, color: colors.ink, fontSize: 13.5, lineHeight: 19, fontFamily: fonts.semibold },
+  link: { color: colors.brand, textDecorationLine: 'underline' },
   terms: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginTop: 14, lineHeight: 17, fontFamily: fonts.medium, marginBottom: 6 },
 });

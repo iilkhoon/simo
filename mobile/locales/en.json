@@ -1,0 +1,6 @@
+{
+  "NSCameraUsageDescription": "Simo uses the camera for video calls, live streams, profile photos and identity verification selfies.",
+  "NSMicrophoneUsageDescription": "Simo uses the microphone for voice and video calls and live streams.",
+  "NSPhotoLibraryUsageDescription": "Simo needs access to your photos so you can choose a profile photo and share photos and videos.",
+  "NSLocationWhenInUseUsageDescription": "Simo uses your location to show people near you. Your exact location is never shown to others."
+}

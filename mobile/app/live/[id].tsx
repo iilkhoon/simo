@@ -10,6 +10,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, vipColor, webNoOutline } from '@/theme';
 import { GlassPill, Box, Btn, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
+import { openReport } from '@/components/ReportSheet';
 import { GiftIcon } from '@/components/GiftIcon';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
@@ -392,6 +393,7 @@ export default function LiveRoom() {
           ))}
           {isHost ? <IconBtn name="stats" size={36} sh={0} bg={colors.glass} color={colors.white} badge={requests} style={{ marginLeft: 8 }} onPress={() => setPanel(true)} /> : null}
           <IconBtn name="share" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => void Share.share({ message: `${room.host.name} · ${room.title} — Simo ${WEB_URL}` })} />
+          {!isHost ? <IconBtn name="flag" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => openReport({ targetUserId: room.host.id, targetType: 'LIVE', targetId: room.id })} /> : null}
           <IconBtn name="close" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={isHost ? endLive : () => router.back()} />
         </View>
       </SafeAreaView>
@@ -429,13 +431,18 @@ export default function LiveRoom() {
           style={{ maxHeight: voice ? 170 : 230, width: W * 0.74 }}
           contentContainerStyle={{ gap: 5 }}
           renderItem={({ item }) => (
-            <View style={[styles.line, night ? styles.lineNight : styles.lineDay, item.kind === 'gift' && { backgroundColor: colors.coin }, item.kind === 'enter' && { opacity: 0.85 }]}>
+            <Pressable
+              disabled={item.kind !== 'comment' || item.user.id === me?.id}
+              delayLongPress={350}
+              onLongPress={() => openReport({ targetUserId: item.user.id, targetType: 'COMMENT', targetId: `live:${id}:${item.id}` })}
+              style={[styles.line, night ? styles.lineNight : styles.lineDay, item.kind === 'gift' && { backgroundColor: colors.coin }, item.kind === 'enter' && { opacity: 0.85 }]}
+            >
               <LevelBadge kind="wealth" level={item.user.wealthLevel} />
               <Text style={[styles.lineText, { color: night && item.kind !== 'gift' ? colors.nightText : colors.ink }]}>
                 <Text style={{ fontFamily: fonts.black, color: item.kind === 'gift' ? colors.ink : item.user.vipTier !== 'NONE' ? colors.coin : night ? colors.highlight : colors.brand }}>{item.user.name}  </Text>
                 {item.text}
               </Text>
-            </View>
+            </Pressable>
           )}
         />
         {!isHost ? (

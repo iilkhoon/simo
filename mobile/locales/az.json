@@ -1,0 +1,6 @@
+{
+  "NSCameraUsageDescription": "Simo kameradan görüntülü zənglər, canlı yayınlar, profil şəkilləri və şəxsiyyət təsdiqi selfisi üçün istifadə edir.",
+  "NSMicrophoneUsageDescription": "Simo mikrofondan səsli və görüntülü zənglər, canlı yayınlar üçün istifadə edir.",
+  "NSPhotoLibraryUsageDescription": "Profil şəkli seçmək, foto və video paylaşmaq üçün qalereyaya giriş lazımdır.",
+  "NSLocationWhenInUseUsageDescription": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik. Dəqiq yerin heç kimə göstərilmir."
+}

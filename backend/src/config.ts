@@ -55,5 +55,11 @@ export const config = {
    */
   testPhones: env('TEST_PHONES', process.env.DEV_MODE === 'true' || !isProd ? '+994990000001,+994990000002' : '').split(',').map((s) => s.trim()).filter(Boolean),
   testOtpCode: env('TEST_OTP_CODE', process.env.DEV_MODE === 'true' || !isProd ? '111111' : ''),
+  /**
+   * Apple App Review hesabı: sabit kodla giriş (SMS göndərilmir), amma ADİ hesabdır — alışlar real Apple (sandbox) ilə.
+   * REVIEW_PHONES=+994990000009  REVIEW_OTP_CODE=<6 rəqəm>  (kod boşdursa söndürülüb). setup.sh avtomatik yaradır.
+   */
+  reviewPhones: env('REVIEW_PHONES', '+994990000009').split(',').map((s) => s.trim()).filter(Boolean),
+  reviewOtpCode: env('REVIEW_OTP_CODE', ''),
   adminEmails: env('ADMIN_EMAILS', '').split(',').map((s) => s.trim()).filter(Boolean),
 };

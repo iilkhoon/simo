@@ -92,6 +92,8 @@ model User {
   firstRechargeDone  Boolean    @default(false)
   /// Test hesabı: limitsiz promo Nar, reytinqdən kənar, alış demo (TEST_PHONES)
   isTester           Boolean    @default(false)
+  /// 18+ və İstifadə Şərtləri (EULA) qəbul edildiyi an (qeydiyyat ekranındakı işarə)
+  termsAcceptedAt    DateTime?
   videoCallPrice     Int        @default(80)
   voiceCallPrice     Int        @default(40)
   online             Boolean    @default(false)

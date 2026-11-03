@@ -10,6 +10,7 @@ import { ECONOMY, activeNoble, activeVip, ageFrom, levelFromXp, todayKey, weekKe
 import { creditCoins, spendCoins } from '../services/wallet.js';
 import { notify } from '../services/notify.js';
 import { recordEvents } from '../services/taste.js';
+import { filterProfanity, hasProfanity } from '../lib/moderation.js';
 
 export const INTERESTS = [
   'music', 'travel', 'cooking', 'sport', 'fitness', 'movies', 'books', 'art', 'dance', 'gaming',
@@ -152,6 +153,7 @@ export default async function userRoutes(app: FastifyInstance) {
     const b = onboardingSchema.parse(req.body);
     const age = ageFrom(b.birthDate) ?? 0;
     if (age < 18) throw err.badRequest('UNDERAGE');
+    if (hasProfanity(b.name)) throw err.badRequest('INAPPROPRIATE_NAME');
     if (age > 100) throw err.badRequest('INVALID_BIRTHDATE');
     const before = await prisma.user.findUniqueOrThrow({ where: { id }, select: { onboarded: true } });
     await prisma.$transaction(async (tx) => {
@@ -161,7 +163,7 @@ export default async function userRoutes(app: FastifyInstance) {
           name: b.name, gender: b.gender, birthDate: b.birthDate,
           interestedIn: b.interestedIn === undefined ? (b.gender === 'MALE' ? 'FEMALE' : 'MALE') : b.interestedIn,
           lookingFor: b.lookingFor, interests: b.interests.filter((i) => INTERESTS.includes(i)),
-          languages: b.languages, city: b.city, bio: b.bio, avatarUrl: b.avatarUrl, onboarded: true,
+          languages: b.languages, city: b.city, bio: filterProfanity(b.bio), avatarUrl: b.avatarUrl, onboarded: true, termsAcceptedAt: new Date(),
           ageMin: b.ageMin ?? (b.gender === 'MALE' ? 18 : Math.max(18, age - 3)),
           ageMax: b.ageMax ?? (b.gender === 'MALE' ? Math.max(30, age + 5) : Math.min(99, age + 12)),
           profileExtra: b.extra as object,
@@ -195,6 +197,9 @@ export default async function userRoutes(app: FastifyInstance) {
       }
     }
     const { extra, callHours, notifPrefs, ...rest } = b;
+    if (rest.name && hasProfanity(rest.name)) throw err.badRequest('INAPPROPRIATE_NAME');
+    if (rest.bio) rest.bio = filterProfanity(rest.bio);
+    if (extra && typeof (extra as { job?: string }).job === 'string') (extra as { job?: string }).job = filterProfanity((extra as { job: string }).job);
     await prisma.user.update({
       where: { id },
       data: {
@@ -381,12 +386,13 @@ export default async function userRoutes(app: FastifyInstance) {
     const b = z
       .object({
         targetUserId: z.string(),
-        targetType: z.enum(['USER', 'MESSAGE', 'VIDEO', 'LIVE', 'COMMENT']).default('USER'),
+        targetType: z.enum(['USER', 'MESSAGE', 'VIDEO', 'LIVE', 'COMMENT', 'STORY']).default('USER'),
         targetId: z.string().optional(),
         reason: z.enum(['SPAM', 'FAKE', 'NUDITY', 'HARASSMENT', 'UNDERAGE', 'SCAM', 'VIOLENCE', 'OTHER']),
         details: z.string().max(500).default(''),
       })
       .parse(req.body);
+    // Şikayət: həmin istifadəçi avtomatik gizlədilmir, amma admin panelində növbəyə düşür (24 saat ərzində baxılır)
     await prisma.report.create({ data: { ...b, reporterId: uid(req) } });
     return { ok: true };
   });

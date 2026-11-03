@@ -79,6 +79,9 @@ set_env DATABASE_URL "postgresql://simo:$DBPASS@127.0.0.1:5432/simo"
 set_env UPLOAD_DIR "$DATA/uploads"
 set_env PUBLIC_URL "$API_URL"
 set_env WEB_URL "$WEB_URL"
+# Apple App Review hesabı (+994 990000009): sabit 6 rəqəmli kod bir dəfə yaradılır
+grep -q "^REVIEW_OTP_CODE=[0-9]\{6\}$" "$ENV" || set_env REVIEW_OTP_CODE "$(shuf -i 100000-999999 -n 1)"
+grep -q "^REVIEW_PHONES=" "$ENV" || set_env REVIEW_PHONES "+994990000009"
 chmod 600 "$ENV"
 
 step "Backend paketləri və build"
@@ -163,6 +166,7 @@ if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
   echo "  Sayt:  $WEB_URL"
   echo "  Admin: $WEB_URL/admin.html"
   echo "  Loglar: journalctl -u simo-api -f"
+  echo "  App Review: +994 990000009 / kod: $(grep '^REVIEW_OTP_CODE=' "$ENV" | cut -d= -f2)"
   echo "=============================================="
 else
   echo "[XƏTA] API açılmadı. Son loglar:"

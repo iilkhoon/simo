@@ -16,16 +16,17 @@
       "supportsTablet": false,
       "usesAppleSignIn": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Simo görüntülü zənglər, canlı yayınlar və profil şəkilləri üçün kameradan istifadə edir.",
-        "NSMicrophoneUsageDescription": "Simo səsli və görüntülü zənglər, canlı yayınlar üçün mikrofondan istifadə edir.",
-        "NSPhotoLibraryUsageDescription": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.",
-        "NSLocationWhenInUseUsageDescription": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik.",
+        "NSCameraUsageDescription": "Simo uses the camera for video calls, live streams, profile photos and identity verification selfies.",
+        "NSMicrophoneUsageDescription": "Simo uses the microphone for voice and video calls and live streams.",
+        "NSPhotoLibraryUsageDescription": "Simo needs access to your photos so you can choose a profile photo and share photos and videos.",
+        "NSLocationWhenInUseUsageDescription": "Simo uses your location to show people near you. Your exact location is never shown to others.",
         "UIBackgroundModes": [
           "audio",
           "remote-notification",
           "voip"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       },
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
@@ -33,6 +34,103 @@
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
             "NSPrivacyAccessedAPITypeReasons": [
               "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1",
+              "0A2A.1",
+              "3B52.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1",
+              "85F4.1"
+            ]
+          }
+        ],
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhoneNumber",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhotosorVideos",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAudioData",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeOtherUserContent",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
             ]
           }
         ]
@@ -93,14 +191,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Profil şəkli və video paylaşmaq üçün qalereyaya giriş lazımdır.",
-          "cameraPermission": "Selfi və profil şəkli üçün kamera lazımdır."
+          "photosPermission": "Simo needs access to your photos so you can choose a profile photo and share photos and videos.",
+          "cameraPermission": "Simo uses the camera for video calls, live streams, profile photos and identity verification selfies.",
+          "microphonePermission": "Simo uses the microphone for voice and video calls and live streams."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Yaxınlığındakı insanları göstərmək üçün yerləşməndən istifadə edirik."
+          "locationWhenInUsePermission": "Simo uses your location to show people near you. Your exact location is never shown to others."
         }
       ],
       [
@@ -145,6 +244,11 @@
       "eas": {
         "projectId": ""
       }
+    },
+    "locales": {
+      "az": "./locales/az.json",
+      "ru": "./locales/ru.json",
+      "en": "./locales/en.json"
     }
   }
 }

@@ -7,7 +7,7 @@ import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { issueTokens, requireAuth, sha256, uid } from '../lib/auth.js';
 import { sendSms } from '../services/sms.js';
-import { ensureTesterUser, isTestPhone, refillTester } from '../services/tester.js';
+import { ensureTesterUser, fixedOtpFor, isTestPhone, refillTester } from '../services/tester.js';
 
 /** Azərbaycan nömrəsi: +994 XX XXX XX XX (50, 51, 55, 60, 70, 77, 99, 10, 12 və s.) */
 export function normalizePhone(input: string): string {
@@ -42,8 +42,8 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/auth/otp/request', { config: { rateLimit: { max: 5, timeWindow: '10 minutes' } } }, async (req) => {
     const body = z.object({ phone: z.string().min(7), locale: z.string().default('az') }).parse(req.body);
     const phone = normalizePhone(body.phone);
-    // Test hesabı: SMS göndərilmir, sabit kod (TEST_OTP_CODE) ilə daxil olunur
-    if (isTestPhone(phone)) return { ok: true, phone, ...(config.devMode ? { devCode: config.testOtpCode } : {}) };
+    // Test / App Review hesabı: SMS göndərilmir, sabit kod ilə daxil olunur
+    if (fixedOtpFor(phone)) return { ok: true, phone, ...(config.devMode && isTestPhone(phone) ? { devCode: config.testOtpCode } : {}) };
     const recent = await prisma.otpCode.count({ where: { phone, createdAt: { gte: new Date(Date.now() - 60_000) } } });
     if (recent > 0) throw err.badRequest('OTP_TOO_SOON');
     const code = String(crypto.randomInt(100000, 1000000));
@@ -58,8 +58,9 @@ export default async function authRoutes(app: FastifyInstance) {
     const body = z.object({ phone: z.string(), code: z.string().length(6), referralCode: z.string().optional(), locale: z.string().optional() }).parse(req.body);
     const phone = normalizePhone(body.phone);
     const tester = isTestPhone(phone);
-    if (tester) {
-      if (!crypto.timingSafeEqual(Buffer.from(sha256(body.code)), Buffer.from(sha256(config.testOtpCode)))) throw err.badRequest('OTP_INVALID');
+    const fixed = fixedOtpFor(phone);
+    if (fixed) {
+      if (!crypto.timingSafeEqual(Buffer.from(sha256(body.code)), Buffer.from(sha256(fixed)))) throw err.badRequest('OTP_INVALID');
     } else {
       const otp = await prisma.otpCode.findFirst({
         where: { phone, usedAt: null, expiresAt: { gte: new Date() } },

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
+import { filterProfanity } from '../lib/moderation.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
@@ -20,10 +21,10 @@ export async function getOrCreateConversation(u1: string, u2: string) {
 
 /** Təhlükəsizlik: telefon nömrələri və xarici linklər maskalanır (fırıldaqçılığa qarşı) */
 export function sanitizeText(text: string): string {
-  return text
+  return filterProfanity(text
     .replace(/(\+?\d[\d\s\-()]{7,}\d)/g, '•••')
     .replace(/https?:\/\/\S+/gi, '•••')
-    .trim();
+    .trim());
 }
 
 async function isBlocked(a: string, b: string) {

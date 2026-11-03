@@ -84,6 +84,8 @@ const az = {
   menu2: { services: 'Xidmətlərim', orders: 'Sifarişlər', callSettings: 'Zəng və status', notifSettings: 'Bildirişlər', taste: 'Alqoritm səni belə tanıyır' },
   profile2: { about: 'Haqqında', services: 'Xidmətlər', more: 'Ətraflı' },
   find: { title: 'Axtarış', users: 'Hesablar', tags: 'Heşteqlər', usersPh: 'Ad və ya ID yaz', hint: 'Adı və ya ID nömrəsini yaz', none: 'Hesab tapılmadı', host: 'Host' },
+  consent: { pre: '18 yaşım tamamdır və ', terms: 'İstifadə Şərtləri (EULA)', mid: ' və ', privacy: 'Məxfilik Siyasəti', post: ' ilə razıyam.', need: 'Davam etmək üçün 18+ və Şərtləri təsdiqlə', zero: 'Simo-da təhqiramiz məzmuna sıfır tolerantlıq var: şikayətlərə 24 saat ərzində baxılır.' },
+  report: { sent: 'Şikayətin göndərildi. 24 saat ərzində baxacağıq.', blockToo: 'Bu istifadəçini bloklamaq istəyirsən?' },
   notifTypes: {
     visit_digest: 'Profilinə {{n}} nəfər baxdı', like_digest: '{{n}} nəfər səni bəyəndi', offer: 'Sənə özəl təklif bitmək üzrədir', picks: 'Sənə uyğun {{n}} yeni profil',
     order: 'Xidmətinə yeni sifariş: {{title}}', order_update: 'Sifariş yeniləndi: {{title}}', comment: 'Postuna şərh yazdı', post_live: 'Planlanmış postun paylaşıldı',
@@ -91,7 +93,7 @@ const az = {
   errors: {
     HASHTAG_LIMIT: 'Ən çox 5 heşteq olar', COMMENTS_OFF: 'Şərhlər bağlıdır', SCHEDULE_RANGE: 'Vaxt 5 dəqiqədən 30 günədək ola bilər',
     VIDEO_CALLS_OFF: 'Bu istifadəçi görüntülü zəng qəbul etmir', VOICE_CALLS_OFF: 'Bu istifadəçi səsli zəng qəbul etmir', OUTSIDE_CALL_HOURS: 'İndi bu istifadəçinin zəng saatı deyil',
-    SERVICE_LIMIT: 'Ən çox 10 xidmət əlavə etmək olar', ORDER_CLOSED: 'Sifariş artıq bağlanıb',
+    SERVICE_LIMIT: 'Ən çox 10 xidmət əlavə etmək olar', ORDER_CLOSED: 'Sifariş artıq bağlanıb', INAPPROPRIATE_NAME: 'Bu adda qeyri-münasib söz var',
   },
 };
 
@@ -173,6 +175,8 @@ const ru: ExtraDict = {
   menu2: { services: 'Мои услуги', orders: 'Заказы', callSettings: 'Звонки и статус', notifSettings: 'Уведомления', taste: 'Как тебя знает алгоритм' },
   profile2: { about: 'О себе', services: 'Услуги', more: 'Подробнее' },
   find: { title: 'Поиск', users: 'Аккаунты', tags: 'Хэштеги', usersPh: 'Имя или ID', hint: 'Введите имя или ID', none: 'Аккаунт не найден', host: 'Хост' },
+  consent: { pre: 'Мне есть 18 лет, и я принимаю ', terms: 'Условия использования (EULA)', mid: ' и ', privacy: 'Политику конфиденциальности', post: '.', need: 'Чтобы продолжить, подтвердите 18+ и Условия', zero: 'В Simo нулевая терпимость к оскорбительному контенту: жалобы рассматриваются в течение 24 часов.' },
+  report: { sent: 'Жалоба отправлена. Мы рассмотрим её в течение 24 часов.', blockToo: 'Заблокировать этого пользователя?' },
   notifTypes: {
     visit_digest: 'Твой профиль посмотрели {{n}} чел.', like_digest: 'Ты понравился {{n}} людям', offer: 'Персональное предложение скоро закончится', picks: '{{n}} новых анкет для тебя',
     order: 'Новый заказ: {{title}}', order_update: 'Заказ обновлён: {{title}}', comment: 'Прокомментировал твой пост', post_live: 'Запланированный пост опубликован',
@@ -180,7 +184,7 @@ const ru: ExtraDict = {
   errors: {
     HASHTAG_LIMIT: 'Не больше 5 хештегов', COMMENTS_OFF: 'Комментарии закрыты', SCHEDULE_RANGE: 'Время — от 5 минут до 30 дней',
     VIDEO_CALLS_OFF: 'Пользователь не принимает видеозвонки', VOICE_CALLS_OFF: 'Пользователь не принимает голосовые звонки', OUTSIDE_CALL_HOURS: 'Сейчас не часы звонков этого пользователя',
-    SERVICE_LIMIT: 'Можно добавить не больше 10 услуг', ORDER_CLOSED: 'Заказ уже закрыт',
+    SERVICE_LIMIT: 'Можно добавить не больше 10 услуг', ORDER_CLOSED: 'Заказ уже закрыт', INAPPROPRIATE_NAME: 'Имя содержит недопустимые слова',
   },
 };
 
@@ -259,6 +263,8 @@ const en: ExtraDict = {
   menu2: { services: 'My services', orders: 'Orders', callSettings: 'Calls & status', notifSettings: 'Notifications', taste: 'How the algorithm sees you' },
   profile2: { about: 'About', services: 'Services', more: 'More' },
   find: { title: 'Search', users: 'Accounts', tags: 'Hashtags', usersPh: 'Name or ID', hint: 'Type a name or ID', none: 'No accounts found', host: 'Host' },
+  consent: { pre: 'I am 18 or older and I agree to the ', terms: 'Terms of Use (EULA)', mid: ' and ', privacy: 'Privacy Policy', post: '.', need: 'Confirm 18+ and the Terms to continue', zero: 'Simo has zero tolerance for objectionable content: reports are reviewed within 24 hours.' },
+  report: { sent: 'Report sent. We will review it within 24 hours.', blockToo: 'Do you want to block this user?' },
   notifTypes: {
     visit_digest: '{{n}} people viewed your profile', like_digest: '{{n}} people liked you', offer: 'Your personal offer ends soon', picks: '{{n}} new profiles for you',
     order: 'New order: {{title}}', order_update: 'Order updated: {{title}}', comment: 'commented on your post', post_live: 'Your scheduled post is live',
@@ -266,7 +272,7 @@ const en: ExtraDict = {
   errors: {
     HASHTAG_LIMIT: 'At most 5 hashtags', COMMENTS_OFF: 'Comments are off', SCHEDULE_RANGE: 'Time must be 5 minutes to 30 days ahead',
     VIDEO_CALLS_OFF: "This user doesn't accept video calls", VOICE_CALLS_OFF: "This user doesn't accept voice calls", OUTSIDE_CALL_HOURS: "It's outside this user's call hours",
-    SERVICE_LIMIT: 'You can add up to 10 services', ORDER_CLOSED: 'This order is already closed',
+    SERVICE_LIMIT: 'You can add up to 10 services', ORDER_CLOSED: 'This order is already closed', INAPPROPRIATE_NAME: 'This name contains inappropriate words',
   },
 };
 

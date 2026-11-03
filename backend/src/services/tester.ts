@@ -14,6 +14,18 @@ export function isTestPhone(phone?: string | null) {
   return !!phone && !!config.testOtpCode && config.testPhones.includes(phone);
 }
 
+/** App Review hesabı (adi hesab, yalnız sabit kod) */
+export function isReviewPhone(phone?: string | null) {
+  return !!phone && /^\d{6}$/.test(config.reviewOtpCode) && config.reviewPhones.includes(phone);
+}
+
+/** Sabit kodla daxil olan nömrə üçün kod (test və ya review), əks halda null */
+export function fixedOtpFor(phone: string): string | null {
+  if (isTestPhone(phone)) return config.testOtpCode;
+  if (isReviewPhone(phone)) return config.reviewOtpCode;
+  return null;
+}
+
 /** Balansı yenidən doldurur (girişdə, /me və /wallet sorğusunda) */
 export async function refillTester(userId: string) {
   const u = await prisma.user.findUnique({ where: { id: userId }, select: { isTester: true, coins: true, diamonds: true } });
@@ -45,7 +57,7 @@ export async function ensureTesterUser(phone: string) {
     avatarUrl: `https://i.pravatar.cc/600?img=${p.img}`,
     bio: 'Test hesabı', interests: ['music', 'travel', 'coffee'], languages: ['az', 'ru'],
     lat: 40.4093, lng: 49.8671, locationAt: new Date(),
-    onboarded: true, isTester: true,
+    onboarded: true, isTester: true, termsAcceptedAt: new Date(),
     ...(p.host ? { hostStatus: 'APPROVED' as const, verified: true } : {}),
   };
   const existing = await prisma.user.findUnique({ where: { phone } });

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad } from '@/theme';
 import { IconBtn, Loader, tap } from '@/components/ui';
+import { openReport } from '@/components/ReportSheet';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { api } from '@/lib/api';
@@ -79,6 +80,7 @@ export default function PostView() {
       {p.mediaType === 'VIDEO' ? <Video uri={p.url} /> : <Image source={{ uri: p.url }} style={StyleSheet.absoluteFill} contentFit="contain" />}
       <SafeAreaView edges={['top']} style={styles.top}>
         <IconBtn name="back" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => router.back()} />
+        {!mine ? <IconBtn name="flag" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => openReport({ targetUserId: p.user.id, targetType: 'VIDEO', targetId: p.id })} /> : null}
       </SafeAreaView>
       <View style={styles.side}>
         {[
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
   lockedSub: { color: 'rgba(255,255,255,0.8)', fontFamily: fonts.semibold, fontSize: 15, textAlign: 'center' },
   lockedBtn: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.white, borderRadius: 26, paddingVertical: 10, paddingHorizontal: 18 },
   lockedBtnText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 15 },
-  top: { position: 'absolute', top: 0, left: 14, paddingTop: 6 },
+  top: { position: 'absolute', top: 0, left: 14, right: 14, paddingTop: 6, flexDirection: 'row', justifyContent: 'space-between' },
   side: { position: 'absolute', right: 12, bottom: 150, gap: 14, alignItems: 'center' },
   sideBtn: { alignItems: 'center', gap: 3 },
   disc: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
