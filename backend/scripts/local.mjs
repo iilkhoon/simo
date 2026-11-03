@@ -92,12 +92,14 @@ if (win) {
 const DATABASE_URL = `postgresql://simo:simo@127.0.0.1:${PORT}/simo`;
 // Pəncərə birdən bağlanıbsa PostgreSQL arxa planda qala bilər — onda onu işlədirik
 async function canConnect() {
-  const c = new pg.Client({ connectionString: DATABASE_URL, connectionTimeoutMillis: 2000 });
+  const c = new pg.Client({ connectionString: DATABASE_URL.replace(/\/simo$/, '/postgres'), connectionTimeoutMillis: 2000 });
   try { await c.connect(); await c.end(); return true; } catch { return false; }
 }
 const reuse = await canConnect();
 const db = new EmbeddedPostgres({
   databaseDir: dataDir, user: 'simo', password: 'simo', port: PORT, persistent: true,
+  // Windows sistemin kodlaşdırmasını (WIN1252 və s.) götürür — "ə, ş" yazıla bilmir. Həmişə UTF-8.
+  initdbFlags: ['--encoding=UTF8', '--locale=C'],
   onLog: (m) => { pgLog.push(m); if (pgLog.length > 300) pgLog.shift(); },
   onError: (m) => { pgLog.push(`[ERR] ${m instanceof Error ? m.message : m}\n`); },
 });
@@ -108,7 +110,6 @@ if (!reuse) {
     if (fresh) { say('Verilənlər bazası ilk dəfə yaradılır...'); await db.initialise(); }
     say('Verilənlər bazası açılır...');
     await db.start();
-    if (fresh) await db.createDatabase('simo').catch(() => {});
   } catch (e) {
     const out = pgLog.join('');
     const hint = /administrative permissions|administrator/i.test(out)
@@ -123,6 +124,35 @@ if (!reuse) {
   if (!(await canConnect())) fail('Verilənlər bazasına qoşulmaq olmadı.', 'Kompüteri yenidən başladın və təkrar cəhd edin.');
 }
 const stopDb = () => (reuse ? Promise.resolve() : db.stop().catch(() => {}));
+
+/** "simo" bazası UTF-8 olmalıdır; köhnə (səhv kodlaşdırmalı) baza varsa yenidən yaradılır */
+async function ensureDatabase() {
+  const admin = new pg.Client({ connectionString: DATABASE_URL.replace(/\/simo$/, '/postgres') });
+  await admin.connect();
+  try {
+    const { rows } = await admin.query("SELECT pg_encoding_to_char(encoding) AS enc FROM pg_database WHERE datname = 'simo'");
+    if (rows[0] && rows[0].enc !== 'UTF8') {
+      say(`Köhnə baza səhv kodlaşdırmadadır (${rows[0].enc}) — UTF-8 ilə yenidən yaradılır...`);
+      await admin.query('DROP DATABASE simo WITH (FORCE)');
+    }
+    if (!rows[0] || rows[0].enc !== 'UTF8') {
+      await admin.query("CREATE DATABASE simo OWNER simo ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0");
+    }
+  } finally { await admin.end(); }
+  // Yarımçıq qalmış miqrasiya (əvvəlki uğursuz cəhd) — test bazasıdır, təmizləyib yenidən qururuq
+  const c = new pg.Client({ connectionString: DATABASE_URL });
+  await c.connect();
+  try {
+    const { rows } = await c.query("SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS has");
+    if (rows[0].has) {
+      const f = await c.query('SELECT COUNT(*)::int AS n FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL');
+      if (f.rows[0].n > 0) {
+        say('Əvvəlki uğursuz cəhddən yarımçıq cədvəllər qalıb — təmizlənir...');
+        await c.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+      }
+    }
+  } finally { await c.end(); }
+}
 
 const ip = lanIp();
 const env = {
@@ -140,6 +170,7 @@ const npx = (args, extra = {}) => {
 };
 
 try {
+  await ensureDatabase();
   if (reset) {
     say('Baza təmizlənir...');
     const c = new pg.Client({ connectionString: DATABASE_URL });
