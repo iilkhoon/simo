@@ -95,7 +95,9 @@ export default async function socialRoutes(app: FastifyInstance) {
     const { creatorId } = z.object({ creatorId: z.string() }).parse(req.params);
     if (creatorId === me) throw err.badRequest();
     const creator = await prisma.user.findUnique({ where: { id: creatorId } });
-    if (!creator || !creator.privatePrice || creator.banned) throw err.notFound('PRIVATE_DISABLED');
+    if (!creator || !creator.privatePrice || creator.banned || creator.deletedAt) throw err.notFound('PRIVATE_DISABLED');
+    const blocked = await prisma.block.findFirst({ where: { OR: [{ blockerId: me, blockedId: creatorId }, { blockerId: creatorId, blockedId: me }] } });
+    if (blocked) throw err.forbidden('BLOCKED');
     const price = creator.privatePrice;
     const sub = await prisma.$transaction(async (tx) => {
       const r = await spend(tx, me, price, 'SUBSCRIPTION', creatorId);
@@ -171,8 +173,10 @@ export default async function socialRoutes(app: FastifyInstance) {
     const winners: string[] = [];
     while (winners.length < r.winners && pool.length) winners.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     await prisma.$transaction(async (tx) => {
+      // İki admin eyni anda "çək" bassa — mükafat yalnız bir dəfə yazılır
+      const claimed = await tx.raffle.updateMany({ where: { id, drawnAt: null }, data: { drawnAt: new Date(), winnerIds: winners } });
+      if (!claimed.count) throw err.badRequest('ALREADY_DRAWN');
       for (const w of winners) await creditCoins(tx, w, r.prizeCoins, 'RAFFLE_PRIZE', r.id, '', true);
-      await tx.raffle.update({ where: { id }, data: { drawnAt: new Date(), winnerIds: winners } });
     });
     for (const w of winners) void notify(w, 'raffle', { body: `+${r.prizeCoins}` }).catch(() => {});
     return { winners };

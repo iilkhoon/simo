@@ -8,6 +8,8 @@ interface RoomState {
   viewers: Map<string, number>;
   seats: (string | null)[];
   hostLeftTimer?: NodeJS.Timeout;
+  /** Host otaqda olmayan an (sweeper üçün; host qayıdanda sıfırlanır) */
+  hostAbsentSince?: number;
   /** Video yayında qonaqlar (səsli və ya videolu), ən çox 3 */
   guests: Map<string, 'AUDIO' | 'VIDEO'>;
   guestRequests: Set<string>;
@@ -88,4 +90,11 @@ export function leaveSeat(roomId: string, userId: string) {
 
 export function roomsOf(userId: string): string[] {
   return [...rooms.entries()].filter(([, r]) => r.viewers.has(userId)).map(([id]) => id);
+}
+
+/** Otaqdakı izləyicilərin id-ləri (host daxil deyil) */
+export function viewerIds(roomId: string): string[] {
+  const r = rooms.get(roomId);
+  if (!r) return [];
+  return [...r.viewers.keys()].filter((u) => u !== r.hostId);
 }

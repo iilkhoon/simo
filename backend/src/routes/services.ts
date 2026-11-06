@@ -23,10 +23,10 @@ const serviceBody = z.object({
   active: z.boolean().default(true),
 });
 
-async function refund(orderId: string, status: 'CANCELLED' | 'DECLINED') {
+async function refund(orderId: string, status: 'CANCELLED' | 'DECLINED', from: ('PENDING' | 'ACCEPTED')[] = ['PENDING', 'ACCEPTED']) {
   await prisma.$transaction(async (tx) => {
     const o = await tx.serviceOrder.findUniqueOrThrow({ where: { id: orderId } });
-    const upd = await tx.serviceOrder.updateMany({ where: { id: orderId, status: { in: ['PENDING', 'ACCEPTED'] } }, data: { status } });
+    const upd = await tx.serviceOrder.updateMany({ where: { id: orderId, status: { in: from } }, data: { status } });
     if (!upd.count) throw err.badRequest('ORDER_CLOSED');
     // Ödənişli hissə ödənişli, promo hissə promo kimi qaytarılır
     if (o.paid > 0) await creditCoins(tx, o.buyerId, o.paid, 'SERVICE_REFUND', o.id);
@@ -36,7 +36,7 @@ async function refund(orderId: string, status: 'CANCELLED' | 'DECLINED') {
 
 export async function expireOrders() {
   const old = await prisma.serviceOrder.findMany({ where: { status: 'PENDING', createdAt: { lt: new Date(Date.now() - 72 * 3600_000) } }, select: { id: true } });
-  for (const o of old) await refund(o.id, 'DECLINED').catch(() => {});
+  for (const o of old) await refund(o.id, 'DECLINED', ['PENDING']).catch(() => {});
 }
 
 export default async function serviceRoutes(app: FastifyInstance) {
@@ -82,6 +82,8 @@ export default async function serviceRoutes(app: FastifyInstance) {
     const svc = await prisma.service.findFirst({ where: { id, active: true } });
     if (!svc) throw err.notFound();
     if (svc.userId === me) throw err.badRequest();
+    const blocked = await prisma.block.findFirst({ where: { OR: [{ blockerId: me, blockedId: svc.userId }, { blockerId: svc.userId, blockedId: me }] } });
+    if (blocked) throw err.forbidden('BLOCKED');
     const order = await prisma.$transaction(async (tx) => {
       const o = await tx.serviceOrder.create({ data: { serviceId: svc.id, buyerId: me, sellerId: svc.userId, price: svc.price, note: sanitizeText(b.note) } });
       const { paid } = await spend(tx, me, svc.price, 'SERVICE_ORDER', o.id);
@@ -112,7 +114,8 @@ export default async function serviceRoutes(app: FastifyInstance) {
     if (!o) throw err.notFound();
     if (action === 'cancel') {
       if (o.buyerId !== me || o.status !== 'PENDING') throw err.forbidden();
-      await refund(id, 'CANCELLED');
+      // Satıcı bu arada qəbul edibsə — alıcı artıq ləğv edə bilməz (yalnız PENDING-dən)
+      await refund(id, 'CANCELLED', ['PENDING']);
     } else {
       if (o.sellerId !== me) throw err.forbidden();
       if (action === 'decline') await refund(id, 'DECLINED');

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { filterProfanity } from '../lib/moderation.js';
-import { err } from '../lib/errors.js';
+import { AppError, err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
 import { ECONOMY, activeVip, todayKey } from '../economy.js';
@@ -58,7 +58,9 @@ export async function messagePricing(senderId: string, receiverId: string, conve
   const sub = await prisma.subscription.findUnique({ where: { subscriberId_creatorId: { subscriberId: senderId, creatorId: receiverId } } });
   if (sub && sub.expiresAt.getTime() > Date.now()) return { price: 0, reason: 'SUBSCRIBED' as const, sender };
   const today = todayKey();
-  const sent = conversationId ? await prisma.message.count({ where: { conversationId, senderId } }) : 0;
+  // Yalnız istifadəçinin özünün yazdığı mesajlar sayılır: zəng qeydləri (CALL — senderId zəng edəndir),
+  // hədiyyə və sistem mesajları "ilk pulsuz salam" hüququnu yandırmır
+  const sent = conversationId ? await prisma.message.count({ where: { conversationId, senderId, type: { in: ['TEXT', 'IMAGE'] } } }) : 0;
   const hellos = sender.helloDate === today ? sender.helloUsed : 0;
   if (sent === 0 && hellos < ECONOMY.freeHellosPerDay) return { price: 0, reason: 'FIRST_FREE' as const, sender, hellos };
   const vip = activeVip(sender);
@@ -161,17 +163,30 @@ export default async function chatRoutes(app: FastifyInstance) {
     // Şəkil/video yalnız qarşılıqlı izləmədə
     if (b.type === 'IMAGE' && !(await mutualFollow(me, otherId))) throw err.forbidden('MUTUAL_FOLLOW_REQUIRED');
 
-    const pricing = await messagePricing(me, otherId, conv.id);
     const text = sanitizeText(b.text);
-    const msg = await prisma.$transaction(async (tx) => {
+    let pricing = await messagePricing(me, otherId, conv.id);
+    const send = () => prisma.$transaction(async (tx) => {
       const m = await tx.message.create({
         data: { conversationId: id, senderId: me, type: b.type, text, mediaUrl: b.mediaUrl, coinsCost: pricing.price },
       });
+      // Pulsuz limitlər şərtli yenilənir: eyni anda göndərilən iki mesaj eyni pulsuz yeri tuta bilməz
+      // (sayğac oxunandan bəri dəyişibsə — tranzaksiya ləğv olunur, müştəri yenidən göndərir)
+      const today = todayKey();
       if (pricing.reason === 'FIRST_FREE') {
-        await tx.user.update({ where: { id: me }, data: { helloDate: todayKey(), helloUsed: (pricing.hellos ?? 0) + 1 } });
+        const prevDate = pricing.sender.helloDate;
+        const r = await tx.user.updateMany({
+          where: prevDate === today ? { id: me, helloDate: today, helloUsed: pricing.hellos ?? 0 } : { id: me, helloDate: prevDate },
+          data: { helloDate: today, helloUsed: (pricing.hellos ?? 0) + 1 },
+        });
+        if (!r.count) throw new AppError('RETRY', 409);
       }
       if (pricing.reason === 'VIP_FREE') {
-        await tx.user.update({ where: { id: me }, data: { freeMsgDate: todayKey(), freeMsgUsed: (pricing.vipUsed ?? 0) + 1 } });
+        const prevDate = pricing.sender.freeMsgDate;
+        const r = await tx.user.updateMany({
+          where: prevDate === today ? { id: me, freeMsgDate: today, freeMsgUsed: pricing.vipUsed ?? 0 } : { id: me, freeMsgDate: prevDate },
+          data: { freeMsgDate: today, freeMsgUsed: (pricing.vipUsed ?? 0) + 1 },
+        });
+        if (!r.count) throw new AppError('RETRY', 409);
       }
       if (pricing.price > 0) {
         const { paid } = await spend(tx, me, pricing.price, 'MESSAGE_SENT', m.id);
@@ -184,6 +199,15 @@ export default async function chatRoutes(app: FastifyInstance) {
       });
       return m;
     });
+    let msg: Awaited<ReturnType<typeof send>>;
+    try {
+      msg = await send();
+    } catch (e) {
+      if (!(e instanceof AppError && e.code === 'RETRY')) throw e;
+      // Paralel mesaj pulsuz yeri tutdu — qiyməti yenidən hesabla (bu dəfə ödənişli ola bilər)
+      pricing = await messagePricing(me, otherId, conv.id);
+      msg = await send();
+    }
     emitToUser(otherId, 'message:new', msg);
     emitToUser(me, 'message:new', msg);
     const sender = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { name: true, coins: true } });

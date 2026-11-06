@@ -29,7 +29,14 @@ export default async function discoveryRoutes(app: FastifyInstance) {
     const me = uid(req);
     const b = z.object({ toId: z.string(), action: z.enum(['LIKE', 'PASS', 'SUPERLIKE']) }).parse(req.body);
     if (b.toId === me) throw err.badRequest();
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
+    const [user, target, blocked] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: me } }),
+      prisma.user.findUnique({ where: { id: b.toId }, select: { banned: true, deletedAt: true } }),
+      prisma.block.findFirst({ where: { OR: [{ blockerId: me, blockedId: b.toId }, { blockerId: b.toId, blockedId: me }] } }),
+    ]);
+    if (!target || target.banned || target.deletedAt) throw err.notFound('USER_NOT_FOUND');
+    // Bloklanmış cütlük üçün uyğunluq/söhbət yaranmamalıdır
+    if (blocked) throw err.forbidden('BLOCKED');
     const vip = activeVip(user);
     const today = todayKey();
     if (b.action === 'LIKE' && !vip) {
@@ -61,8 +68,10 @@ export default async function discoveryRoutes(app: FastifyInstance) {
     const reverse = await prisma.swipe.findUnique({ where: { fromId_toId: { fromId: b.toId, toId: me } } });
     if (reverse && reverse.action !== 'PASS') {
       const [a, c] = [me, b.toId].sort();
-      await prisma.match.upsert({ where: { userAId_userBId: { userAId: a, userBId: c } }, create: { userAId: a, userBId: c }, update: {} });
+      // Təkrar bəyənmə (LIKE → SUPERLIKE və s.) yeni "uyğunluq" bildirişi göndərməsin
+      const created = await prisma.match.createMany({ data: [{ userAId: a, userBId: c }], skipDuplicates: true });
       const conv = await getOrCreateConversation(me, b.toId);
+      if (!created.count) return { matched: true, conversationId: conv.id, user: presentUser(await prisma.user.findUniqueOrThrow({ where: { id: b.toId }, select: { ...publicUserSelect, photos: true } })), already: true };
       const [mine, theirs] = await Promise.all([
         prisma.user.findUniqueOrThrow({ where: { id: me }, select: { ...publicUserSelect, photos: true } }),
         prisma.user.findUniqueOrThrow({ where: { id: b.toId }, select: { ...publicUserSelect, photos: true } }),

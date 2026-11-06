@@ -8,7 +8,7 @@ import { ECONOMY, activeVip } from '../economy.js';
 import { rtcToken } from '../services/agora.js';
 import { emitToUser } from '../realtime/hub.js';
 import { notify, pushIncomingCall } from '../services/notify.js';
-import { chargeMinute, clearRingTimeout, finishCall, scheduleRingTimeout } from '../services/calls.js';
+import { callEarnings, chargeMinute, clearRingTimeout, finishCall, scheduleRingTimeout } from '../services/calls.js';
 
 /** Hostun qiyməti köhnə (aşağı) dəyərdə qalıbsa, cari minimuma qaldırılır */
 const minPrice = (type: 'VIDEO' | 'VOICE', p: number) => Math.max(type === 'VIDEO' ? ECONOMY.videoCallPrice.min : ECONOMY.voiceCallPrice.min, p);
@@ -46,6 +46,34 @@ export default async function callRoutes(app: FastifyInstance) {
     return out;
   });
 
+  /**
+   * Zəngdən əvvəl təsdiq ekranı üçün: dəqiqəlik qiymət, balans, neçə dəqiqəyə çatır.
+   * `available=false` olduqda `reason` səbəbi bildirir (zəng ayarları, saatlar, məşğul, uyğunluq).
+   */
+  app.get('/calls/quote/:userId', { preHandler: requireAuth }, async (req) => {
+    const { userId } = z.object({ userId: z.string() }).parse(req.params);
+    const { type } = z.object({ type: z.enum(['VIDEO', 'VOICE']).default('VIDEO') }).parse(req.query);
+    const me = uid(req);
+    try {
+      const { price, caller, callee } = await callPrice(me, userId, type);
+      let reason: string | null = null;
+      if (callee.deletedAt || callee.banned) reason = 'USER_NOT_FOUND';
+      else if (type === 'VIDEO' && !callee.acceptVideo) reason = 'VIDEO_CALLS_OFF';
+      else if (type === 'VOICE' && !callee.acceptVoice) reason = 'VOICE_CALLS_OFF';
+      else if (!callWindowOpen(callee.callHours)) reason = 'OUTSIDE_CALL_HOURS';
+      else if (callee.presence === 'BUSY') reason = 'USER_BUSY';
+      const base = price > 0 ? minPrice(type, type === 'VIDEO' ? callee.videoCallPrice : callee.voiceCallPrice) : 0;
+      return {
+        type, price, basePrice: base, coins: caller.coins,
+        minutes: price > 0 ? Math.floor(caller.coins / price) : null,
+        enough: caller.coins >= price, available: !reason, reason,
+      };
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? 'FORBIDDEN';
+      return { type, price: null, basePrice: null, coins: null, minutes: null, enough: false, available: false, reason: code };
+    }
+  });
+
   app.post('/calls', { preHandler: requireAuth, config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req) => {
     const me = uid(req);
     const b = z.object({ calleeId: z.string(), type: z.enum(['VIDEO', 'VOICE']) }).parse(req.body);
@@ -60,15 +88,20 @@ export default async function callRoutes(app: FastifyInstance) {
     if (!callWindowOpen(callee.callHours)) throw err.badRequest('OUTSIDE_CALL_HOURS', { hours: callee.callHours });
     if (callee.presence === 'BUSY') throw err.badRequest('USER_BUSY');
     if (caller.coins < price) throw err.insufficient(price);
-    const busy = await prisma.call.findFirst({
-      where: {
-        status: { in: ['RINGING', 'ACTIVE'] },
-        OR: [{ callerId: { in: [me, b.calleeId] } }, { calleeId: { in: [me, b.calleeId] } }],
-      },
-    });
-    if (busy) throw err.badRequest('USER_BUSY');
-    const call = await prisma.call.create({
-      data: { callerId: me, calleeId: b.calleeId, type: b.type, pricePerMin: price, channel: `call_${Date.now()}_${caller.shortId}` },
+    // Eyni anda iki zəng (iki fərqli zəng edəndən və ya iki cihazdan) eyni hosta düşməsin:
+    // hər iki istifadəçi üzrə tranzaksiya kilidi altında yoxla və yarat
+    const call = await prisma.$transaction(async (tx) => {
+      for (const u of [me, b.calleeId].sort()) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'call:' + u}))`;
+      const busy = await tx.call.findFirst({
+        where: {
+          status: { in: ['RINGING', 'ACTIVE'] },
+          OR: [{ callerId: { in: [me, b.calleeId] } }, { calleeId: { in: [me, b.calleeId] } }],
+        },
+      });
+      if (busy) throw err.badRequest('USER_BUSY');
+      return tx.call.create({
+        data: { callerId: me, calleeId: b.calleeId, type: b.type, pricePerMin: price, channel: `call_${Date.now()}_${caller.shortId}_${Math.random().toString(36).slice(2, 6)}` },
+      });
     });
     scheduleRingTimeout(call.id);
     const callerPublic = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { ...publicUserSelect, photos: true } });
@@ -124,7 +157,53 @@ export default async function callRoutes(app: FastifyInstance) {
       prisma.user.findUniqueOrThrow({ where: { id: peerId }, select: { ...publicUserSelect, photos: true } }),
       prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } }),
     ]);
-    return { call, peer: presentUser(peer), rtc: rtcToken(call.channel, mine.shortId, true), role: call.callerId === me ? 'caller' : 'callee' };
+    const role = call.callerId === me ? 'caller' : 'callee';
+    const nextChargeAt = call.status === 'ACTIVE' && call.startedAt ? new Date(call.startedAt.getTime() + call.billedMinutes * 60_000) : null;
+    return {
+      call, peer: presentUser(peer), rtc: rtcToken(call.channel, mine.shortId, true), role,
+      serverNow: new Date(), nextChargeAt,
+      earned: role === 'callee' && call.pricePerMin > 0 ? await callEarnings(call.id, call.calleeId) : 0,
+    };
+  });
+
+  /** Zəngdən sonrakı xülasə: müddət, xərclənən Nar / qazanılan Almaz, hədiyyələr, izləmə, qiymət */
+  app.get('/calls/:id/summary', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const call = await prisma.call.findUnique({ where: { id } });
+    if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
+    const isCaller = call.callerId === me;
+    const peerId = isCaller ? call.calleeId : call.callerId;
+    const [peer, gifts, follow] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: peerId }, select: { ...publicUserSelect, photos: true } }),
+      prisma.giftTransaction.aggregate({ where: { context: 'CALL', contextId: id }, _sum: { coins: true, diamonds: true } }),
+      prisma.follow.findUnique({ where: { followerId_followingId: { followerId: me, followingId: peerId } } }),
+    ]);
+    const end = call.endedAt ?? new Date();
+    return {
+      call: { id: call.id, type: call.type, status: call.status, endReason: call.endReason, pricePerMin: call.pricePerMin, billedMinutes: call.billedMinutes, startedAt: call.startedAt, endedAt: call.endedAt },
+      role: isCaller ? 'caller' : 'callee',
+      durationSec: call.startedAt ? Math.max(0, Math.round((end.getTime() - call.startedAt.getTime()) / 1000)) : 0,
+      coinsSpent: isCaller ? call.coinsSpent : 0,
+      earned: isCaller ? 0 : await callEarnings(call.id, call.calleeId),
+      giftsCoins: gifts._sum.coins ?? 0,
+      giftsDiamonds: isCaller ? 0 : gifts._sum.diamonds ?? 0,
+      peer: presentUser(peer),
+      isFollowing: !!follow,
+      myRating: isCaller ? call.callerRating : call.calleeRating,
+    };
+  });
+
+  /** Zəngi qiymətləndirmək (yalnız başlamış və bitmiş zəng, bir dəfə dəyişdirilə bilər) */
+  app.post('/calls/:id/rate', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const b = z.object({ stars: z.number().int().min(1).max(5) }).parse(req.body);
+    const call = await prisma.call.findUnique({ where: { id } });
+    if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
+    if (!call.startedAt || call.status !== 'ENDED') throw err.badRequest('CALL_NOT_ENDED');
+    await prisma.call.update({ where: { id }, data: call.callerId === me ? { callerRating: b.stars } : { calleeRating: b.stars } });
+    return { ok: true };
   });
 
   app.post('/calls/:id/accept', { preHandler: requireAuth }, async (req) => {
@@ -145,8 +224,12 @@ export default async function callRoutes(app: FastifyInstance) {
       throw err.badRequest('CALLER_INSUFFICIENT');
     }
     const call = await prisma.call.findUniqueOrThrow({ where: { id } });
+    // Zəng edən qəbul anında imtina etdisə
+    if (call.status !== 'ACTIVE') throw err.badRequest('CALL_NOT_RINGING');
     const callee = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { shortId: true } });
     emitToUser(call.callerId, 'call:accepted', { callId: id, startedAt: call.startedAt });
+    // Hostun digər cihazlarında gələn zəng ekranı bağlansın
+    emitToUser(call.calleeId, 'call:accepted', { callId: id, startedAt: call.startedAt });
     return { call, rtc: rtcToken(call.channel, callee.shortId, true) };
   });
 
@@ -164,8 +247,11 @@ export default async function callRoutes(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const call = await prisma.call.findUnique({ where: { id } });
     if (!call || (call.callerId !== me && call.calleeId !== me)) throw err.notFound();
-    const ended = await finishCall(id, 'ENDED', 'HANGUP');
-    return { ok: true, call: ended ?? call };
+    // Cavab verilməmiş zəngi host "bitir"sə — bu, imtinadır (zəng edənə "rədd edildi" görünsün)
+    const ended = call.status === 'RINGING' && call.calleeId === me
+      ? await finishCall(id, 'REJECTED', 'REJECTED')
+      : await finishCall(id, 'ENDED', 'HANGUP');
+    return { ok: true, call: ended ?? (await prisma.call.findUniqueOrThrow({ where: { id } })) };
   });
 
   app.get('/calls', { preHandler: requireAuth }, async (req) => {

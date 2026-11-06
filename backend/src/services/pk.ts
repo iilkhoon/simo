@@ -40,16 +40,36 @@ export async function endPk(battleId: string) {
   const t = timers.get(battleId);
   if (t) clearTimeout(t);
   timers.delete(battleId);
-  const b = await prisma.pkBattle.findUnique({ where: { id: battleId } });
-  if (!b || b.status !== 'ACTIVE') return;
-  const winnerId = b.scoreA === b.scoreB ? null : b.scoreA > b.scoreB ? b.hostAId : b.hostBId;
-  await prisma.pkBattle.update({ where: { id: battleId }, data: { status: 'ENDED', winnerId } });
-  for (const r of [b.roomAId, b.roomBId]) {
+  // Taymer, sweeper və "bitir" düyməsi eyni anda çağıra bilər: keçid və bonus bir tranzaksiyada,
+  // şərtli yeniləmə ilə — qalib bonusu yalnız bir dəfə yazılır
+  const done = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.pkBattle.updateMany({ where: { id: battleId, status: 'ACTIVE' }, data: { status: 'ENDED' } });
+    if (!claimed.count) return null;
+    const b = await tx.pkBattle.findUniqueOrThrow({ where: { id: battleId } });
+    const winnerId = b.scoreA === b.scoreB ? null : b.scoreA > b.scoreB ? b.hostAId : b.hostBId;
+    await tx.pkBattle.update({ where: { id: battleId }, data: { winnerId, endsAt: b.endsAt && b.endsAt.getTime() < Date.now() ? b.endsAt : new Date() } });
+    if (winnerId) await creditCoins(tx, winnerId, ECONOMY.pkWinnerBonusPromo, 'PK_WIN', battleId, '', true);
+    return b;
+  });
+  if (!done) return;
+  for (const r of [done.roomAId, done.roomBId]) {
     const st = getRoom(r);
     if (st?.pk?.battleId === battleId) st.pk = undefined;
   }
-  if (winnerId) await prisma.$transaction((tx) => creditCoins(tx, winnerId, ECONOMY.pkWinnerBonusPromo, 'PK_WIN', battleId, '', true));
   await broadcast(battleId, 'pk:end');
+}
+
+export const PK_INVITE_TTL_MS = 60_000;
+
+/** Server restartında itən taymerlər üçün: vaxtı keçmiş döyüşləri bitir, köhnə dəvətləri EXPIRED et */
+export async function sweepPk(now = Date.now()) {
+  const due = await prisma.pkBattle.findMany({ where: { status: 'ACTIVE', endsAt: { lt: new Date(now - 3_000) } }, select: { id: true } });
+  for (const b of due) await endPk(b.id);
+  const old = await prisma.pkBattle.findMany({ where: { status: 'PENDING', createdAt: { lt: new Date(now - PK_INVITE_TTL_MS) } }, select: { id: true, hostAId: true } });
+  for (const b of old) {
+    const r = await prisma.pkBattle.updateMany({ where: { id: b.id, status: 'PENDING' }, data: { status: 'EXPIRED' } });
+    if (r.count) emitToUser(b.hostAId, 'pk:declined', { battleId: b.id, expired: true });
+  }
 }
 
 /** Hədiyyə PK zamanı yayın hostuna gedirsə — xal əlavə et */
@@ -91,17 +111,24 @@ export function registerPkRoutes(app: FastifyInstance) {
     }
     if (b.hostBId !== me || b.status !== 'PENDING') throw err.forbidden();
     if (p.action === 'decline') {
-      await prisma.pkBattle.update({ where: { id: b.id }, data: { status: 'DECLINED' } });
+      await prisma.pkBattle.updateMany({ where: { id: b.id, status: 'PENDING' }, data: { status: 'DECLINED' } });
       emitToUser(b.hostAId, 'pk:declined', { battleId: b.id });
       return { ok: true };
     }
+    if (Date.now() - b.createdAt.getTime() > PK_INVITE_TTL_MS) {
+      await prisma.pkBattle.updateMany({ where: { id: b.id, status: 'PENDING' }, data: { status: 'EXPIRED' } });
+      throw err.badRequest('PK_EXPIRED');
+    }
     const [sa, sb] = await Promise.all([ensureRoomState(b.roomAId), ensureRoomState(b.roomBId)]);
     if (!sa || !sb) throw err.badRequest('TARGET_NOT_LIVE');
+    // Dəvətlər arasında otaqlardan biri artıq başqa PK-ya girib
+    if (sa.pk || sb.pk) throw err.badRequest('PK_BUSY');
     const endsAt = new Date(Date.now() + b.durationSec * 1000);
-    await prisma.pkBattle.update({ where: { id: b.id }, data: { status: 'ACTIVE', startedAt: new Date(), endsAt } });
+    const started = await prisma.pkBattle.updateMany({ where: { id: b.id, status: 'PENDING' }, data: { status: 'ACTIVE', startedAt: new Date(), endsAt } });
+    if (!started.count) throw err.badRequest('PK_EXPIRED');
     sa.pk = { battleId: b.id, opponentRoomId: b.roomBId, side: 'A', endsAt: endsAt.getTime() };
     sb.pk = { battleId: b.id, opponentRoomId: b.roomAId, side: 'B', endsAt: endsAt.getTime() };
-    timers.set(b.id, setTimeout(() => void endPk(b.id), b.durationSec * 1000));
+    timers.set(b.id, setTimeout(() => void endPk(b.id).catch(() => {}), b.durationSec * 1000));
     await broadcast(b.id, 'pk:start');
     return { ok: true };
   });

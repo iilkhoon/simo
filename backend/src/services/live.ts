@@ -1,10 +1,13 @@
 import { prisma } from '../db.js';
 import { emitToRoom } from '../realtime/hub.js';
-import { dropRoom, getRoom, initRoom, viewerCount } from '../realtime/liveState.js';
+import { dropRoom, getRoom, initRoom, liveRoomIds, viewerCount } from '../realtime/liveState.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
 
 export async function endLive(roomId: string, reason = 'HOST_ENDED') {
   const res = await prisma.liveRoom.updateMany({ where: { id: roomId, status: 'LIVE' }, data: { status: 'ENDED', endedAt: new Date() } });
+  // Gedən PK döyüşü dərhal yekunlaşır (rəqib otaq "yarımçıq" PK zolağı ilə qalmasın)
+  const pkId = getRoom(roomId)?.pk?.battleId;
+  if (pkId) await (await import('./pk.js')).endPk(pkId).catch(() => {});
   dropRoom(roomId);
   if (res.count > 0) emitToRoom(`live:${roomId}`, 'live:ended', { roomId, reason });
   return res.count > 0;
@@ -34,12 +37,32 @@ export async function broadcastViewers(roomId: string) {
   emitToRoom(`live:${roomId}`, 'live:viewers', { roomId, count: n });
 }
 
-/** Server yenidən başladıqda: yaddaşda olmayan, 2 dəqiqədən çox izləyicisiz qalan yayınları bağla */
-export async function sweepStaleLives() {
+export const HOST_ABSENT_MS = 90_000;
+
+/**
+ * Sweeper (hər dəqiqə):
+ *  • yaddaşda olmayan (server yenidən başlayıb, heç kim qoşulmayıb), 2 dəqiqədən köhnə yayınlar → STALE
+ *  • host otaqda olmayan yayınlar (məs. server restartından sonra izləyicilər qayıdıb, host qayıtmayıb) → HOST_LEFT
+ *  • vaxtı keçmiş ACTIVE PK-lar → yekunlaşır, 60 saniyədən çox cavabsız PENDING dəvətlər → EXPIRED
+ */
+export async function sweepStaleLives(now = Date.now()) {
   const rooms = await prisma.liveRoom.findMany({ where: { status: 'LIVE' }, select: { id: true, startedAt: true } });
   for (const r of rooms) {
-    if (!getRoom(r.id) && Date.now() - r.startedAt.getTime() > 120_000) await endLive(r.id, 'STALE');
+    if (!getRoom(r.id) && now - r.startedAt.getTime() > 120_000) await endLive(r.id, 'STALE');
   }
+  for (const { roomId, hostId } of liveRoomIds()) {
+    const st = getRoom(roomId);
+    if (!st) continue;
+    if (st.viewers.has(hostId)) {
+      st.hostAbsentSince = undefined;
+      continue;
+    }
+    if (st.hostLeftTimer) continue; // host özü çıxıb — öz taymeri işləyir
+    st.hostAbsentSince ??= now;
+    if (now - st.hostAbsentSince >= HOST_ABSENT_MS) await endLive(roomId, 'HOST_LEFT');
+  }
+  const pk = await import('./pk.js');
+  await pk.sweepPk(now);
 }
 
 /** Canlıda olan hostlar (story sırası üçün) */

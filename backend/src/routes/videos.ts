@@ -42,8 +42,8 @@ async function makeBlurPreview(src: string | null | undefined): Promise<string |
 export async function publishScheduled() {
   const due = await prisma.video.findMany({ where: { status: 'SCHEDULED', scheduledAt: { lte: new Date() } }, select: { id: true, userId: true }, take: 100 });
   for (const v of due) {
-    await prisma.video.update({ where: { id: v.id }, data: { status: 'ACTIVE', createdAt: new Date() } });
-    void notify(v.userId, 'post_live', { data: { videoId: v.id } }).catch(() => {});
+    const r = await prisma.video.updateMany({ where: { id: v.id, status: 'SCHEDULED' }, data: { status: 'ACTIVE', createdAt: new Date() } });
+    if (r.count) void notify(v.userId, 'post_live', { data: { videoId: v.id } }).catch(() => {});
   }
 }
 
@@ -252,8 +252,12 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.post('/videos/:id/save', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const exists = await prisma.videoSave.findUnique({ where: { videoId_userId: { videoId: id, userId: me } } });
-    if (!exists) await prisma.$transaction([prisma.videoSave.create({ data: { videoId: id, userId: me } }), prisma.video.update({ where: { id }, data: { savesCount: { increment: 1 } } })]);
+    if (!(await prisma.video.findUnique({ where: { id }, select: { id: true } }))) throw err.notFound();
+    // Paralel iki "saxla" unikal açar xətası (500) verməsin, sayğac iki dəfə artmasın
+    await prisma.$transaction(async (tx) => {
+      const r = await tx.videoSave.createMany({ data: [{ videoId: id, userId: me }], skipDuplicates: true });
+      if (r.count) await tx.video.update({ where: { id }, data: { savesCount: { increment: 1 } } });
+    });
     return { ok: true };
   });
 
@@ -283,30 +287,25 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.post('/videos/:id/view', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const existing = await prisma.videoView.findUnique({ where: { videoId_userId: { videoId: id, userId: me } } });
     const author = await prisma.video.findUnique({ where: { id }, select: { userId: true } });
-    if (author && author.userId !== me) void recordEvents(me, [{ kind: 'post_view', targetId: author.userId, meta: { videoId: id } }]).catch(() => {});
-    if (!existing) {
-      await prisma.$transaction([
-        prisma.videoView.create({ data: { videoId: id, userId: me } }),
-        prisma.video.update({ where: { id }, data: { views: { increment: 1 } } }),
-      ]);
-    } else {
-      await prisma.videoView.update({ where: { videoId_userId: { videoId: id, userId: me } }, data: { createdAt: new Date() } });
-    }
+    if (!author) throw err.notFound();
+    if (author.userId !== me) void recordEvents(me, [{ kind: 'post_view', targetId: author.userId, meta: { videoId: id } }]).catch(() => {});
+    await prisma.$transaction(async (tx) => {
+      const r = await tx.videoView.createMany({ data: [{ videoId: id, userId: me }], skipDuplicates: true });
+      if (r.count) await tx.video.update({ where: { id }, data: { views: { increment: 1 } } });
+      else await tx.videoView.update({ where: { videoId_userId: { videoId: id, userId: me } }, data: { createdAt: new Date() } });
+    });
     return { ok: true };
   });
 
   app.post('/videos/:id/like', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const exists = await prisma.videoLike.findUnique({ where: { videoId_userId: { videoId: id, userId: me } } });
-    if (!exists) {
-      await prisma.$transaction([
-        prisma.videoLike.create({ data: { videoId: id, userId: me } }),
-        prisma.video.update({ where: { id }, data: { likesCount: { increment: 1 } } }),
-      ]);
-    }
+    if (!(await prisma.video.findUnique({ where: { id }, select: { id: true } }))) throw err.notFound();
+    await prisma.$transaction(async (tx) => {
+      const r = await tx.videoLike.createMany({ data: [{ videoId: id, userId: me }], skipDuplicates: true });
+      if (r.count) await tx.video.update({ where: { id }, data: { likesCount: { increment: 1 } } });
+    });
     return { ok: true };
   });
 

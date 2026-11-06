@@ -448,6 +448,9 @@ model Call {
   coinsSpent    Int        @default(0)
   endReason     String?
   createdAt     DateTime   @default(now())
+  /// Zəngdən sonra qiymətləndirmə (1–5): zəng edən hostu, host zəng edəni
+  callerRating  Int?
+  calleeRating  Int?
 
   @@index([callerId, createdAt])
   @@index([calleeId, createdAt])
@@ -710,6 +713,7 @@ enum PkStatus {
   ACTIVE
   ENDED
   DECLINED
+  EXPIRED
 }
 
 model PkBattle {

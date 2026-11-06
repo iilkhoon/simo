@@ -5,10 +5,11 @@ import { filterProfanity } from '../lib/moderation.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
+import { activeVip, levelFromXp, vipRank } from '../economy.js';
 import { rtcToken } from '../services/agora.js';
 import { endLive, ensureRoomState, guestsPayload, seatsPayload } from '../services/live.js';
 import { pkPayload, registerPkRoutes } from '../services/pk.js';
-import { MAX_GUESTS, getRoom, initRoom, leaveSeat, takeSeat } from '../realtime/liveState.js';
+import { MAX_GUESTS, getRoom, initRoom, leaveSeat, takeSeat, viewerIds } from '../realtime/liveState.js';
 import { emitToUser } from '../realtime/hub.js';
 import { emitToRoom } from '../realtime/hub.js';
 import { notify } from '../services/notify.js';
@@ -217,6 +218,27 @@ export default async function liveRoutes(app: FastifyInstance) {
     emitToRoom(`live:${id}`, 'live:guests', { roomId: id, guests: await guestsPayload(id) });
     emitToUser(target, 'live:guest-removed', { roomId: id });
     return { ok: true };
+  });
+
+  /**
+   * İzləyici siyahısı (Bigo/Tango üslubu): bu yayında ən çox hədiyyə edənlər öndə,
+   * sonra VIP və sərvət səviyyəsinə görə. Hər izləyicinin bu yayındakı hədiyyə cəmi göstərilir.
+   */
+  app.get('/live/:id/viewers', { preHandler: requireAuth }, async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const ids = viewerIds(id).slice(0, 300);
+    if (!ids.length) return { items: [], total: 0 };
+    const [users, gifts] = await Promise.all([
+      prisma.user.findMany({ where: { id: { in: ids } }, select: { ...publicUserSelect, photos: true, totalSpent: true, vipTier: true, vipUntil: true } }),
+      prisma.giftTransaction.groupBy({ by: ['senderId'], where: { context: 'LIVE', contextId: id, senderId: { in: ids } }, _sum: { coins: true } }),
+    ]);
+    const coins = new Map(gifts.map((g) => [g.senderId, g._sum.coins ?? 0]));
+    const items = users.map((u) => {
+      const vip = (activeVip(u)?.tier ?? 'NONE') as typeof u.vipTier;
+      return { user: presentUser(u), coins: coins.get(u.id) ?? 0, vipTier: vip, wealthLevel: levelFromXp(u.totalSpent) };
+    });
+    items.sort((a, b) => b.coins - a.coins || vipRank(b.vipTier) - vipRank(a.vipTier) || b.wealthLevel - a.wealthLevel);
+    return { items: items.slice(0, 100), total: ids.length };
   });
 
   /** Hostun yayın paneli: canlı statistika */
