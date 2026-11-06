@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle,
@@ -7,10 +7,14 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from '../lib/keyboard';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { blocks, colors, elev, fonts, glow, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { blocks, colors, elev, fonts, glow, gradients, motion, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Mascot, type MascotPose } from './Mascot';
-import { MASCOT } from './mascotAssets';
+import { Illustration, type IllustrationName } from './Illustration';
+import { Appear, Pressable3, SkeletonGrid, SkeletonList } from './motion';
+import { LogoMark } from './Logo';
 
 export const tap = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
@@ -66,7 +70,7 @@ export function Box({ children, style, inner, bg = colors.card, r = radius.md, s
     );
   }
   return (
-    <View style={[{ borderRadius: r, backgroundColor: bg }, elev(sh), pressed && { transform: [{ scale: 0.97 }] }, style]}>
+    <View style={[{ borderRadius: r, backgroundColor: bg }, elev(sh), style]}>
       <View style={[{ flexGrow: 1, borderRadius: r, overflow: 'hidden', backgroundColor: bg }, borderColor ? { borderWidth: 1.5, borderColor } : null, inner]}>
         {children}
       </View>
@@ -74,14 +78,15 @@ export function Box({ children, style, inner, bg = colors.card, r = radius.md, s
   );
 }
 
-/** Toxunma qutusu — basılanda yüngülcə kiçilir */
+/** Toxunma qutusu — basılanda yaylı kiçilir (UI thread) */
 export function PressBox({ onPress, disabled, children, haptic = true, ...box }: React.ComponentProps<typeof Box> & { onPress?: () => void; disabled?: boolean; haptic?: boolean }) {
   const [p, setP] = useState(false);
   return (
-    <Pressable
+    <Pressable3
       disabled={disabled}
-      onPressIn={() => setP(true)}
-      onPressOut={() => setP(false)}
+      scaleTo={box.hard ? 1 : 0.965}
+      onPressIn={() => box.hard && setP(true)}
+      onPressOut={() => box.hard && setP(false)}
       onPress={() => {
         if (haptic) tap();
         onPress?.();
@@ -91,7 +96,7 @@ export function PressBox({ onPress, disabled, children, haptic = true, ...box }:
       <Box {...box} style={undefined} pressed={p}>
         {children}
       </Box>
-    </Pressable>
+    </Pressable3>
   );
 }
 
@@ -114,19 +119,28 @@ export function Btn({ title, onPress, loading, disabled, kind = 'primary', size 
   const c = BTN[kind];
   const h = size === 'lg' ? 56 : size === 'md' ? 46 : 36;
   const off = disabled || loading;
+  const grad = !disabled ? (kind === 'primary' ? gradients.nar : kind === 'coin' ? gradients.gold : kind === 'diamond' ? gradients.diamond : kind === 'dark' ? gradients.night : null) : null;
   return (
-    <Pressable
+    <Pressable3
       onPress={() => { tap(); onPress?.(); }}
       disabled={off}
-      style={({ pressed }) => [
+      scaleTo={0.965}
+      style={[
         { height: h, borderRadius: radius.pill, backgroundColor: disabled ? colors.bgSunken : c.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: size === 'sm' ? 14 : 22, flexDirection: 'row', gap: 8 },
         !disabled && kind === 'primary' && size !== 'sm' ? glow(colors.brand) : null,
+        !disabled && kind === 'coin' && size !== 'sm' ? glow(colors.coin) : null,
         !disabled && kind === 'light' ? elev(1) : null,
         !full && { alignSelf: 'center' },
-        pressed && { transform: [{ scale: 0.97 }], opacity: 0.94 },
         style,
       ]}
     >
+      {grad ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius.pill, overflow: 'hidden' }]}>
+          <LinearGradient colors={grad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          {/* yuxarıda incə işıq xətti — "şüşə" qalınlığı */}
+          <LinearGradient colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']} style={[StyleSheet.absoluteFill, { bottom: '50%' }]} />
+        </View>
+      ) : null}
       {loading ? (
         <ActivityIndicator color={c.fg} />
       ) : (
@@ -138,7 +152,7 @@ export function Btn({ title, onPress, loading, disabled, kind = 'primary', size 
           {iconRight}
         </>
       )}
-    </Pressable>
+    </Pressable3>
   );
 }
 
@@ -148,12 +162,13 @@ export function IconBtn({ name, onPress, bg = colors.card, color = colors.ink, s
 }) {
   return (
     <View style={style}>
-      <Pressable
+      <Pressable3
         onPress={() => { tap(); onPress?.(); }}
-        style={({ pressed }) => [{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }, bg !== 'transparent' && elev(sh), pressed && { transform: [{ scale: 0.92 }] }]}
+        scaleTo={0.88}
+        style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }, bg !== 'transparent' && elev(sh)]}
       >
         <Icon name={name} size={iconSize ?? size * 0.46} color={color} />
-      </Pressable>
+      </Pressable3>
       {badge ? <Badge n={badge} style={{ position: 'absolute', top: -4, right: -2 }} /> : null}
     </View>
   );
@@ -195,10 +210,10 @@ export function Chip({ label, active, onPress, style, icon, color = colors.ink }
   label: string; active?: boolean; onPress?: () => void; style?: StyleProp<ViewStyle>; icon?: IconName; color?: string;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.chip, active && { backgroundColor: color, borderColor: color }, pressed && { opacity: 0.8 }, style]}>
+    <Pressable3 onPress={onPress} scaleTo={0.94} style={[styles.chip, active && { backgroundColor: color, borderColor: color }, style]}>
       {icon ? <Icon name={icon} size={14} color={active ? colors.bg : colors.ink} /> : null}
       <Text style={[styles.chipText, active && { color: colors.bg }]}>{label}</Text>
-    </Pressable>
+    </Pressable3>
   );
 }
 
@@ -222,15 +237,26 @@ export function Segmented<T extends string>({ options, value, onChange, style }:
   );
 }
 
-/** Tam enli tab-seçici (2–3 seçim) */
-export function Tabs<K extends string>({ options, value, onChange, night }: { options: { key: K; label: string }[]; value: K; onChange: (k: K) => void; night?: boolean }) {
+/** Tam enli tab-seçici (2–3 seçim) — aktiv "həb" yay ilə sürüşür */
+export function Tabs<K extends string>({ options, value, onChange, night }: { options: { key: K; label: string; icon?: IconName }[]; value: K; onChange: (k: K) => void; night?: boolean }) {
+  const [w, setW] = useState(0);
+  const idx = Math.max(0, options.findIndex((o) => o.key === value));
+  const tw = w / Math.max(1, options.length);
+  const x = useSharedValue(0);
+  useEffect(() => {
+    x.value = w ? withSpring(idx * tw, motion.enter) : idx * tw;
+  }, [idx, tw, w, x]);
+  const ind = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return (
-    <View style={[styles.tabs, night && { backgroundColor: colors.night3 }]}>
+    <View style={[styles.tabs, night && { backgroundColor: colors.night3 }]} onLayout={(e) => setW(e.nativeEvent.layout.width - 8)}>
+      {w ? <Animated.View pointerEvents="none" style={[styles.tabInd, { width: tw, backgroundColor: night ? colors.bg : colors.card }, elev(1), ind]} /> : null}
       {options.map((o) => {
         const on = o.key === value;
+        const fg = on ? colors.ink : night ? colors.nightMuted : colors.textMuted;
         return (
-          <Pressable key={o.key} onPress={() => { tap(); onChange(o.key); }} style={[styles.tab, on && [{ backgroundColor: night ? colors.bg : colors.card }, elev(1)]]}>
-            <Text style={{ ...noPad, fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: on ? colors.ink : night ? colors.nightMuted : colors.textMuted }} numberOfLines={1}>{o.label}</Text>
+          <Pressable key={o.key} onPress={() => { tap(); onChange(o.key); }} style={[styles.tab, !w && on && [{ backgroundColor: night ? colors.bg : colors.card }, elev(1)]]}>
+            {o.icon ? <Icon name={o.icon} size={15} color={on ? colors.brand : fg} /> : null}
+            <Text style={{ ...noPad, fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: fg }} numberOfLines={1}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -282,33 +308,56 @@ export function Input({ label, hint, left, style, ...props }: TextInputProps & {
 }
 
 /* ───────────── Vəziyyətlər ───────────── */
-export function Loader({ full, night }: { full?: boolean; night?: boolean }) {
+/**
+ * Yükləmə vəziyyəti. Siyahı/şəbəkə üçün `variant` ilə parıltılı skelet (spinner yox);
+ * standart — nəbz vuran Simo nişanı.
+ */
+export function Loader({ full, night, variant, width, n }: { full?: boolean; night?: boolean; variant?: 'list' | 'grid'; width?: number; n?: number }) {
+  if (variant === 'list') return <View style={[{ paddingTop: 4 }, full && { flex: 1 }]}><SkeletonList night={night} n={n} /></View>;
+  if (variant === 'grid') return <View style={[{ paddingTop: 4 }, full && { flex: 1 }]}><SkeletonGrid night={night} n={n} width={width ?? 170} /></View>;
   return (
-    <View style={[{ padding: 24, alignItems: 'center', justifyContent: 'center' }, full && { flex: 1 }]}>
-      <ActivityIndicator color={night ? colors.bg : colors.brand} size="large" />
+    <View style={[{ padding: 32, alignItems: 'center', justifyContent: 'center' }, full && { flex: 1 }]}>
+      <BrandPulse night={night} />
     </View>
   );
 }
 
-/** Boş vəziyyətlərdə ikon əvəzinə maskot pozası */
-const EMPTY_POSE: Partial<Record<IconName, MascotPose>> = {
-  heart: 'heart', chat: 'wave', call: 'call', video: 'dance', location: 'search', compass: 'search', bell: 'sleep',
-  live: 'sing', mic: 'sing', ban: 'cool', people: 'welcome', gift: 'gift', eye: 'shy', trophy: 'trophy', time: 'think',
+/** Nəbz vuran loqo — tam ekran yükləmə üçün (ActivityIndicator əvəzi) */
+function BrandPulse({ night }: { night?: boolean }) {
+  const s = useSharedValue(1);
+  useEffect(() => {
+    s.value = withRepeat(withSequence(withTiming(1.12, { duration: 260, easing: Easing.out(Easing.quad) }), withTiming(1, { duration: 260 }), withTiming(1.08, { duration: 220 }), withTiming(1, { duration: 520 })), -1, false);
+  }, [s]);
+  const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return (
+    <Animated.View style={a}>
+      <LogoMark size={44} light={night} />
+    </Animated.View>
+  );
+}
+
+/** Boş vəziyyət ikonundan illüstrasiyaya keçid */
+const EMPTY_ART: Partial<Record<IconName, IllustrationName>> = {
+  heart: 'heart', heartOutline: 'heart', chat: 'chat', chatOutline: 'chat', chatsOutline: 'chat', call: 'call', video: 'video', playOutline: 'video',
+  location: 'pin', pin: 'pin', compass: 'search', search: 'search', bell: 'bell', live: 'mic', radio: 'mic', mic: 'mic', ban: 'shield', shield: 'shield',
+  people: 'people', users: 'people', business: 'people', gift: 'gift', eye: 'eye', trophy: 'trophy', time: 'bell', bookmark: 'bookmark',
+  bookmarkOutline: 'bookmark', receipt: 'ticket', sparkles: 'spark', camera: 'camera', image: 'camera',
 };
 
-export function EmptyState({ icon = 'heart', title, sub, action, tint = colors.brandSoft, pose }: { icon?: IconName; title: string; sub?: string; action?: React.ReactNode; tint?: string; pose?: MascotPose }) {
-  const p = pose ?? EMPTY_POSE[icon];
-  const hasMascot = !!(p && MASCOT[p]);
+export function EmptyState({ icon = 'heart', title, sub, action, art, pose, mascot, compact }: {
+  icon?: IconName; title: string; sub?: string; action?: React.ReactNode; tint?: string;
+  /** İllüstrasiya (standart: ikon üzrə) */
+  art?: IllustrationName;
+  /** Köhnə API: maskot pozası — yalnız `mascot` true olduqda göstərilir */
+  pose?: MascotPose; mascot?: boolean; compact?: boolean;
+}) {
+  const a = art ?? EMPTY_ART[icon] ?? 'spark';
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12, flex: 1 }}>
-      {hasMascot ? <Mascot pose={p} size={150} /> : (
-        <View style={{ width: 96, height: 96, borderRadius: 34, backgroundColor: tint, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
-          <Icon name={icon} size={40} color={colors.ink} />
-        </View>
-      )}
-      <T v="h3" center style={{ marginTop: 6 }}>{title}</T>
-      {sub ? <T v="small" color={colors.textMuted} center>{sub}</T> : null}
-      {action}
+    <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, paddingVertical: compact ? 16 : 32, gap: 10, flex: 1 }}>
+      <Appear i={0}>{mascot && pose ? <Mascot pose={pose} size={150} /> : <Illustration name={a} size={compact ? 128 : 168} />}</Appear>
+      <Appear i={1}><T v="h2" center style={{ marginTop: 4, fontSize: 20, lineHeight: 25 }}>{title}</T></Appear>
+      {sub ? <Appear i={2}><T v="body" color={colors.textMuted} center style={{ maxWidth: 300 }}>{sub}</T></Appear> : null}
+      {action ? <Appear i={3} style={{ marginTop: 8 }}>{action}</Appear> : null}
     </View>
   );
 }
@@ -395,7 +444,8 @@ const styles = StyleSheet.create({
   glass: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 26, borderRadius: 13, alignSelf: 'flex-start' },
   glassText: { ...noPad, fontFamily: fonts.bold, fontSize: 11.5, lineHeight: 14 },
   tabs: { flexDirection: 'row', borderRadius: radius.pill, padding: 4, backgroundColor: colors.bgSunken },
-  tab: { flex: 1, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  tab: { flex: 1, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
+  tabInd: { position: 'absolute', left: 4, top: 4, height: 38, borderRadius: radius.pill },
   input: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bgSunken, borderRadius: radius.md,
     borderWidth: 1.5, borderColor: 'transparent', paddingHorizontal: 16, minHeight: 56,

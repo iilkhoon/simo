@@ -4,7 +4,8 @@ import { Tabs, type BottomTabBarProps } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { colors, fonts } from '@/theme';
+import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { colors, fonts, motion } from '@/theme';
 import { Glass, TAB_BAR_H as BAR_H } from '@/components/Glass';
 import { Icon, type IconName } from '@/components/Icon';
 import { Badge, tap } from '@/components/ui';
@@ -22,6 +23,22 @@ const LEFT = ['index', 'videos'];
 const RIGHT = ['chats', 'me'];
 
 type BarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'emitter' | 'navigateToTab'>;
+
+/** Aktiv olanda ikon kiçik "sıçrayış" edir (yay: 1 → 1.22 → 1) və bir az yuxarı qalxır */
+function TabIcon({ focused, name, color }: { focused: boolean; name: IconName; color: string }) {
+  const s = useSharedValue(1);
+  const y = useSharedValue(0);
+  useEffect(() => {
+    if (focused) {
+      s.value = withSequence(withTiming(1.22, { duration: 120 }), withSpring(1, motion.bouncy));
+      y.value = withSpring(-1.5, motion.enter);
+    } else {
+      y.value = withSpring(0, motion.enter);
+    }
+  }, [focused, s, y]);
+  const a = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }, { scale: s.value }] }));
+  return <Reanimated.View style={a}><Icon name={name} size={24} color={color} /></Reanimated.View>;
+}
 
 
 /**
@@ -86,7 +103,7 @@ function TabBar({ state, descriptors, emitter, navigateToTab }: BarProps) {
                 }}
                 style={styles.item}
               >
-                <Icon name={focused ? on : off} size={24} color={fg} />
+                <TabIcon focused={focused} name={focused ? on : off} color={fg} />
                 <Text style={[styles.label, { color: fg }, focused && styles.labelOn]} numberOfLines={1}>{label}</Text>
                 {badge ? <Badge n={badge} style={{ position: 'absolute', top: 5, right: '20%' }} /> : null}
               </Pressable>
