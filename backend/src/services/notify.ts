@@ -26,6 +26,8 @@ const TITLES: Record<string, Record<string, string>> = {
   vip: { az: 'VIP statusun', ru: 'Твой VIP', en: 'Your VIP' },
   comment: { az: 'Postuna şərh yazdılar 💬', ru: 'Новый комментарий 💬', en: 'New comment 💬' },
   post_live: { az: 'Planlanmış postun paylaşıldı ✅', ru: 'Запланированный пост опубликован ✅', en: 'Your scheduled post is live ✅' },
+  withdrawal: { az: 'Pul çıxarışı', ru: 'Вывод средств', en: 'Withdrawal' },
+  agency_update: { az: 'Agentlik', ru: 'Агентство', en: 'Agency' },
 };
 
 const BODIES: Record<string, Record<string, string>> = {

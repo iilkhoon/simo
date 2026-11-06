@@ -5,17 +5,13 @@ import { refillTester } from '../services/tester.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { ECONOMY, NOBLE_PLANS, VIP_PLANS, activeNoble, activeVip, todayKey, vipRank, withdrawQepik } from '../economy.js';
-import { EARN_TYPES, creditCoins, spendCoins, spendDiamonds } from '../services/wallet.js';
+import { creditCoins, heldDiamonds, lockUser, spendCoins, spendDiamonds } from '../services/wallet.js';
+import { notify } from '../services/notify.js';
 import { presentMe } from './users.js';
 import { vipDiscount } from '../services/smart.js';
 import { optionalUid } from '../lib/auth.js';
 
-/** Son N gündə qazanılan (hələ çıxarıla bilməyən) Ləl */
-export async function heldDiamonds(userId: string): Promise<number> {
-  const since = new Date(Date.now() - ECONOMY.withdrawHoldDays * 86400_000);
-  const r = await prisma.walletTransaction.aggregate({ where: { userId, currency: 'DIAMOND', amount: { gt: 0 }, type: { in: [...EARN_TYPES, 'AGENCY_COMMISSION'] }, createdAt: { gte: since } }, _sum: { amount: true } });
-  return r._sum.amount ?? 0;
-}
+export { heldDiamonds };
 
 export default async function walletRoutes(app: FastifyInstance) {
   app.get('/wallet/packages', async () => {
@@ -54,7 +50,7 @@ export default async function walletRoutes(app: FastifyInstance) {
 
   app.post('/wallet/exchange', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
-    const b = z.object({ diamonds: z.number().int().min(ECONOMY.diamondsPerCoin) }).parse(req.body);
+    const b = z.object({ diamonds: z.number().int().min(ECONOMY.diamondsPerCoin).max(100_000_000) }).parse(req.body);
     const diamonds = b.diamonds - (b.diamonds % ECONOMY.diamondsPerCoin);
     const coins = diamonds / ECONOMY.diamondsPerCoin;
     await prisma.$transaction(async (tx) => {
@@ -64,37 +60,46 @@ export default async function walletRoutes(app: FastifyInstance) {
     return presentMe(me);
   });
 
-  app.post('/wallet/withdraw', { preHandler: requireAuth }, async (req) => {
+  /**
+   * Nağdlaşdırma sorğusu. Bütün yoxlamalar istifadəçi sətri kilidləndikdən SONRA eyni tranzaksiyada edilir —
+   * eyni anda göndərilən iki sorğu həftəlik limiti / gözləmə müddətini keçə bilməz.
+   */
+  app.post('/wallet/withdraw', { preHandler: requireAuth, config: { rateLimit: { max: 10, timeWindow: '1 hour' } } }, async (req) => {
     const me = uid(req);
     const b = z
       .object({
-        diamonds: z.number().int().min(ECONOMY.minWithdrawDiamonds),
+        diamonds: z.number().int().min(ECONOMY.minWithdrawDiamonds).max(100_000_000),
         method: z.enum(['CARD', 'M10', 'EMANAT', 'AGENCY']),
         account: z.string().trim().min(4).max(64),
       })
       .parse(req.body);
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
-    const ownsAgency = await prisma.agency.count({ where: { ownerId: me, status: 'ACTIVE' } });
-    if (user.hostStatus !== 'APPROVED' && !user.agencyId && !ownsAgency) throw err.forbidden('HOST_REQUIRED');
-    if (user.kycStatus !== 'APPROVED') throw err.forbidden('KYC_REQUIRED');
-    const pending = await prisma.withdrawal.count({ where: { userId: me, status: 'PENDING' } });
-    if (pending > 0) throw err.badRequest('WITHDRAW_PENDING');
-    // Həftədə bir çıxarış
-    const weekAgo = new Date(Date.now() - 7 * 86400_000);
-    const recent = await prisma.withdrawal.count({ where: { userId: me, createdAt: { gte: weekAgo }, status: { not: 'REJECTED' } } });
-    if (recent >= ECONOMY.withdrawPerWeek) throw err.badRequest('WITHDRAW_WEEKLY_LIMIT');
-    // Son 7 günün qazancı gözləmədədir
-    const held = await heldDiamonds(me);
-    // Nağdlaşan: qazanılmış Almaz (alınmış Almaz çıxmır) − son 7 günün gözləmədəki qazancı
-    const earned = Math.max(0, user.diamonds - user.diamondsBought);
-    if (b.diamonds > Math.max(0, earned - held)) throw err.badRequest('WITHDRAW_HELD', { available: Math.max(0, earned - held), held });
     const w = await prisma.$transaction(async (tx) => {
+      const bal = await lockUser(tx, me);
+      const user = await tx.user.findUniqueOrThrow({ where: { id: me }, select: { hostStatus: true, agencyId: true, kycStatus: true, banned: true } });
+      if (user.banned) throw err.forbidden('BANNED');
+      const ownsAgency = await tx.agency.count({ where: { ownerId: me, status: 'ACTIVE' } });
+      if (user.hostStatus !== 'APPROVED' && !user.agencyId && !ownsAgency) throw err.forbidden('HOST_REQUIRED');
+      if (user.kycStatus !== 'APPROVED') throw err.forbidden('KYC_REQUIRED');
+      if (b.method === 'AGENCY' && !user.agencyId) throw err.badRequest('AGENCY_REQUIRED');
+      const pending = await tx.withdrawal.count({ where: { userId: me, status: { in: ['PENDING', 'APPROVED'] } } });
+      if (pending > 0) throw err.badRequest('WITHDRAW_PENDING');
+      // Həftədə bir çıxarış (rədd edilənlər sayılmır)
+      const weekAgo = new Date(Date.now() - 7 * 86400_000);
+      const recent = await tx.withdrawal.count({ where: { userId: me, createdAt: { gte: weekAgo }, status: { not: 'REJECTED' } } });
+      if (recent >= ECONOMY.withdrawPerWeek) throw err.badRequest('WITHDRAW_WEEKLY_LIMIT');
+      // Nağdlaşan: qazanılmış Almaz (alınmış Almaz çıxmır) − son 7 günün gözləmədəki qazancı
+      const held = await heldDiamonds(me, tx);
+      const earned = Math.max(0, bal.diamonds - Math.max(0, bal.diamondsBought));
+      const available = Math.max(0, earned - held);
+      if (b.diamonds > available) throw err.badRequest('WITHDRAW_HELD', { available, held });
+      const q = withdrawQepik(b.diamonds);
       const row = await tx.withdrawal.create({
-        data: { userId: me, diamonds: b.diamonds, amountQepik: withdrawQepik(b.diamonds).net, method: b.method, account: b.account, note: `fee:${withdrawQepik(b.diamonds).fee}` },
+        data: { userId: me, diamonds: b.diamonds, amountQepik: q.net, feeQepik: q.fee, method: b.method, account: b.account, note: `fee:${q.fee}` },
       });
       await spendDiamonds(tx, me, b.diamonds, 'WITHDRAW', row.id, true);
       return row;
     });
+    void notify(me, 'withdrawal', { store: true, body: `${(w.amountQepik / 100).toFixed(2)} ₼`, data: { withdrawalId: w.id, status: w.status } }).catch(() => {});
     return { withdrawal: w };
   });
 
