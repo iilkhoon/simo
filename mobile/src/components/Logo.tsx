@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { colors, fonts, palette } from '../theme';
 
 /**
@@ -12,7 +12,10 @@ const HEART = 'M32 46.6S20.8 40 20.8 32.6C20.8 29 23.6 26.4 26.9 26.4C29.2 26.4 
 export function LogoMark({ size = 64, light }: { size?: number; shadow?: boolean; light?: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 64 64">
-      <Path d={BODY} fill={light ? colors.white : colors.brand} />
+      <Defs>
+        <LinearGradient id="lmA" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#FF5A73" /><Stop offset="1" stopColor="#D81E45" /></LinearGradient>
+      </Defs>
+      <Path d={BODY} fill={light ? colors.white : 'url(#lmA)'} />
       <Path d={HEART} fill={light ? colors.brand : colors.white} />
     </Svg>
   );
@@ -31,11 +34,15 @@ export function Wordmark({ size = 34, color = colors.ink }: { size?: number; col
 export function Nazar({ size = 48 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Circle cx={24} cy={24} r={22} fill="#1F4FD8" />
+      <Defs>
+        <LinearGradient id="nzA" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#4A7DFF" /><Stop offset="1" stopColor="#1638B8" /></LinearGradient>
+        <LinearGradient id="nzB" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#B5E2FF" /><Stop offset="1" stopColor="#4FA8F0" /></LinearGradient>
+      </Defs>
+      <Circle cx={24} cy={24} r={22} fill="url(#nzA)" />
       <Circle cx={24} cy={24} r={15} fill={colors.white} />
-      <Circle cx={24} cy={24} r={10} fill="#7CC4FF" />
+      <Circle cx={24} cy={24} r={10} fill="url(#nzB)" />
       <Circle cx={24} cy={24} r={5.2} fill={palette.ink} />
-      <Circle cx={18} cy={14} r={3} fill="rgba(255,255,255,0.6)" />
+      <Path d="M10 18 C12 12 16 8.5 21 7.2" stroke="rgba(255,255,255,0.55)" strokeWidth={2.4} strokeLinecap="round" fill="none" />
     </Svg>
   );
 }

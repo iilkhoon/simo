@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, tintFor } from '@/theme';
 import { Box, Btn, Card, Chip, GlassPill, IconBtn, Loader, PressBox, T, Tabs } from '@/components/ui';
 import { PostGrid, type Post } from '@/components/PostGrid';
-import { Icon } from '@/components/Icon';
+import { Icon, type IconName } from '@/components/Icon';
+import { Skeleton } from '@/components/motion';
 import { GiftIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
@@ -87,7 +88,7 @@ export default function UserProfile() {
     }
   }
 
-  if (!p) return <View style={{ flex: 1, backgroundColor: colors.bg }}><Loader full /></View>;
+  if (!p) return <View style={{ flex: 1, backgroundColor: colors.bg, padding: 16, paddingTop: 70, gap: 14 }}><Skeleton h={420} r={28} /><Skeleton w="60%" h={28} r={10} /><Skeleton w="40%" h={14} r={7} /><Skeleton h={90} r={20} /></View>;
   const u = p.user;
   const photos = u.photos.length ? u.photos : u.avatarUrl ? [u.avatarUrl] : [];
 
@@ -288,26 +289,26 @@ export default function UserProfile() {
 function AboutCard({ u }: { u: PublicUser }) {
   const { t } = useTranslation();
   const x = u.extra ?? {};
-  const facts: [string, string][] = [];
-  if (x.heightCm) facts.push(['📏', t('ob.heightVal', { n: x.heightCm })]);
-  if (x.education) facts.push(['🎓', t(`ob.educations.${x.education}`)]);
-  if (x.job) facts.push(['💼', x.job]);
-  if (x.smoking) facts.push(['🚬', `${t('ob.smoking')}: ${t(`ob.habits.${x.smoking}`)}`]);
-  if (x.drinking) facts.push(['🍷', `${t('ob.drinking')}: ${t(`ob.habits.${x.drinking}`)}`]);
-  if (x.kids) facts.push(['👶', `${t('ob.kids')}: ${t(`ob.kidsOpts.${x.kids}`)}`]);
-  if (x.personality) facts.push(['✨', t(`ob.personalities.${x.personality}`)]);
-  (x.comm ?? []).forEach((c) => facts.push(['💬', t(`ob.commOpts.${c}`)]));
-  (x.activeTimes ?? []).forEach((c) => facts.push(['🕒', t(`ob.times.${c}`)]));
-  (x.dateIdeas ?? []).forEach((c) => facts.push(['💞', t(`ob.ideas.${c}`)]));
-  (x.music ?? []).forEach((c) => facts.push(['🎵', t(`ob.musics.${c}`)]));
-  if (u.callHours) facts.push(['📞', t('callSettings.hoursInfo', { from: u.callHours.from, to: u.callHours.to })]);
+  const facts: [IconName, string][] = [];
+  if (x.heightCm) facts.push(['ruler', t('ob.heightVal', { n: x.heightCm })]);
+  if (x.education) facts.push(['school', t(`ob.educations.${x.education}`)]);
+  if (x.job) facts.push(['briefcase', x.job]);
+  if (x.smoking) facts.push(['smoke', `${t('ob.smoking')}: ${t(`ob.habits.${x.smoking}`)}`]);
+  if (x.drinking) facts.push(['wine', `${t('ob.drinking')}: ${t(`ob.habits.${x.drinking}`)}`]);
+  if (x.kids) facts.push(['kids', `${t('ob.kids')}: ${t(`ob.kidsOpts.${x.kids}`)}`]);
+  if (x.personality) facts.push(['sparklesOutline', t(`ob.personalities.${x.personality}`)]);
+  (x.comm ?? []).forEach((c) => facts.push(['chatOutline', t(`ob.commOpts.${c}`)]));
+  (x.activeTimes ?? []).forEach((c) => facts.push(['time', t(`ob.times.${c}`)]));
+  (x.dateIdeas ?? []).forEach((c) => facts.push(['heartOutline', t(`ob.ideas.${c}`)]));
+  (x.music ?? []).forEach((c) => facts.push(['musical', t(`ob.musics.${c}`)]));
+  if (u.callHours) facts.push(['callOutline', t('callSettings.hoursInfo', { from: u.callHours.from, to: u.callHours.to })]);
   if (!facts.length) return null;
   return (
     <Card r={20} sh={3}>
       <View style={styles.section}>
         <T v="label" color={colors.brand}>{t('profile2.more')}</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {facts.map(([e, l], i) => <View key={i} style={styles.fact}><Text style={styles.factText}>{e} {l}</Text></View>)}
+          {facts.map(([e, l], i) => <View key={i} style={styles.fact}><Icon name={e} size={14} color={colors.brand} /><Text style={styles.factText}>{l}</Text></View>)}
         </View>
       </View>
     </Card>
@@ -315,7 +316,7 @@ function AboutCard({ u }: { u: PublicUser }) {
 }
 
 const styles = StyleSheet.create({
-  fact: { height: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: colors.bgSunken, justifyContent: 'center' },
+  fact: { height: 34, paddingHorizontal: 12, borderRadius: 17, backgroundColor: colors.bgSunken, flexDirection: 'row', alignItems: 'center', gap: 6 },
   factText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.ink },
   subCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.night, borderRadius: radius.lg, padding: 14 },
   topBar: { flexDirection: 'row', alignItems: 'center' },

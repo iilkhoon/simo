@@ -8,6 +8,7 @@ import { KeyboardAvoidingView, KeyboardAwareScrollView } from '../lib/keyboard';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { blocks, colors, elev, fonts, glow, gradients, motion, noPad, radius, shadow as SH, type, type BlockName, type GradientName, type TypeName, webNoOutline } from '../theme';
 import { Icon, type IconName } from './Icon';
@@ -354,8 +355,8 @@ export function EmptyState({ icon = 'heart', title, sub, action, art, pose, masc
   const a = art ?? EMPTY_ART[icon] ?? 'spark';
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, paddingVertical: compact ? 16 : 32, gap: 10, flex: 1 }}>
-      <Appear i={0}>{mascot && pose ? <Mascot pose={pose} size={150} /> : <Illustration name={a} size={compact ? 128 : 168} />}</Appear>
-      <Appear i={1}><T v="h2" center style={{ marginTop: 4, fontSize: 20, lineHeight: 25 }}>{title}</T></Appear>
+      <Appear i={0}>{mascot && pose ? <Mascot pose={pose} size={150} /> : <Illustration name={a} size={compact ? 112 : 168} />}</Appear>
+      <Appear i={1}><T v="h2" center style={{ marginTop: 4, fontSize: compact ? 17 : 20, lineHeight: compact ? 22 : 25 }}>{title}</T></Appear>
       {sub ? <Appear i={2}><T v="body" color={colors.textMuted} center style={{ maxWidth: 300 }}>{sub}</T></Appear> : null}
       {action ? <Appear i={3} style={{ marginTop: 8 }}>{action}</Appear> : null}
     </View>
@@ -404,8 +405,16 @@ export function GradientCard({ g, children, style, inner, r = radius.lg, glow: g
     <View style={[{ borderRadius: r, overflow: 'hidden' }, inner]}>
       <LinearGradient colors={colorsArr} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       {glowColor ? (
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'flex-end' }]}>
-          <View style={{ width: 220, height: 220, borderRadius: 110, marginTop: -90, marginRight: -70, backgroundColor: glowColor, opacity: 0.35 }} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: -110, right: -90 }}>
+          <Svg width={260} height={260}>
+            <Defs>
+              <RadialGradient id={`gl${glowColor.replace(/[^a-z0-9]/gi, '')}`} cx="50%" cy="50%" r="50%">
+                <Stop offset="0" stopColor={glowColor} stopOpacity={0.45} />
+                <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={130} cy={130} r={130} fill={`url(#gl${glowColor.replace(/[^a-z0-9]/gi, '')})`} />
+          </Svg>
         </View>
       ) : null}
       {shine ? <Shine /> : null}
