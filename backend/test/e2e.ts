@@ -9,7 +9,7 @@ import { prisma } from '../src/db.js';
 import { createSocketServer } from '../src/realtime/socket.js';
 import { stopCallBilling } from '../src/services/calls.js';
 
-const PORT = 4555;
+const PORT = Number(process.env.TEST_PORT ?? 4555);
 const BASE = `http://127.0.0.1:${PORT}`;
 let passed = 0;
 

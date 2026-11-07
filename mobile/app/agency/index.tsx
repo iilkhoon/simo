@@ -109,8 +109,8 @@ function OwnerView({ d, period, setPeriod, reload, refreshing, setRefreshing }: 
     <Screen>
       <Header title={a.name} sub={t('ag.owner')} />
       <ScrollView
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 48 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} />}
         showsVerticalScrollIndicator={false}
       >
@@ -245,7 +245,7 @@ function OwnerView({ d, period, setPeriod, reload, refreshing, setRefreshing }: 
               </View>
               <View style={{ alignItems: 'flex-end', gap: 2 }}>
                 <Almaz units={m.earnings} size={14} />
-                <T v="tiny" color={colors.online}>+{fmtAlmaz(m.commission)}</T>
+                {m.commission > 0 ? <T v="tiny" color={colors.online}>+{fmtAlmaz(m.commission)}</T> : null}
               </View>
             </Pressable>
           )) : <T v="small" color={colors.textMuted} style={{ padding: 16 }}>{t('ag.noHosts')}</T>}
@@ -449,7 +449,7 @@ function JoinView({ d, initialCode, reload }: { d: MyAgency; initialCode: string
 const styles = StyleSheet.create({
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md, marginBottom: 12 },
   hero: { backgroundColor: colors.night, borderRadius: radius.xl, padding: 20, overflow: 'hidden', marginTop: 12, gap: 2 },
-  heroGlow: { position: 'absolute', right: -70, top: -70, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(205,184,255,0.22)' },
+  heroGlow: { position: 'absolute', right: -70, top: -70, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(205,184,255,0.12)' },
   heroNum: { ...noPad, color: colors.white, fontFamily: fonts.displayBlack, fontSize: 40, lineHeight: 46, letterSpacing: -1.4, marginTop: 8 },
   heroSplit: { flexDirection: 'row', marginTop: 14, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 16, padding: 12 },
   heroDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginHorizontal: 12 },
