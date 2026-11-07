@@ -19,6 +19,7 @@ import { GiftSheet } from '@/components/GiftSheet';
 import { GuestStrip, HostPanel, PkBar, type Guest, type PkState } from '@/components/LiveExtras';
 import { WEB_URL } from '@/config';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
+import { CallSafetyLayer } from '@/components/CallSafety';
 import { Hearts, type HeartsHandle } from '@/components/Hearts';
 import { api } from '@/lib/api';
 import { compact, duration, errorText, giftName } from '@/lib/format';
@@ -480,6 +481,7 @@ export default function LiveRoom() {
       </KeyboardAvoidingView>
 
       <Hearts ref={hearts} />
+      <CallSafetyLayer contextType="LIVE" contextId={room.id} isVideo={room.type === 'VIDEO'} active={isHost && room.type === 'VIDEO'} peerId={isHost ? null : room.hostId} peerUid={hostUid} showReport={false} onEnd={isHost ? endLive : () => router.back()} />
       <GiftOverlay ref={overlay} />
       {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} /> : null}
       {isHost ? <HostPanel visible={panel} onClose={() => { setPanel(false); setRequests(0); }} roomId={room.id} video={room.type === 'VIDEO'} /> : null}

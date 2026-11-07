@@ -83,6 +83,10 @@ export default function Welcome() {
             {t('consent.post')}
           </Text>
         </Pressable>
+        <Text style={styles.terms}>
+          {t('safety.signupNote')}
+          <Text style={styles.link} onPress={() => void Linking.openURL(`${WEB_URL}/community-guidelines.html`)}>{t('safety.guidelines')}</Text>
+        </Text>
         <View style={{ gap: 10, opacity: agree ? 1 : 0.5 }}>
           <Btn title={t('auth.continuePhone')} icon="phone" onPress={() => go('/(auth)/phone')} />
           <Btn kind="light" title={t('auth.continueEmail')} icon="mail" onPress={() => go('/(auth)/email')} />

@@ -20,6 +20,7 @@ import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
 import { endNative, markConnected, startNativeOutgoing } from '@/lib/nativeCall';
+import { CallSafetyLayer } from '@/components/CallSafety';
 
 function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
@@ -288,6 +289,7 @@ export default function CallScreen() {
         </View>
       </SafeAreaView>
       </Animated.View>
+      <CallSafetyLayer contextType="CALL" contextId={call.id} isVideo={!!isVideo} active={videoLive && camOn} peerId={peer.id} peerUid={peerUid} onEnd={() => void hangup()} />
       <GiftOverlay ref={overlay} />
       <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} receiverName={peer.name} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
     </View>

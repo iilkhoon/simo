@@ -8,6 +8,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { DiamondAmount } from '@/components/Badges';
 import { api } from '@/lib/api';
+import { handleAgreementError } from '@/lib/callSafety';
 import { errorText } from '@/lib/format';
 import { useStore } from '@/store';
 import type { PublicUser } from '@/lib/types';
@@ -50,6 +51,8 @@ export default function Agency() {
       if (okMsg) toast(okMsg, 'success');
       await Promise.all([load(), refreshMe()]);
     } catch (e) {
+      // Agentlik müqaviləsi qəbul edilməyibsə — dialoq, qəbul etsə əməliyyat təkrarlanır
+      if (await handleAgreementError(e)) return act(fn, okMsg);
       toast(errorText(e), 'error');
     } finally {
       setBusy(false);
