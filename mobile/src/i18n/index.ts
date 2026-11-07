@@ -9,9 +9,10 @@ import { callLive } from './callLive';
 import { agencyText } from './agencyText';
 import { safetyI18n } from './safety';
 import { uiText } from './uiText';
+import { ui2Text } from './ui2';
 
 /** Əlavə lüğət bölmələri — yenisini bu siyahıya əlavə edin */
-const PACKS = [extra, callLive, agencyText, safetyI18n, uiText];
+const PACKS = [extra, callLive, agencyText, safetyI18n, uiText, ui2Text];
 
 /** Əsas lüğət + yeni bölmələr (dərin birləşmə; eyni bölmədə yeni açarlar əlavə olunur) */
 function merge<T extends Record<string, unknown>>(a: T, b: Record<string, unknown>): T {
