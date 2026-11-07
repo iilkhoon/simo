@@ -28,6 +28,8 @@ const TITLES: Record<string, Record<string, string>> = {
   post_live: { az: 'Planlanmış postun paylaşıldı ✅', ru: 'Запланированный пост опубликован ✅', en: 'Your scheduled post is live ✅' },
   withdrawal: { az: 'Pul çıxarışı', ru: 'Вывод средств', en: 'Withdrawal' },
   agency_update: { az: 'Agentlik', ru: 'Агентство', en: 'Agency' },
+  host_online: { az: '{{name}} indi onlayndır 🟢', ru: '{{name}} сейчас онлайн 🟢', en: '{{name}} is online now 🟢' },
+  campaign: { az: '{{emoji}} {{titleAz}} başladı!', ru: '{{emoji}} {{titleRu}} — начинаем!', en: '{{emoji}} {{titleEn}} has started!' },
 };
 
 const BODIES: Record<string, Record<string, string>> = {
@@ -35,12 +37,14 @@ const BODIES: Record<string, Record<string, string>> = {
   like_digest: { az: 'Qarşılıqlı bəyən və söhbətə başla', ru: 'Ответь взаимностью и начни общение', en: 'Like back and start chatting' },
   offer: { az: 'Bonus Nar səni gözləyir — yalnız bir neçə saat', ru: 'Бонусные Нар ждут — всего несколько часов', en: 'Bonus Nar waiting — only a few hours left' },
   picks: { az: 'Zövqünə görə seçdik, bax', ru: 'Подобрали по твоему вкусу', en: 'Picked to your taste' },
+  host_online: { az: 'Elə indi zəng et və ya yaz — hələ ki buradadır', ru: 'Позвони или напиши прямо сейчас', en: 'Call or message now while they are here' },
+  campaign: { az: 'Xüsusi hədiyyələr və reytinq — mükafatlar səni gözləyir', ru: 'Особые подарки и рейтинг — призы ждут', en: 'Special gifts and leaderboard — prizes await' },
 };
 
 /** Bildiriş növü → istifadəçinin bağlaya biləcəyi kateqoriya */
 const PREF: Record<string, string> = {
   message: 'messages', call: 'calls', like: 'likes', match: 'likes', like_digest: 'likes', follow: 'follows', visit: 'visits', visit_digest: 'visits',
-  subscription: 'subscriptions', live: 'lives', offer: 'offers', picks: 'smart', vip: 'offers', comment: 'messages',
+  subscription: 'subscriptions', live: 'lives', offer: 'offers', picks: 'smart', vip: 'offers', comment: 'messages', host_online: 'follows', campaign: 'offers',
 };
 
 const fill = (s: string, d: Record<string, unknown>) => s.replace(/\{\{(\w+)\}\}/g, (_, k) => String(d[k] ?? ''));

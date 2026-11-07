@@ -1013,3 +1013,43 @@ model SafetyAuditLog {
   @@index([targetUserId, createdAt])
   @@index([action, createdAt])
 }
+
+/// Mövsümi kampaniya (Novruz, 8 Mart, Sevgililər günü, Ramazan, Yeni il...): admin planlaşdırır —
+/// ana səhifədə banner, hədiyyə pəncərəsində xüsusi tab, kampaniya hədiyyələri üzrə reytinq (göndərənlər / hostlar)
+model Campaign {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  titleAz     String
+  titleRu     String
+  titleEn     String
+  subtitleAz  String    @default("")
+  subtitleRu  String    @default("")
+  subtitleEn  String    @default("")
+  /// Mükafatlar (mətn): "1-ci yer: 10 000 Nar + çərçivə" və s.
+  prizesAz    String    @default("")
+  prizesRu    String    @default("")
+  prizesEn    String    @default("")
+  emoji       String    @default("🎉")
+  color       String    @default("#FF3D7F")
+  color2      String    @default("#7B5CFF")
+  imageUrl    String?
+  /// Kampaniya hədiyyələri; boşdursa — reytinq bütün hədiyyələr üzrə hesablanır
+  giftIds     String[]  @default([])
+  startsAt    DateTime
+  endsAt      DateTime
+  active      Boolean   @default(true)
+  /// Başlayanda aktiv istifadəçilərə push göndərilsin
+  announce    Boolean   @default(true)
+  announcedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([active, endsAt])
+}
+
+/// Hostun izləyicilərinə "onlayn oldu" bildirişi — tezlik limiti üçün qeyd (host başına son göndəriş)
+model HostOnlineAlert {
+  hostId    String   @id
+  sentAt    DateTime @default(now())
+  /// Neçə izləyiciyə göndərildi (analitika)
+  reached   Int      @default(0)
+}

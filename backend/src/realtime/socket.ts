@@ -8,6 +8,7 @@ import { broadcastViewers, endLive, ensureRoomState, seatsPayload } from '../ser
 import { sanitizeText } from '../routes/chat.js';
 import { activeVip, levelFromXp } from '../economy.js';
 import { OFFLINE_GRACE_MS, finishCall } from '../services/calls.js';
+import { hostCameOnline } from '../services/growth.js';
 
 interface Data {
   userId: string;
@@ -70,6 +71,8 @@ export function createSocketServer(http: HttpServer) {
     await socket.join(`u:${userId}`);
     if (markOnline(userId)) {
       await prisma.user.update({ where: { id: userId }, data: { online: true, lastSeenAt: new Date() } }).catch(() => {});
+      // Host onlayn oldu — izləyicilərə push (tezlik limiti ilə; services/growth.ts)
+      void hostCameOnline(userId).catch(() => {});
     }
 
     socket.on('typing', async (p: { conversationId: string; to: string }) => {

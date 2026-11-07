@@ -9,6 +9,7 @@ import { publishScheduled } from './routes/videos.js';
 import { expireOrders } from './routes/services.js';
 import { ensureTesterUsers } from './services/tester.js';
 import { startHostStats } from './services/hostStats.js';
+import { campaignTick } from './services/growth.js';
 
 async function main() {
   const app = await buildApp();
@@ -26,6 +27,8 @@ async function main() {
   setInterval(() => void publishScheduled().catch(() => {}), 60_000).unref();
   setInterval(() => void smartTick().catch(() => {}), 15 * 60_000).unref();
   setInterval(() => void expireOrders().catch(() => {}), 30 * 60_000).unref();
+  // Mövsümi kampaniya başlayanda bir dəfəlik push (hər 5 dəqiqə yoxlanır)
+  setInterval(() => void campaignTick().catch(() => {}), 5 * 60_000).unref();
   await app.listen({ port: config.port, host: '0.0.0.0' });
   console.log(`Simo API: ${config.publicUrl} (port ${config.port})`);
 }

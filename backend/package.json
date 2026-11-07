@@ -10,7 +10,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/e2e.ts && tsx test/calls-live.ts && tsx test/money.ts && tsx test/safety.ts",
+    "test": "tsx test/e2e.ts && tsx test/calls-live.ts && tsx test/money.ts && tsx test/safety.ts && tsx test/growth.ts",
     "test:money": "tsx test/money.ts",
     "local": "node scripts/local.mjs"
   },
