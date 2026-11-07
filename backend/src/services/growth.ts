@@ -51,17 +51,15 @@ export async function visibleCampaigns(now = new Date()) {
   return rows.map((c) => presentCampaign(c, now)).sort((a, b) => rank[a.status] - rank[b.status]);
 }
 
-/** Kampaniya pəncərəsindəki uyğun hədiyyə əməliyyatları. Hədiyyə siyahısı boşdursa — bütün Nar hədiyyələri (Almaz hədiyyələri ayrı vahiddir) */
-async function campaignGiftWhere(c: CampaignRow, now: Date) {
-  const giftId = c.giftIds.length
-    ? { in: c.giftIds }
-    : { notIn: (await prisma.gift.findMany({ where: { currency: 'DIAMOND' }, select: { id: true } })).map((g) => g.id) };
-  return { giftId, createdAt: { gte: c.startsAt, lt: now < c.endsAt ? now : c.endsAt } };
+/** Kampaniya pəncərəsindəki uyğun hədiyyə əməliyyatları; hədiyyə siyahısı boşdursa — bütün hədiyyələr.
+ *  coins sahəsi hər iki valyutada qəpik dəyəridir (1 Nar = 1 Almaz vahidi = 1 qəpik), ona görə Almaz hədiyyələri də düz toplanır */
+function campaignGiftWhere(c: CampaignRow, now: Date) {
+  return { ...(c.giftIds.length ? { giftId: { in: c.giftIds } } : {}), createdAt: { gte: c.startsAt, lt: now < c.endsAt ? now : c.endsAt } };
 }
 
 /** Kampaniya hədiyyələrinin dəyəri üzrə reytinq */
 export async function campaignLeaderboard(c: CampaignRow, by: 'senders' | 'hosts', limit = 20, now = new Date()) {
-  const where = await campaignGiftWhere(c, now);
+  const where = campaignGiftWhere(c, now);
   const field = by === 'senders' ? 'senderId' : 'receiverId';
   const grouped = await prisma.giftTransaction.groupBy({ by: [field], where, _sum: { coins: true }, orderBy: { _sum: { coins: 'desc' } }, take: limit + 30 });
   const ids = grouped.map((g) => (g as unknown as Record<string, string>)[field]);
@@ -78,7 +76,7 @@ export async function campaignLeaderboard(c: CampaignRow, by: 'senders' | 'hosts
 
 /** İstifadəçinin öz xalı (göndərdiyi + qəbul etdiyi) */
 export async function campaignMyScore(c: CampaignRow, userId: string, now = new Date()) {
-  const base = await campaignGiftWhere(c, now);
+  const base = campaignGiftWhere(c, now);
   const [sent, received] = await Promise.all([
     prisma.giftTransaction.aggregate({ where: { ...base, senderId: userId }, _sum: { coins: true } }),
     prisma.giftTransaction.aggregate({ where: { ...base, receiverId: userId }, _sum: { coins: true } }),

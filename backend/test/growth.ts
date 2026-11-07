@@ -130,14 +130,14 @@ async function main() {
       assert.equal((await api('GET', `/campaigns/nv-${stamp}`, s2.token)).status, 200);
     });
 
-    await step('Kampaniya: hədiyyə siyahısı boşdursa — bütün Nar hədiyyələri, Almaz hədiyyələri xaric', async () => {
+    await step('Kampaniya: hədiyyə siyahısı boşdursa — bütün hədiyyələr (Nar və Almaz eyni qəpik dəyərində)', async () => {
       const c = await api('POST', '/admin/campaigns', admin.token, { ...base, slug: `all-${stamp}`, giftIds: [] });
       const h = await mkUser({ gender: 'FEMALE', hostStatus: 'APPROVED' });
       const s = await mkUser();
       await gt(CROWN, s.id, h.id, 999);
       await gt(DHEART, s.id, h.id, 1000);
       const r = await api('GET', `/campaigns/${c.data.campaign.id}`, s.token);
-      assert.equal(r.data.senders.find((x: any) => x.user.id === s.id).score, 999);
+      assert.equal(r.data.senders.find((x: any) => x.user.id === s.id).score, 1999);
     });
 
     await step('Kampaniya anonsu: bir dəfə göndərilir, gecə gözləyir', async () => {
