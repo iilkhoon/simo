@@ -16,10 +16,12 @@ export interface AgencyCard {
 export const TIER_COLORS = ['#C8875A', '#AEB6C2', '#FFC23D', '#8ED1FF', '#CDB8FF'];
 
 export function TierPill({ tier, name }: { tier: number; name: string }) {
+  const { t } = useTranslation();
+  const label = t(`ag.tiers.${tier}`, { defaultValue: name });
   return (
     <View style={[styles.tier, { backgroundColor: TIER_COLORS[tier - 1] ?? TIER_COLORS[0] }]}>
       <Icon name="trophy" size={11} color={colors.ink} />
-      <Text style={styles.tierText}>{name}</Text>
+      <Text style={styles.tierText}>{label}</Text>
     </View>
   );
 }
