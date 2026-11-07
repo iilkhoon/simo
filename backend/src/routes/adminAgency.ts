@@ -13,6 +13,7 @@ import { agencyTerms, clearTierCache, creditDiamonds } from '../services/wallet.
 import { hostsStats, periodStart } from '../services/hostStats.js';
 import { notify } from '../services/notify.js';
 import { emitToUser } from '../realtime/hub.js';
+import { assertHostAgeEligible } from '../services/safety.js';
 
 /** CSV hüceyrəsi: vergül, dırnaq, sətir sonu qorunur; Excel formula inyeksiyasına qarşı (=,+,-,@) */
 export function csvCell(v: unknown): string {
@@ -155,6 +156,8 @@ export function registerAgencyAdmin(app: FastifyInstance) {
     if (!before) throw err.notFound('AGENCY_NOT_FOUND');
     if (b.status === 'ACTIVE' && before.owner.kycStatus !== 'APPROVED') throw err.badRequest('OWNER_KYC_REQUIRED');
     if (b.status === 'ACTIVE' && before.owner.agencyId && before.owner.agencyId !== id) throw err.badRequest('OWNER_IN_OTHER_AGENCY');
+    // Sahib host olur — şəxsiyyət sənədinə görə 18+ olmalıdır
+    if (b.status === 'ACTIVE') await assertHostAgeEligible(before.ownerId, req.user?.id);
     const a = await prisma.agency.update({
       where: { id },
       data: {

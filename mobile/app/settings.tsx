@@ -103,6 +103,9 @@ export default function Settings() {
         <MenuRow icon="ban" label={t('settings.blockList')} tint={colors.brandSoft} onPress={() => router.push('/blocked')} />
         <MenuRow icon="document" label={t('settings.terms')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/terms.html`)} />
         <MenuRow icon="shield" label={t('settings.privacy')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/privacy.html`)} />
+        <MenuRow icon="people" label={t('safety.guidelines')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/community-guidelines.html`)} />
+        <MenuRow icon="document" label={t('safety.hostAgreement')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/host-agreement.html`)} />
+        <MenuRow icon="document" label={t('safety.agencyAgreement')} tint={colors.bgSunken} onPress={() => void Linking.openURL(`${WEB_URL}/agency-agreement.html`)} />
         <MenuRow icon="help" label={t('settings.support')} tint={colors.bgSunken} onPress={() => void Linking.openURL('mailto:support@simo.az')} last />
       </Card>
       <Card style={{ marginTop: 16 }}>

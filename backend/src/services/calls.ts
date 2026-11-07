@@ -11,13 +11,14 @@
  */
 import { prisma } from '../db.js';
 import { rewardReceiver, spend } from './wallet.js';
-import { emitToUser, isOnline } from '../realtime/hub.js';
+import { emitToUser, getIo, isOnline } from '../realtime/hub.js';
+import { ECONOMY } from '../economy.js';
 import { AppError } from '../lib/errors.js';
 import { getOrCreateConversation } from '../routes/chat.js';
 
 export const RING_TIMEOUT_MS = 40_000;
 /** Aktiv zəngdə tərəflərdən biri bu qədər oflayn qalsa, zəng bitirilir (server yenidən başladıqdan sonra da işləyir) */
-export const OFFLINE_GRACE_MS = 60_000;
+export const OFFLINE_GRACE_MS = ECONOMY.callDisconnectGraceSec * 1000;
 const ringTimers = new Map<string, NodeJS.Timeout>();
 
 export function scheduleRingTimeout(callId: string) {
@@ -143,7 +144,9 @@ export async function billingTick(now = Date.now(), online: (userId: string) => 
   for (const c of active) {
     if (!c.startedAt) continue;
     // Tərəflərdən biri (bütün cihazlarda) oflayndırsa — güzəşt müddətindən sonra bitir
-    const bothOnline = online(c.callerId) && online(c.calleeId);
+    // Socket serveri yoxdursa (məs. testlər/skriptlər) onlayn yoxlaması aparılmır
+    const canCheck = online !== isOnline || !!getIo();
+    const bothOnline = !canCheck || (online(c.callerId) && online(c.calleeId));
     if (!bothOnline) {
       const since = offlineSince.get(c.id) ?? now;
       offlineSince.set(c.id, since);

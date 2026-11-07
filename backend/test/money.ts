@@ -248,6 +248,7 @@ async function main() {
       const girl = await mkUser({ hostStatus: 'NONE' });
       // Host şərtləri testdə tamamlanmış sayılır: profil, post, KYC, 10 söhbət
       await prisma.user.update({ where: { id: girl.id }, data: { createdAt: new Date(Date.now() - 10 * 86400_000), avatarUrl: 'https://x.az/a.jpg', bio: 'Salam, mən Ayselam', kycStatus: 'APPROVED' } });
+      await prisma.verification.create({ data: { userId: girl.id, firstName: 'Aysel', lastName: 'T', birthDate: new Date('1998-05-05'), docFrontUrl: 'https://x.az/d.jpg', selfieUrl: 'https://x.az/s.jpg', status: 'APPROVED' } });
       for (let i = 0; i < 3; i++) await prisma.photo.create({ data: { userId: girl.id, url: `https://x.az/${i}.jpg`, order: i } });
       await prisma.video.create({ data: { userId: girl.id, url: 'https://x.az/v.mp4' } });
       for (let i = 0; i < 10; i++) {
@@ -259,6 +260,7 @@ async function main() {
       const pub = await api('GET', `/agencies/public/${agency.code.toLowerCase()}`);
       assert.equal(pub.data.name, agency.name);
       assert.equal((await api('POST', '/agencies/join', girl.token, { code: 'NOPE99' })).data.error, 'AGENCY_NOT_FOUND');
+      await api('POST', '/safety/consent', girl.token, { kind: 'HOST_AGREEMENT', version: (await api('GET', '/safety/me', girl.token)).data.versions.HOST_AGREEMENT });
       const j = await api('POST', '/agencies/join', girl.token, { code: agency.code.toLowerCase(), message: 'Salam!' });
       assert.equal(j.status, 200, JSON.stringify(j.data));
       assert.equal((await api('POST', '/agencies/join', girl.token, { code: agency.code })).data.error, 'REQUEST_PENDING');

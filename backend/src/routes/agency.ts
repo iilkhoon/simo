@@ -17,6 +17,7 @@ import { agencyTerms } from '../services/wallet.js';
 import { hostsStats, periodStart, type Period } from '../services/hostStats.js';
 import { notify } from '../services/notify.js';
 import { emitToUser } from '../realtime/hub.js';
+import { assertAgencyAgreement, assertHostAgeEligible, assertHostAgreement } from '../services/safety.js';
 
 export function agencyCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -53,6 +54,8 @@ export async function createJoinRequest(me: string, agencyId: string, source: 'C
   if (until) throw err.badRequest('AGENCY_COOLDOWN', { until });
   const reqs = await hostRequirements(me);
   if (!reqs.eligible) throw err.badRequest('HOST_REQUIREMENTS', { items: reqs.items });
+  // Host müqaviləsi (müstəqil podratçı, cinsi xidmət qadağası, vergi) qəbul edilməlidir
+  await assertHostAgreement(me);
   const pending = await prisma.agencyJoinRequest.findFirst({ where: { userId: me, status: 'PENDING' } });
   if (pending) throw err.badRequest('REQUEST_PENDING');
   const request = await prisma.agencyJoinRequest.create({ data: { agencyId: a.id, userId: me, source, message: message.slice(0, 300) } });
@@ -81,6 +84,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     if (owned) throw err.badRequest('AGENCY_EXISTS');
     const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (u.kycStatus !== 'PENDING' && u.kycStatus !== 'APPROVED') throw err.badRequest('KYC_REQUIRED');
+    await assertAgencyAgreement(me);
     if (u.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
     const agency = await prisma.agency.create({ data: { ...b, code: await uniqueCode(), ownerId: me } });
     return { agency };
@@ -223,6 +227,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     if (r.status !== 'PENDING') throw err.badRequest('REQUEST_PROCESSED');
     if (p.action === 'approve') {
       if (r.agency.status !== 'ACTIVE') throw err.badRequest('AGENCY_NOT_ACTIVE');
+      await assertHostAgeEligible(r.userId, me);
       await prisma.$transaction(async (tx) => {
         // Şərti yeniləmələr: eyni müraciət iki dəfə təsdiqlənmir, host eyni anda iki agentliyə düşmür
         const upd = await tx.agencyJoinRequest.updateMany({ where: { id: r.id, status: 'PENDING' }, data: { status: 'APPROVED', decidedAt: new Date() } });
@@ -254,6 +259,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.agencyId !== agency.id) throw err.notFound();
     if (!user.verificationUrl) throw err.badRequest('VERIFICATION_REQUIRED');
+    await assertHostAgeEligible(user.id, me);
     await prisma.user.update({ where: { id: userId }, data: { hostStatus: 'APPROVED', verified: true } });
     return { ok: true };
   });

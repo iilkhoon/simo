@@ -47,3 +47,49 @@ export function filterProfanity(text: string): string {
 export function hasProfanity(text: string): boolean {
   return (text.match(WORD) ?? []).some(isBad);
 }
+
+/* ───────── Vizual moderasiya: kadr qiymətləndirməsi (zəng və canlı yayın) ───────── */
+
+/** Provayderdən asılı olmayan normallaşdırılmış ballar (0..1) */
+export interface FrameScores {
+  /** Açıq çılpaqlıq / cinsi fəaliyyət / cinsiyyət orqanlarının nümayişi */
+  sexual: number;
+  /** Erotik, çox təhrikedici poza, alt paltarı və s. */
+  suggestive: number;
+  /** Provayder azyaşlı ehtimalı verirsə (məs. üz yaşı modeli) */
+  minor?: number;
+}
+
+export type FrameVerdict = 'SAFE' | 'SUSPECT' | 'VIOLATION' | 'UNSCANNED';
+
+export interface VerdictThresholds {
+  /** Bu baldan yuxarı — dərhal tədbir (bulanıqlaşdırma, xəbərdarlıq, strike) */
+  block: number;
+  /** Bu baldan yuxarı — moderator növbəsinə (avtomatik tədbirsiz) */
+  review: number;
+}
+
+/**
+ * Kadr üçün qərar. "Suggestive" tək başına bloklamır (yanlış pozitiv çox olur — çimərlik, idman),
+ * yalnız çox yüksək olduqda moderatora göndərilir. Azyaşlı ehtimalı + hər hansı cinsi siqnal = pozuntu.
+ */
+export function frameVerdict(s: FrameScores | null, t: VerdictThresholds): FrameVerdict {
+  if (!s) return 'UNSCANNED';
+  if (s.sexual >= t.block) return 'VIOLATION';
+  if ((s.minor ?? 0) >= 0.8 && Math.max(s.sexual, s.suggestive) >= t.review) return 'VIOLATION';
+  if (s.sexual >= t.review || s.suggestive >= Math.max(t.block, 0.9)) return 'SUSPECT';
+  return 'SAFE';
+}
+
+export type StrikeAction = 'WARN' | 'SUSPEND' | 'BAN';
+
+/**
+ * Xəbərdarlıq pilləsi (aktiv strike sayına görə):
+ * 1..N-1 → xəbərdarlıq; N..2N-1 → müvəqqəti dayandırma; 2N və daha çox → daimi blok.
+ */
+export function strikeAction(activeStrikes: number, strikesToSuspend: number): StrikeAction {
+  const n = Math.max(1, strikesToSuspend);
+  if (activeStrikes >= n * 2) return 'BAN';
+  if (activeStrikes >= n) return 'SUSPEND';
+  return 'WARN';
+}

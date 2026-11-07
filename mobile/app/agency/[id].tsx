@@ -8,6 +8,7 @@ import { Btn, Card, Header, Loader, Screen, SectionTitle, T } from '@/components
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { api, ApiError } from '@/lib/api';
+import { ensureAgreement } from '@/lib/callSafety';
 import { errorText } from '@/lib/format';
 import { useStore } from '@/store';
 import type { PublicUser } from '@/lib/types';
@@ -28,6 +29,8 @@ export default function AgencyDetail() {
   useEffect(load, [load]);
 
   async function apply() {
+    // Host müqaviləsi (müstəqil podratçı, cinsi xidmət qadağası, vergi) — qəbul edilmədən müraciət olmur
+    if (!(await ensureAgreement('HOST'))) return;
     setBusy(true);
     try {
       await api(`/agencies/${id}/apply`, { body: {} });

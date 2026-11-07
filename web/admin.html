@@ -133,7 +133,7 @@
       ['stats', 'Statistika'], ['hosts', 'Host müraciətləri', 'pendingHosts'], ['users', 'İstifadəçilər'],
       ['withdrawals', 'Pul çıxarışları', 'pendingWithdrawals'], ['reports', 'Şikayətlər', 'openReports'],
       ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['settlements', 'Həftəlik hesabat'], ['raffles', 'Çəkilişlər'],
-      ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'],
+      ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'], ['safety', 'Moderasiya (zəng/yayın)', 'safetyPending'],
     ];
     function side() {
       $('#side').innerHTML = TABS.map(([k, l, c]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}${c && counts[c] ? `<span class="n">${counts[c]}</span>` : ''}</button>`).join('');
@@ -256,6 +256,26 @@
         return `<h2 style="margin-bottom:18px">Ödənişlər</h2>` + table(['İstifadəçi', 'Paket', 'Məbləğ', 'Provayder', 'Status', 'Tarix'], items.map((p) => `<tr>
           <td>${esc(p.user?.name)} · ${esc(p.user?.shortId)}</td><td>${esc(p.packageId)}</td><td>${(p.amountQepik / 100).toFixed(2)} ₼</td><td>${esc(p.provider)}</td><td><span class="st" style="background:${p.status === 'PAID' ? 'var(--mint-soft)' : p.status === 'FAILED' ? 'var(--nar-soft)' : 'var(--card)'}">${esc(p.status)}</span></td><td>${date(p.createdAt)}</td></tr>`));
       },
+      async safety() {
+        const st = $('#sst') ? $('#sst').value : 'PENDING';
+        const vd = $('#svd') ? $('#svd').value : 'ALL';
+        const [s, { items }] = await Promise.all([api('/admin/safety/stats'), api(`/admin/safety/queue?status=${st}&verdict=${vd}`)]);
+        counts.safetyPending = s.pending; side();
+        const vBg = { VIOLATION: 'var(--nar-soft)', SUSPECT: 'var(--saffron-soft)', UNSCANNED: 'var(--card)', SAFE: 'var(--mint-soft)' };
+        const k = [['Baxış gözləyir', s.pending], ['Pozuntu (24s)', s.violations24h], ['Strike (24s)', s.strikes24h], ['Dayandırılıb', s.suspended], ['Daimi blok', s.banned], ['Hüquqi saxlama', s.holds], ['Azyaşlı şikayəti (açıq)', s.urgentReports], ['Provayder', esc(s.provider)]];
+        const sc = (e) => { const x = e.scores || {}; return `${x.sexual != null ? `cinsi ${(x.sexual * 100).toFixed(0)}%` : ''}${x.suggestive != null ? ` · təhrik ${(x.suggestive * 100).toFixed(0)}%` : ''}${x.error ? ` · xəta: ${esc(x.error)}` : ''}`; };
+        return `<h2 style="margin-bottom:18px">Moderasiya: zəng və yayın kadrları</h2><div class="kpis" style="margin-bottom:16px">${k.map(([l, v]) => `<div class="box kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>
+          <p class="muted" style="margin-bottom:12px">Avtomatik hədlər: blok ≥ ${s.thresholds.block}, baxış ≥ ${s.thresholds.review}; ${s.thresholds.endAfter}-ci aşkarlamada zəng bitir; ${s.thresholds.strikesToSuspend} strike → dayandırma. <b>Azyaşlı şübhəsi</b> (legalHold) ən yuxarıdadır — 1 saat ərzində baxın, CSAM aşkarlanarsa şəkli yükləməyin/paylaşmayın, rəhbərliyə və hüquq-mühafizə orqanlarına bildirin (docs/legal/SAFETY_COMPLIANCE.md). Hər şəkil baxışı jurnala yazılır.</p>
+          <div class="toolbar"><select class="input" id="sst">${['PENDING', 'CONFIRMED', 'DISMISSED', 'ALL'].map((x) => `<option ${x === st ? 'selected' : ''}>${x}</option>`).join('')}</select><select class="input" id="svd">${['ALL', 'VIOLATION', 'SUSPECT', 'UNSCANNED'].map((x) => `<option ${x === vd ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="btn sm dark" data-act="search">Göstər</button></div>` +
+          table(['Kadr', 'Şəxs (kadrdakı)', 'Kontekst', 'Qərar / ballar', 'Şikayət', 'Tarix', ''], items.map((e) => `<tr>
+          <td>${e.hasImage ? `<img class="ph" data-ev="${esc(e.id)}" alt="" style="cursor:zoom-in">` : '<span class="muted">silinib</span>'}</td>
+          <td>${e.subject ? userCell(e.subject) : esc(e.subjectId)}<div class="muted" style="font-size:12px">Strike: ${e.subjectSafety ? e.subjectSafety.strikes : 0}${e.subjectSafety && e.subjectSafety.suspensionActive ? ' · DAYANDIRILIB' : ''}${e.subject && e.subject.banned ? ' · BLOK' : ''}</div></td>
+          <td><span class="st">${esc(e.contextType)}</span> <span class="st">${esc(e.kind)}</span><div class="muted" style="font-size:12px">${esc(e.contextId)}</div>${e.peer ? `<div style="font-size:12px">Qarşı tərəf: ${esc(e.peer.name)} · ${esc(e.peer.shortId)}</div>` : ''}</td>
+          <td><span class="st" style="background:${vBg[e.verdict] || 'var(--card)'}">${esc(e.verdict)}</span> ${e.legalHold ? '<span class="st" style="background:var(--nar);color:#fff">LEGAL HOLD</span>' : ''}<div style="font-size:12px">${sc(e)}</div><div class="muted" style="font-size:12px">${esc(e.provider)} · ${esc(e.reviewStatus)}</div></td>
+          <td>${e.report ? `<b>${esc(e.report.reason)}</b><div style="font-size:12px;max-width:200px">${esc(e.report.details || '')}</div>${e.reporter ? `<div class="muted" style="font-size:12px">${esc(e.reporter.name)} · ${esc(e.reporter.shortId)}</div>` : ''}` : '—'}</td>
+          <td>${date(e.createdAt)}<div class="muted" style="font-size:12px">silinmə: ${e.legalHold ? '—' : date(e.expiresAt)}</div></td>
+          <td class="acts">${e.reviewStatus === 'PENDING' ? `<button class="mini no" data-act="ev" data-id="${e.id}" data-v="CONFIRM">Təsdiq (strike)</button><button class="mini ok" data-act="ev" data-id="${e.id}" data-v="DISMISS">Yanlış — ləğv</button>` : ''}<button class="mini dk" data-act="ev" data-id="${e.id}" data-v="BAN">Daimi blok</button><button class="mini" data-act="ev" data-id="${e.id}" data-v="${e.legalHold ? 'RELEASE_HOLD' : 'HOLD'}">${e.legalHold ? 'Saxlamanı götür' : 'Hüquqi saxlama'}</button><button class="mini" data-act="unsusp" data-id="${e.subjectId}">Dayandırmanı götür</button><button class="mini" data-act="export" data-id="${e.subjectId}">İxrac (DİN)</button></td></tr>`));
+      },
       async lives() {
         const { items } = await api('/admin/lives');
         return `<h2 style="margin-bottom:18px">Canlı yayınlar</h2>` + table(['Host', 'Başlıq', 'Növ', 'İzləyici', 'Başlayıb', ''], items.map((l) => `<tr>
@@ -267,8 +287,22 @@
     async function render() {
       side();
       $('#view').innerHTML = '<div class="muted">Yüklənir…</div>';
-      try { $('#view').innerHTML = await VIEWS[tab](); } catch (e) { if (e.message !== 'AUTH') $('#view').innerHTML = `<div class="notice err">Xəta: ${esc(e.message)}</div>`; }
+      try { $('#view').innerHTML = await VIEWS[tab](); hydrateEvidence(); } catch (e) { if (e.message !== 'AUTH') $('#view').innerHTML = `<div class="notice err">Xəta: ${esc(e.message)}</div>`; }
     }
+
+    /** Sübut şəkilləri ictimai deyil — tokenlə yüklənir */
+    function hydrateEvidence() {
+      document.querySelectorAll('img[data-ev]').forEach(async (img) => {
+        try {
+          const r = await fetch(`${API}/admin/safety/evidence/${img.dataset.ev}/image`, { headers: { Authorization: `Bearer ${token}` } });
+          if (r.ok) img.src = URL.createObjectURL(await r.blob());
+        } catch (e) { /* ignore */ }
+      });
+    }
+    $('#view').addEventListener('click', (e) => {
+      const img = e.target.closest('img[data-ev]');
+      if (img && img.src) { const w = window.open(); if (w) w.document.write(`<img src="${img.src}" style="max-width:100%">`); }
+    });
 
     $('#view').addEventListener('click', async (e) => {
       const b = e.target.closest('[data-act]');
@@ -309,6 +343,14 @@
         if (act === 'ag') { const rejectReason = v === 'SUSPENDED' ? (prompt('Səbəb (agentliyə görünür)') || '') : ''; await api(`/admin/agencies/${id}`, { status: v, ...(rejectReason ? { rejectReason } : {}) }); }
         if (act === 'kyc') { const note = v === 'REJECTED' ? (prompt('Səbəb (istifadəçiyə görünür)') || '') : ''; await api(`/admin/kyc/${id}`, { status: v, note }); }
         if (act === 'draw') { if (!confirm('Qaliblər indi seçilsin?')) return; const r = await api(`/admin/raffles/${id}/draw`, {}); toast(`${r.winners.length} qalib seçildi`); }
+        if (act === 'ev') { const note = v === 'DISMISS' || v === 'HOLD' ? (prompt('Qeyd (məs. sorğu nömrəsi və ya səbəb)') || '') : ''; if (v === 'BAN' && !confirm('İstifadəçi daimi bloklansın?')) return; await api(`/admin/safety/evidence/${id}`, { action: v, note }); }
+        if (act === 'unsusp') { if (!confirm('Dayandırma götürülsün?')) return; await api(`/admin/safety/users/${id}`, { action: 'UNSUSPEND' }); }
+        if (act === 'export') {
+          const ref = prompt('Rəsmi sorğunun nömrəsi (DİN / prokurorluq / məhkəmə)'); if (!ref) return;
+          const r = await fetch(`${API}/admin/safety/users/${id}/export?ref=${encodeURIComponent(ref)}&hold=1`, { headers: { Authorization: `Bearer ${token}` } });
+          const blob = new Blob([JSON.stringify(await r.json(), null, 2)], { type: 'application/json' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `simo-case-${id}-${Date.now()}.json`; a.click();
+        }
         if (act === 'endlive') { if (!confirm('Yayın bitirilsin?')) return; await api(`/admin/lives/${id}/end`, {}); }
         toast('Yadda saxlanıldı');
         counts = await api('/admin/stats');

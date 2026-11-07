@@ -14,6 +14,7 @@ import { AGENCY_TIERS, ECONOMY, ageFrom, hostLevel, levelFromXp, maxMsgPriceForL
 import { agencyTerms, heldDiamonds } from '../services/wallet.js';
 import { hostTargets, hostsStats, periodStart } from '../services/hostStats.js';
 import { cooldownUntil, createJoinRequest } from './agency.js';
+import { recordSelfDeclaredMinor } from '../services/safety.js';
 
 /** Host olmaq üçün şərtlərin vəziyyəti */
 export async function hostRequirements(userId: string) {
@@ -89,7 +90,7 @@ export default async function hostRoutes(app: FastifyInstance) {
       docBackUrl: z.string().url().optional(),
       selfieUrl: z.string().url(),
     }).parse(req.body);
-    if ((ageFrom(b.birthDate) ?? 0) < 18) throw err.badRequest('UNDERAGE');
+    if ((ageFrom(b.birthDate) ?? 0) < 18) { await recordSelfDeclaredMinor(me, b.birthDate); throw err.badRequest('UNDERAGE'); }
     const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (u.kycStatus === 'APPROVED') throw err.badRequest('KYC_ALREADY_APPROVED');
     if (u.kycStatus === 'PENDING') throw err.badRequest('KYC_PENDING');
@@ -111,6 +112,7 @@ export default async function hostRoutes(app: FastifyInstance) {
     const q = z.object({ q: z.string().max(40).optional() }).parse(req.query);
     const list = await prisma.agency.findMany({
       where: { status: 'ACTIVE', ...(q.q ? { name: { contains: q.q, mode: 'insensitive' as const } } : {}) },
+      orderBy: { createdAt: 'desc' },
       take: 60,
     });
     const cards = await Promise.all(list.map(agencyCard));
