@@ -11,6 +11,7 @@ import { ActionSheet } from '@/components/ActionSheet';
 import { Almaz, ConfirmSheet, MiniBars, PeriodTabs, Progress, SourceBreakdown, StatTile, TileGrid, minutesLabel, unitsToAzn, type Period } from '@/components/AgencyKit';
 import { TIER_COLORS } from '../agencies';
 import { api } from '@/lib/api';
+import { handleAgreementError } from '@/lib/callSafety';
 import { dateOnly, errorText, timeAgo } from '@/lib/format';
 import { fmtAlmaz } from '@/lib/economy';
 import { useStore } from '@/store';
@@ -352,7 +353,14 @@ function JoinView({ d, initialCode, reload }: { d: MyAgency; initialCode: string
   async function act(fn: () => Promise<unknown>, ok?: string) {
     setBusy(true);
     try {
-      await fn();
+      // Kodla qoşulma / agentlik yaratma Host (Agentlik) müqaviləsi tələb edir — əvvəl yalnız xəta göstərilirdi,
+      // qəbul etmək üçün heç bir yol yox idi. İndi müqavilə dialoqu açılır və qəbul edəndə sorğu təkrarlanır.
+      try {
+        await fn();
+      } catch (e) {
+        if (!(await handleAgreementError(e))) throw e;
+        await fn();
+      }
       if (ok) toast(ok, 'success');
       await reload();
     } catch (e) {

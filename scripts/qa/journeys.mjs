@@ -18,7 +18,9 @@ const only = (process.argv.find((a) => a.startsWith('--only=')) ?? '').slice(7).
 const want = (n) => !only.length || only.includes(n);
 const stamp = Date.now().toString().slice(-6);
 let phoneSeq = 0;
-const newPhone = () => `+99455${stamp}${String(phoneSeq++).padStart(1, '0')}`.slice(0, 13);
+// Hər işə salmada təsadüfi operator + 4 rəqəm, sonra 3 rəqəmli sıra — nömrələr toqquşmur
+const phoneRun = `${['50', '51', '55', '70', '77'][Math.floor(Math.random() * 5)]}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+const newPhone = () => `+994${phoneRun}${String(phoneSeq++).padStart(3, '0')}`;
 const PNG = testPng(path.join(OUT, 'test.png'));
 
 /** API ilə tam onboarding olunmuş istifadəçi */
@@ -99,6 +101,29 @@ async function swipeUntil(page, name, max = 25) {
     await sleep(700);
   }
   throw new Error(`kəşfdə ${name} tapılmadı`);
+}
+
+let qaAdmin = null;
+async function admin() {
+  if (!qaAdmin) {
+    qaAdmin = await makeUser({ gender: 'MALE', name: `QA Admin ${stamp}` });
+    await sql(`UPDATE "User" SET role='ADMIN' WHERE id=$1`, [qaAdmin.me.id]);
+  }
+  return qaAdmin;
+}
+
+/** API ilə KYC göndərir (sənəd + selfi) */
+async function submitKyc(u, birth = '1995-04-10') {
+  const url = await uploadPng(u.accessToken);
+  const r = await api('POST', '/kyc', u.accessToken, { firstName: 'Test', lastName: 'Qa', birthDate: birth, docType: 'ID_CARD', docFrontUrl: url, selfieUrl: url });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  return r.data.verification.id;
+}
+
+async function consent(u, kind) {
+  const s = (await api('GET', '/safety/me', u.accessToken)).data;
+  const r = await api('POST', '/safety/consent', u.accessToken, { kind, version: s.versions[kind] });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
 }
 
 async function main() {
@@ -362,6 +387,91 @@ async function main() {
     await M.page.waitForURL(/wallet/);
     assert.equal((await meOf(m)).coins, c, 'balans dəyişməməlidir');
     await M.ctx.close();
+  });
+
+  // ───────────── 6. Host yolu: tələblər → KYC → kodla agentliyə qoşulma → sahib təsdiqi → qazanc ─────────────
+  if (want(6)) await R.run('6. Host: tələblər, KYC göndərişi, dəvət kodu ilə agentliyə qoşulma, sahib təsdiqləyir, qazanc ekranı', async () => {
+    const adm = await admin();
+    // Agentlik sahibi: KYC (admin təsdiqi) → Agentlik müqaviləsi → müraciət → admin aktivləşdirir
+    const owner = await makeUser({ gender: 'FEMALE', name: `Sahib${stamp}` });
+    const ov = await submitKyc(owner);
+    assert.equal((await api('POST', `/admin/kyc/${ov}`, adm.accessToken, { status: 'APPROVED' })).status, 200);
+    await consent(owner, 'AGENCY_AGREEMENT');
+    const ag = await api('POST', '/agencies', owner.accessToken, { name: `Ulduz ${stamp}`, city: 'Bakı', contactName: 'Sahib Test', contactPhone: '+994501112233', expectedHosts: 5 });
+    assert.equal(ag.status, 200, JSON.stringify(ag.data));
+    const act = await api('POST', `/admin/agencies/${ag.data.agency.id}`, adm.accessToken, { status: 'ACTIVE' });
+    assert.equal(act.status, 200, JSON.stringify(act.data));
+    const code = ag.data.agency.code;
+
+    // Gələcək host: tələblərin bir hissəsi hazır (hesab yaşı, söhbətlər, profil), qalanını UI-da edir
+    const f = await makeUser({ gender: 'FEMALE', name: `Gunel${stamp}` });
+    const F = await newCtx(browser, f);
+    await F.page.goto(`${WEB}/host-tasks`);
+    await seeText(F.page, /0\s*\/\s*5|1\s*\/\s*5/);
+    await shot(F.page, '6-tasks-start');
+    await sql(`UPDATE "User" SET "createdAt" = now() - interval '4 days', bio='Salam, mən Günəl. Söhbət etməyi sevirəm.' WHERE id=$1`, [f.me.id]);
+    const ph = await uploadPng(f.accessToken);
+    for (let i = 0; i < 3; i++) await sql(`INSERT INTO "Photo" (id, "userId", url, "order") VALUES ('qa' || md5(random()::text), $1, $2, $3)`, [f.me.id, ph, i]).catch(async () => {
+      await sql(`INSERT INTO "Photo" (id, "userId", url) VALUES ('qa' || md5(random()::text), $1, $2)`, [f.me.id, ph]);
+    });
+    for (let i = 0; i < 10; i++) {
+      const p = await makeUser({ gender: 'MALE', name: `Dost${i}` });
+      const c = (await api('POST', `/conversations/with/${p.me.id}`, f.accessToken, {})).data.id;
+      await api('POST', `/conversations/${c}/messages`, f.accessToken, { text: 'Salam' });
+    }
+    await api('POST', '/videos', f.accessToken, { url: ph, mediaType: 'PHOTO', caption: 'İlk post' });
+    // KYC — UI ilə
+    await F.page.goto(`${WEB}/verify`);
+    await seeText(F.page, /Göndər|təsdiq/i);
+    const ins = F.page.locator('input:visible');
+    await ins.nth(0).fill('Günəl');
+    await ins.nth(1).fill('Məmmədova');
+    await ins.nth(2).fill('10041996');
+    for (const label of [/Ön tərəf|Ön üz|Sənədin ön/i, /Selfi/i]) {
+      const fc = F.page.waitForEvent('filechooser');
+      await F.page.getByText(label).filter({ visible: true }).first().click();
+      await (await fc).setFiles(PNG);
+      await sleep(1500);
+    }
+    await shot(F.page, '6-kyc-filled');
+    await F.page.getByText(/^Təsdiqə göndər$|^Göndər$/).filter({ visible: true }).first().click();
+    await sleep(1500);
+    assert.equal((await meOf(f)).kycStatus, 'PENDING', 'KYC göndərilməlidir');
+    await F.page.goto(`${WEB}/host-tasks`);
+    await seeText(F.page, /5\s*\/\s*5|hazırsan|Hazırsan/i);
+    await shot(F.page, '6-tasks-done');
+    // Dəvət kodu ilə qoşulma (Host müqaviləsi dialoqu qəbul olunur)
+    F.page.on('dialog', (d) => void d.accept());
+    await F.page.goto(`${WEB}/agency?code=${code}`);
+    await seeText(F.page, new RegExp(`Ulduz ${stamp}`));
+    await F.page.getByText(/Sorğu göndər|Müraciət göndər|Qoşul/).filter({ visible: true }).last().click();
+    await sleep(2000);
+    await shot(F.page, '6-join-sent');
+    const req = await sql(`SELECT id, status FROM "AgencyJoinRequest" WHERE "userId"=$1`, [f.me.id]);
+    assert.equal(req[0]?.status, 'PENDING', 'qoşulma sorğusu yaranmalıdır');
+    // Sahib təsdiqləyir (UI)
+    const O = await newCtx(browser, owner);
+    await O.page.goto(`${WEB}/agency`);
+    await seeText(O.page, new RegExp(`Gunel${stamp}`));
+    await shot(O.page, '6-owner-requests');
+    await O.page.getByText(/^Qəbul et$|^Təsdiqlə$/).filter({ visible: true }).first().click();
+    await sleep(1500);
+    const fm = await meOf(f);
+    assert.equal(fm.hostStatus, 'APPROVED');
+    // Kişi hədiyyə göndərir → hostun qazanc ekranı
+    const m = await makeUser({ gender: 'MALE', name: `Orxan${stamp}` });
+    await fundUser(m, 'coins_1300');
+    const g = await api('POST', '/gifts/send', m.accessToken, { giftId: 'crown', receiverId: f.me.id, count: 1, context: 'PROFILE' });
+    assert.equal(g.status, 200, JSON.stringify(g.data));
+    const fd = (await meOf(f)).diamonds;
+    assert.ok(fd > 0, 'host Almaz qazanmalıdır');
+    await F.page.goto(`${WEB}/earnings`);
+    await sleep(2500);
+    await shot(F.page, '6-earnings');
+    const texts = (await visibleTexts(F.page)).join(' | ');
+    const shown = (fd / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
+    assert.ok(texts.includes(shown) || texts.includes(String(fd / 10)), `qazanc ekranında ${shown} Almaz görünməlidir: ${texts.slice(0, 400)}`);
+    await F.ctx.close(); await O.ctx.close();
   });
 
   await browser.close();
