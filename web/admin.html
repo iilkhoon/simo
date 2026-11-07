@@ -132,7 +132,7 @@
     const TABS = [
       ['stats', 'Statistika'], ['hosts', 'Host müraciətləri', 'pendingHosts'], ['users', 'İstifadəçilər'],
       ['withdrawals', 'Pul çıxarışları', 'pendingWithdrawals'], ['reports', 'Şikayətlər', 'openReports'],
-      ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['settlements', 'Həftəlik hesabat'], ['raffles', 'Çəkilişlər'],
+      ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['settlements', 'Həftəlik hesabat'], ['raffles', 'Çəkilişlər'], ['campaigns', 'Kampaniyalar (bayramlar)'],
       ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'], ['safety', 'Moderasiya (zəng/yayın)', 'safetyPending'],
     ];
     function side() {
@@ -232,6 +232,34 @@
           <td>${r.settlement ? `<span class="st" style="background:var(--mint-soft)">Bağlanıb</span><div class="muted" style="font-size:12px">${date(r.settlement.createdAt)}</div>` : '<span class="st">Açıq</span>'}</td>
           <td class="acts">${r.settlement ? '' : `<button class="mini ok" data-act="settle" data-id="${r.agencyId}" data-v="${esc(d.week)}">Bağla</button>`}<button class="mini" data-act="agcsv" data-id="${r.agencyId}" data-v="${esc(d.week)}">Hostlar CSV</button></td></tr>`));
       },
+      async campaigns() {
+        const [{ items }, tpl] = await Promise.all([api('/admin/campaigns'), api('/admin/campaigns/templates')]);
+        CAMPAIGN_TPL = tpl.items; CAMPAIGN_ITEMS = items;
+        const st = { live: ['Gedir', 'var(--mint-soft)'], upcoming: ['Planlaşdırılıb', 'var(--sky-soft, #e6f0ff)'], ended: ['Bitib', '#eee'] };
+        return `<h2 style="margin-bottom:8px">Mövsümi kampaniyalar</h2>
+          <p class="muted" style="margin-bottom:12px">Ana səhifədə banner, hədiyyə pəncərəsində xüsusi tab, kampaniya hədiyyələri üzrə reytinq. Başlayanda aktiv istifadəçilərə bir dəfə push gedir (23:00–09:00 arası gözləyir). Mükafatı əl ilə verin (istifadəçi → Nar ver; promo Nar nağdlaşmır).</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${tpl.items.map((t, i) => `<button class="mini" data-act="cpTpl" data-v="${i}">${esc(t.emoji)} ${esc(t.titleAz)} · ${new Date(t.startsAt).toLocaleDateString('az-AZ')}</button>`).join('')}</div>
+          <form id="cpForm" class="box" style="padding:16px;margin-bottom:18px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+            <input type="hidden" name="cid">
+            <input class="input" name="slug" placeholder="slug (novruz-2027)" required maxlength="60">
+            <input class="input" name="emoji" placeholder="Emoji" value="🎉" maxlength="8">
+            <input class="input" name="color" type="color" value="#FF3D7F" title="Rəng 1"><input class="input" name="color2" type="color" value="#7B5CFF" title="Rəng 2">
+            <input class="input" name="titleAz" placeholder="Başlıq AZ" required maxlength="80"><input class="input" name="titleRu" placeholder="Başlıq RU" required maxlength="80"><input class="input" name="titleEn" placeholder="Başlıq EN" required maxlength="80">
+            <input class="input" name="subtitleAz" placeholder="Alt başlıq AZ" maxlength="200"><input class="input" name="subtitleRu" placeholder="Alt başlıq RU" maxlength="200"><input class="input" name="subtitleEn" placeholder="Alt başlıq EN" maxlength="200">
+            <textarea class="input" name="prizesAz" placeholder="Mükafatlar AZ (1-ci yer: ...)" maxlength="1000"></textarea><textarea class="input" name="prizesRu" placeholder="Mükafatlar RU" maxlength="1000"></textarea><textarea class="input" name="prizesEn" placeholder="Mükafatlar EN" maxlength="1000"></textarea>
+            <input class="input" name="giftIds" placeholder="Hədiyyələr: rose,bouquet,shekerbura (boş — hamısı)" style="grid-column:1/-1">
+            <label class="muted">Başlayır<input class="input" name="startsAt" type="datetime-local" required></label>
+            <label class="muted">Bitir<input class="input" name="endsAt" type="datetime-local" required></label>
+            <label class="muted" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="announce" checked> Başlayanda push göndər</label>
+            <button class="btn sm dark" type="submit">Yadda saxla</button>
+          </form>` +
+          table(['Kampaniya', 'Tarix', 'Hədiyyələr', 'Status', ''], items.map((c) => `<tr>
+            <td><b>${esc(c.emoji)} ${esc(c.titleAz)}</b><div class="muted" style="font-size:12px">${esc(c.slug)}${c.announcedAt ? ' · push: ' + date(c.announcedAt) : ''}</div></td>
+            <td>${date(c.startsAt)}<div class="muted" style="font-size:12px">→ ${date(c.endsAt)}</div></td>
+            <td style="max-width:220px">${esc((c.giftIds || []).join(', ') || 'hamısı')}</td>
+            <td>${c.active ? `<span class="st" style="background:${st[c.status][1]}">${st[c.status][0]}</span>` : '<span class="st">Söndürülüb</span>'}</td>
+            <td class="acts"><button class="mini" data-act="cpEdit" data-id="${c.id}">Redaktə</button>${c.active ? `<button class="mini no" data-act="cpOff" data-id="${c.id}">Söndür</button>` : `<button class="mini ok" data-act="cpOn" data-id="${c.id}">Yandır</button>`}</td></tr>`));
+      },
       async raffles() {
         const { items } = await api('/admin/raffles');
         const soon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16);
@@ -283,6 +311,26 @@
           <td><button class="mini no" data-act="endlive" data-id="${l.id}">Bitir</button></td></tr>`));
       },
     };
+
+    /** Kampaniya: PATCH/DELETE üçün (api() yalnız GET/POST edir) */
+    let CAMPAIGN_TPL = [], CAMPAIGN_ITEMS = [];
+    async function apiM(method, path, body) {
+      const r = await fetch(API + path, { method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || d.code || 'ERROR');
+      return d;
+    }
+    function fillCampaign(c) {
+      const f = document.getElementById('cpForm'); if (!f) return;
+      const local = (d) => { const x = new Date(d); return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+      f.elements.cid.value = c.id || '';
+      for (const k of ['slug', 'emoji', 'color', 'color2', 'titleAz', 'titleRu', 'titleEn', 'subtitleAz', 'subtitleRu', 'subtitleEn', 'prizesAz', 'prizesRu', 'prizesEn']) if (f.elements[k]) f.elements[k].value = c[k] ?? '';
+      f.elements.giftIds.value = (c.giftIds || []).join(',');
+      f.elements.startsAt.value = local(c.startsAt);
+      f.elements.endsAt.value = local(c.endsAt);
+      f.elements.announce.checked = c.announce !== false;
+      f.scrollIntoView({ behavior: 'smooth' });
+    }
 
     async function render() {
       side();
@@ -351,6 +399,10 @@
           const blob = new Blob([JSON.stringify(await r.json(), null, 2)], { type: 'application/json' });
           const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `simo-case-${id}-${Date.now()}.json`; a.click();
         }
+        if (act === 'cpTpl') { fillCampaign({ ...CAMPAIGN_TPL[Number(v)], id: '' }); return; }
+        if (act === 'cpEdit') { fillCampaign(CAMPAIGN_ITEMS.find((c) => c.id === id)); return; }
+        if (act === 'cpOff') { if (!confirm('Kampaniya söndürülsün? (reytinq tarixçəsi qalır)')) return; await apiM('DELETE', `/admin/campaigns/${id}`); }
+        if (act === 'cpOn') await apiM('PATCH', `/admin/campaigns/${id}`, { active: true });
         if (act === 'endlive') { if (!confirm('Yayın bitirilsin?')) return; await api(`/admin/lives/${id}/end`, {}); }
         toast('Yadda saxlanıldı');
         counts = await api('/admin/stats');
@@ -358,6 +410,22 @@
       } catch (err) { if (err.message !== 'AUTH') toast(`Xəta: ${err.message}`, false); }
     });
     $('#view').addEventListener('submit', async (e) => {
+      if (e.target.id === 'cpForm') {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const body = {};
+        for (const k of ['slug', 'emoji', 'color', 'color2', 'titleAz', 'titleRu', 'titleEn', 'subtitleAz', 'subtitleRu', 'subtitleEn', 'prizesAz', 'prizesRu', 'prizesEn']) body[k] = String(f.get(k) || '').trim();
+        body.giftIds = String(f.get('giftIds') || '').split(',').map((x) => x.trim()).filter(Boolean);
+        body.startsAt = new Date(f.get('startsAt')).toISOString();
+        body.endsAt = new Date(f.get('endsAt')).toISOString();
+        body.announce = !!f.get('announce');
+        const id = f.get('cid');
+        try {
+          if (id) await apiM('PATCH', `/admin/campaigns/${id}`, body); else await apiM('POST', '/admin/campaigns', body);
+          toast('Kampaniya yadda saxlanıldı'); render();
+        } catch (err) { toast(`Xəta: ${err.message}`, false); }
+        return;
+      }
       if (e.target.id !== 'rfForm') return;
       e.preventDefault();
       const f = new FormData(e.target);
