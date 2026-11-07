@@ -554,7 +554,7 @@ export default function LiveRoom() {
 
       <Hearts ref={hearts} />
       <CallSafetyLayer contextType="LIVE" contextId={room.id} isVideo={room.type === 'VIDEO'} active={isHost && room.type === 'VIDEO'} peerId={isHost ? null : room.hostId} peerUid={hostUid} showReport={false} onEnd={isHost ? endLive : () => router.back()} />
-      <GiftOverlay ref={overlay} />
+      {ended || summary ? null : <GiftOverlay ref={overlay} />}
       {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} onSent={(e) => overlay.current?.push(e)} /> : null}
       {isHost ? <HostPanel visible={panel} onClose={() => { setPanel(false); setRequests(0); }} roomId={room.id} video={room.type === 'VIDEO'} /> : null}
       <LiveUsersSheet
