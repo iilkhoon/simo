@@ -57,7 +57,7 @@ export default function Search() {
           keyExtractor={(u) => u.id}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ gap: 8, paddingVertical: 12, flexGrow: 1 }}
-          ListEmptyComponent={<EmptyState icon="search" pose="search" title={users ? t('find.none') : t('find.hint')} />}
+          ListEmptyComponent={<EmptyState icon="search" title={users ? t('find.none') : t('find.hint')} sub={users ? undefined : t('ui.searchSub')} />}
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: item.id } })} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
               <Avatar uri={item.avatarUrl} size={48} online={item.online} name={item.name} vipTier={item.vipTier} />
@@ -79,7 +79,7 @@ export default function Search() {
           keyExtractor={(i) => i.tag}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ gap: 8, paddingVertical: 12, flexGrow: 1 }}
-          ListEmptyComponent={tags ? <EmptyState icon="search" pose="search" title={t('post2.noTags')} /> : undefined}
+          ListEmptyComponent={tags ? <EmptyState icon="search" title={t('post2.noTags')} sub={t('ui.noTagsSub')} /> : undefined}
           renderItem={({ item, index }) => (
             <Pressable onPress={() => router.push({ pathname: '/hashtag/[tag]', params: { tag: item.tag } })} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
               <View style={[styles.hashDisc, index < 3 && !q && { backgroundColor: colors.brand }]}><Text style={[styles.hash, index < 3 && !q && { color: colors.white }]}>#</Text></View>

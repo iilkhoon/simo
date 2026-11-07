@@ -317,14 +317,14 @@ export function Loader({ full, night, variant, width, n }: { full?: boolean; nig
   if (variant === 'list') return <View style={[{ paddingTop: 4 }, full && { flex: 1 }]}><SkeletonList night={night} n={n} /></View>;
   if (variant === 'grid') return <View style={[{ paddingTop: 4 }, full && { flex: 1 }]}><SkeletonGrid night={night} n={n} width={width ?? 170} /></View>;
   return (
-    <View style={[{ padding: 32, alignItems: 'center', justifyContent: 'center' }, full && { flex: 1 }]}>
-      <BrandPulse night={night} />
+    <View style={[{ padding: full ? 32 : 8, alignItems: 'center', justifyContent: 'center' }, full && { flex: 1 }]}>
+      <BrandPulse night={night} size={full ? 44 : 28} />
     </View>
   );
 }
 
 /** Nəbz vuran loqo — tam ekran yükləmə üçün (ActivityIndicator əvəzi) */
-function BrandPulse({ night }: { night?: boolean }) {
+function BrandPulse({ night, size }: { night?: boolean; size: number }) {
   const s = useSharedValue(1);
   useEffect(() => {
     s.value = withRepeat(withSequence(withTiming(1.12, { duration: 260, easing: Easing.out(Easing.quad) }), withTiming(1, { duration: 260 }), withTiming(1.08, { duration: 220 }), withTiming(1, { duration: 520 })), -1, false);
@@ -332,7 +332,7 @@ function BrandPulse({ night }: { night?: boolean }) {
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <Animated.View style={a}>
-      <LogoMark size={44} light={night} />
+      <LogoMark size={size} light={night} />
     </Animated.View>
   );
 }

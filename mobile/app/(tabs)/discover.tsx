@@ -6,8 +6,9 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, palette, radius, tintFor } from '@/theme';
 import { Box, Btn, EmptyState, IconBtn, Loader, PressBox, Screen, SpeechBlock, T, Tag } from '@/components/ui';
-import { Mascot } from '@/components/Mascot';
+import { MatchCelebration } from '@/components/MatchCelebration';
 import { Icon } from '@/components/Icon';
+import { Skeleton } from '@/components/motion';
 import { Avatar } from '@/components/Avatar';
 import { CoinPill } from '@/components/Badges';
 import { SwipeDeck, type SwipeAction } from '@/components/SwipeDeck';
@@ -127,7 +128,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
 
       <View style={{ flex: 1, marginBottom: 2 }}>
         {loading ? (
-          <Loader full />
+          <Skeleton h={480} r={28} style={{ flex: 1 }} />
         ) : deck.length ? (
           <SwipeDeck users={deck} myInterests={me?.interests ?? []} onSwipe={onSwipe} />
         ) : (
@@ -141,19 +142,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
       </View>
 
       <Modal visible={!!match} transparent animationType="fade" onRequestClose={() => setMatch(null)}>
-        <View style={styles.match}>
-          <View style={{ zIndex: 1, alignItems: 'center', width: '100%' }}>
-          <SpeechBlock color="lime" size="lg" rotate={-4} style={{ alignSelf: 'center' }}>{t('discover.matchTitle')}</SpeechBlock>
-          <Text style={styles.matchSub}>{t('discover.matchSub', { name: match?.user.name })}</Text>
-          <View style={{ flexDirection: 'row', marginVertical: 36 }}>
-            <Box r={28} sh={3} bg={tintFor(me?.name)} style={{ transform: [{ rotate: '-8deg' }] }} inner={{ width: 136, height: 172, borderWidth: 4, borderColor: colors.white }}>
-              {me?.avatarUrl ? <Image source={{ uri: me.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-            </Box>
-            <Box r={28} sh={3} bg={tintFor(match?.user.name)} style={{ transform: [{ rotate: '8deg' }], marginLeft: -26, marginTop: 20 }} inner={{ width: 136, height: 172, borderWidth: 4, borderColor: colors.white }}>
-              {match?.user.avatarUrl ? <Image source={{ uri: match.user.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-            </Box>
-            <View style={{ position: 'absolute', alignSelf: 'center', left: 96, top: 62 }}><Mascot size={96} pose="love" /></View>
-          </View>
+        <MatchCelebration me={{ avatarUrl: me?.avatarUrl, name: me?.name }} other={{ avatarUrl: match?.user.avatarUrl, name: match?.user.name }} title={t('discover.matchTitle')} sub={t('discover.matchSub', { name: match?.user.name })}>
           <View style={{ width: '100%', gap: 10 }}>
             <Btn
               kind="light"
@@ -167,8 +156,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
             />
             <Btn kind="ghost" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} title={t('discover.keepSwiping')} onPress={() => setMatch(null)} />
           </View>
-          </View>
-        </View>
+        </MatchCelebration>
       </Modal>
     </Wrap>
   );

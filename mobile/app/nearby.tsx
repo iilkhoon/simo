@@ -70,7 +70,7 @@ export default function Nearby() {
       <Header title={t('nearby2.title')} />
       {noLocation && !items?.length ? (
         <EmptyState icon="location" pose="search" title={t('common.permissionDenied')} action={<Btn full={false} size="md" kind="dark" title={t('common.retry')} onPress={() => void syncLocation(true).then((ok) => { setNoLocation(!ok); void load(); })} />} />
-      ) : !items ? <Loader full /> : (
+      ) : !items ? <Loader full variant="grid" n={4} width={(Dimensions.get('window').width - 44) / 2} /> : (
         <FlatList
           data={items}
           numColumns={2}
