@@ -3,6 +3,14 @@
  * Əvvəl bu kodlar üçün istifadəçi yalnız "Xəta baş verdi" görürdü.
  */
 const az = {
+  wallet: {
+    types: {
+      FILTER_CHANGE: 'Video filtri', NOBLE_PURCHASE: 'Zadəgan statusu', OFFER_BONUS: 'Təklif bonusu', PK_WIN: 'PK qələbəsi',
+      RAFFLE_PRIZE: 'Lotereya uduşu', SAFETY_CLAWBACK: 'Qaydaların pozulması: geri alındı', SAFETY_REFUND: 'Qaydaların pozulması: qaytarıldı',
+      SERVICE_EARNED: 'Xidmət qazancı', SERVICE_ORDER: 'Xidmət sifarişi', SERVICE_REFUND: 'Xidmət: geri qaytarma',
+      SUBSCRIPTION: 'Abunəlik', SUBSCRIPTION_EARNED: 'Abunəlik qazancı', SUPERLIKE: 'Super bəyənmə', TEST_PURCHASE: 'Demo alış (test)', TEST_REFILL: 'Test balansı',
+    } as Record<string, string>,
+  },
   errors: {
     ACCOUNT_DELETED: 'Bu hesab silinib',
     ALREADY_DRAWN: 'Lotereya artıq keçirilib',
@@ -54,6 +62,14 @@ const az = {
 };
 
 const ru: typeof az = {
+  wallet: {
+    types: {
+      FILTER_CHANGE: 'Видеофильтр', NOBLE_PURCHASE: 'Статус знати', OFFER_BONUS: 'Бонус предложения', PK_WIN: 'Победа в PK',
+      RAFFLE_PRIZE: 'Выигрыш в розыгрыше', SAFETY_CLAWBACK: 'Нарушение правил: списано', SAFETY_REFUND: 'Нарушение правил: возврат',
+      SERVICE_EARNED: 'Доход от услуги', SERVICE_ORDER: 'Заказ услуги', SERVICE_REFUND: 'Услуга: возврат',
+      SUBSCRIPTION: 'Подписка', SUBSCRIPTION_EARNED: 'Доход от подписки', SUPERLIKE: 'Суперлайк', TEST_PURCHASE: 'Демо-покупка (тест)', TEST_REFILL: 'Тестовый баланс',
+    },
+  },
   errors: {
     ACCOUNT_DELETED: 'Этот аккаунт удалён',
     ALREADY_DRAWN: 'Розыгрыш уже проведён',
@@ -105,6 +121,14 @@ const ru: typeof az = {
 };
 
 const en: typeof az = {
+  wallet: {
+    types: {
+      FILTER_CHANGE: 'Video filter', NOBLE_PURCHASE: 'Noble status', OFFER_BONUS: 'Offer bonus', PK_WIN: 'PK win',
+      RAFFLE_PRIZE: 'Raffle prize', SAFETY_CLAWBACK: 'Rule violation: clawback', SAFETY_REFUND: 'Rule violation: refund',
+      SERVICE_EARNED: 'Service earnings', SERVICE_ORDER: 'Service order', SERVICE_REFUND: 'Service refund',
+      SUBSCRIPTION: 'Subscription', SUBSCRIPTION_EARNED: 'Subscription earnings', SUPERLIKE: 'Super like', TEST_PURCHASE: 'Demo purchase (test)', TEST_REFILL: 'Test balance',
+    },
+  },
   errors: {
     ACCOUNT_DELETED: 'This account has been deleted',
     ALREADY_DRAWN: 'The raffle has already been drawn',

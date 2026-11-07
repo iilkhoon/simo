@@ -274,6 +274,96 @@ async function main() {
     await M.ctx.close(); await H.ctx.close();
   });
 
+  // ───────────── 4. Pul kisəsi: test hesabının demo alışı ─────────────
+  if (want(4)) await R.run('4. Pul kisəsi: test hesabı demo alış → balans başlıqda, Profildə, hədiyyə vərəqində yenilənir (səhifə yenilənmədən)', async () => {
+    const tk = await login('+994990000002');
+    const meId = (await api('GET', '/me', tk.accessToken)).data.id;
+    // 1M-lik balans "1M" kimi qısaldılır — fərq görünsün deyə 600 000-ə endiririk (yenidən doldurma həddi 500 000)
+    await sql(`UPDATE "User" SET coins=600000, "promoCoins"=600000 WHERE id=$1`, [meId]);
+    const M = await newCtx(browser, tk);
+    await M.page.goto(WEB + '/');
+    await seeText(M.page, /^600,000$/);
+    await M.page.getByText(/^600,000$/).first().click();
+    await M.page.waitForURL(/wallet/);
+    await seeText(M.page, /49\.99 ₼/);
+    await shot(M.page, '4-wallet-before');
+    await M.page.getByText(/49\.99 ₼/).first().click();
+    await seeText(M.page, /3,850/).catch(() => {}); // uğur bildirişi
+    await seeText(M.page, /^603,850$/);
+    await shot(M.page, '4-wallet-after');
+    assert.equal((await api('GET', '/me', tk.accessToken)).data.coins, 603850);
+    await M.page.mouse.wheel(0, -5000);
+    await sleep(500);
+    await clickIcon(M.page, 'back');
+    await seeText(M.page, /^603,850$/);
+    await M.page.getByText(/^Profil$/).first().click();
+    await seeText(M.page, /^604K$/);
+    await shot(M.page, '4-me');
+    // hədiyyə vərəqi: Kəşf → kartdakı hədiyyə düyməsi → profil (?gift=1)
+    await M.page.getByText(/^Ana$/).first().click();
+    await M.page.getByText(/^Kəşf et$/).first().click();
+    await sleep(2000);
+    await clickIcon(M.page, 'gift', -1);
+    await M.page.waitForURL(/\/user\//);
+    await seeText(M.page, /^603,850$/);
+    await shot(M.page, '4-giftsheet');
+    await M.ctx.close();
+  });
+
+  // ───────────── 5. Hədiyyələr ─────────────
+  if (want(5)) await R.run('5. Hədiyyələr: kiçik/orta/lüks profildən və söhbətdən; balans və host qazancı; balans çatmayanda', async () => {
+    const m = await makeUser({ gender: 'MALE', name: `Tural${stamp}` });
+    const h = await makeHost(`Sevda${stamp}`);
+    await fundUser(m, 'coins_1300'); // 1400 real Nar
+    const M = await newCtx(browser, m);
+    await M.page.goto(`${WEB}/user/${h.me.id}`);
+    await seeText(M.page, new RegExp(`Sevda${stamp}`));
+    const sendGift = async (cat, name) => {
+      await clickIcon(M.page, 'gift', -1);
+      await seeText(M.page, /Kimə/);
+      await M.page.getByText(new RegExp(`^${cat}$`)).filter({ visible: true }).first().click();
+      await M.page.getByText(new RegExp(`^${name}$`)).filter({ visible: true }).first().click();
+      await M.page.getByText(/^Göndər$/).filter({ visible: true }).first().click();
+      await sleep(1500);
+    };
+    let c = (await meOf(m)).coins;
+    const d0 = (await meOf(h)).diamonds;
+    for (const [cat, name, price] of [['Romantik', 'Qızılgül', 1], ['Romantik', 'Gül dəstəsi', 99], ['Lüks', 'Tac', 999]]) {
+      await sendGift(cat, name);
+      const now = (await meOf(m)).coins;
+      assert.equal(now, c - price, `${name}: ${c} → ${now}`);
+      c = now;
+    }
+    await shot(M.page, '5-after-gifts');
+    const earned = await sql(`SELECT COALESCE(SUM(diamonds),0)::int AS d FROM "GiftTransaction" WHERE "receiverId"=$1`, [h.me.id]);
+    const h1 = await meOf(h);
+    assert.equal(h1.diamonds - d0, earned[0].d, 'host Almazı = hədiyyə qazancı');
+    assert.ok(earned[0].d > 0, 'host Almaz qazanmalıdır');
+    const he = await sql(`SELECT count(*)::int AS n FROM "HostEarning" WHERE "hostId"=$1 AND source='GIFT'`, [h.me.id]);
+    // Qızılgül (1 Nar): host payı aşağı yuvarlaqlaşdırılır → 0 Almaz, qazanc qeydi yaranmır
+    assert.equal(he[0].n, 2);
+    // söhbətdən sürətli hədiyyə (qızılgül)
+    const conv = (await api('POST', `/conversations/with/${h.me.id}`, m.accessToken, {})).data.id;
+    await M.page.goto(`${WEB}/chat/${conv}`);
+    await seeText(M.page, /Qızılgül|Gül dəstəsi|Tac/);
+    await M.page.locator('[aria-label="rose"]').filter({ visible: true }).first().click();
+    await sleep(1500);
+    assert.equal((await meOf(m)).coins, c - 1, 'söhbətdən qızılgül');
+    c -= 1;
+    // balans çatmır: lüks hədiyyə (Yaxta 9999)
+    await M.page.goto(`${WEB}/user/${h.me.id}`);
+    await seeText(M.page, new RegExp(`Sevda${stamp}`));
+    await clickIcon(M.page, 'gift', -1);
+    await M.page.getByText(/^Lüks$/).filter({ visible: true }).first().click();
+    await M.page.getByText(/^Yaxta$/).filter({ visible: true }).first().click();
+    await seeText(M.page, /çatmır/);
+    await shot(M.page, '5-insufficient');
+    await M.page.getByText(/^Artır$/).filter({ visible: true }).last().click();
+    await M.page.waitForURL(/wallet/);
+    assert.equal((await meOf(m)).coins, c, 'balans dəyişməməlidir');
+    await M.ctx.close();
+  });
+
   await browser.close();
   await closeSql();
   srv.close();

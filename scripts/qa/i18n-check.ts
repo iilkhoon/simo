@@ -104,6 +104,18 @@ for (const l of ['az', 'ru', 'en'] as const) {
   report(`backend xəta kodu, ${l}-da errors.<KOD> yoxdur`, [...codes].filter((c) => !F[l].has(`errors.${c}`)).sort());
 }
 
+// Pul kisəsi əməliyyat növləri (wallet.types.<NÖV>) — yoxdursa tarixçədə xam "TEST_REFILL" görünür
+const txTypes = new Set<string>();
+for (const f of walk(path.join(ROOT, 'backend/src'))) {
+  if (f.includes('generated')) continue;
+  const src = fs.readFileSync(f, 'utf8');
+  for (const m of src.matchAll(/(?:spend|spendCoins|creditCoins|creditDiamonds|spendDiamonds|rewardReceiver)\([^,]+,[^,]+,[^,]+,\s*'([A-Z_]+)'/g)) txTypes.add(m[1]);
+  for (const m of src.matchAll(/walletTransaction\.create\(\{[^}]*?type:\s*'([A-Z_]+)'/gs)) txTypes.add(m[1]);
+}
+for (const l of ['az', 'ru', 'en'] as const) {
+  report(`əməliyyat növü, ${l}-da wallet.types.<NÖV> yoxdur`, [...txTypes].filter((c) => !F[l].has(`wallet.types.${c}`)).sort());
+}
+
 // Tərcümə olunmamış ehtimalı (yalnız məlumat)
 const same = [...F.az].filter(([k, v]) => typeof v === 'string' && v.length > 12 && /[əğıöüşçƏĞİÖÜŞÇ]/.test(v) && (F.ru.get(k) === v || F.en.get(k) === v)).map(([k]) => k);
 if (same.length) console.log(`\n! ru/en dəyəri az ilə eynidir (ehtimal tərcümə olunmayıb): ${same.length}\n   ${same.slice(0, 50).join('\n   ')}`);

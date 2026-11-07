@@ -79,7 +79,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Mətn görünənə qədər gözləyir */
 export async function seeText(page, re, timeout = 10000) {
-  await page.getByText(re).first().waitFor({ state: 'visible', timeout });
+  await page.getByText(re).filter({ visible: true }).first().waitFor({ state: 'visible', timeout });
 }
 
 /** Ekrandakı bütün görünən mətnlər */
