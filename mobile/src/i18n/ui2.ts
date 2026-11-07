@@ -55,6 +55,14 @@ const az = {
     online: 'Onlayn',
     prices: 'Qiymətlər',
     perMin: '/dəq',
+    payOk: 'Ödəniş qəbul edildi',
+    payOkSub: 'Nar balansına əlavə olunur. Bir neçə saniyəyə pul kisəsinə qayıdırıq',
+    payFail: 'Ödəniş tamamlanmadı',
+    payFailSub: 'Ödəniş ləğv edildi və ya bank tərəfindən təsdiqlənmədi. Yenidən cəhd edə bilərsən',
+    toWallet: 'Pul kisəsinə keç',
+    priceMin: 'Minimum qiymət: {{n}} Nar',
+    titleMin: 'Ad ən azı 3 simvol olmalıdır',
+    close: 'Bağla',
   },
 };
 
@@ -114,6 +122,14 @@ const ru: Dict = {
     online: 'Онлайн',
     prices: 'Цены',
     perMin: '/мин',
+    payOk: 'Оплата принята',
+    payOkSub: 'Нар зачисляются на баланс. Через пару секунд вернёмся в кошелёк',
+    payFail: 'Оплата не завершена',
+    payFailSub: 'Оплата отменена или не подтверждена банком. Можно попробовать ещё раз',
+    toWallet: 'Перейти в кошелёк',
+    priceMin: 'Минимальная цена: {{n}} Нар',
+    titleMin: 'Название — минимум 3 символа',
+    close: 'Закрыть',
   },
 };
 
@@ -170,6 +186,14 @@ const en: Dict = {
     online: 'Online',
     prices: 'Prices',
     perMin: '/min',
+    payOk: 'Payment received',
+    payOkSub: 'Nar is being added to your balance. Returning to your wallet in a moment',
+    payFail: 'Payment not completed',
+    payFailSub: 'The payment was cancelled or not approved by the bank. You can try again',
+    toWallet: 'Go to wallet',
+    priceMin: 'Minimum price: {{n}} Nar',
+    titleMin: 'Title must be at least 3 characters',
+    close: 'Close',
   },
 };
 

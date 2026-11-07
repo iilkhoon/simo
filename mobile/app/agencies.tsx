@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad, radius, tintFor } from '@/theme';
 import { EmptyState, Header, Input, Loader, PressBox, Screen, T } from '@/components/ui';
+import { Appear } from '@/components/motion';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 
@@ -31,12 +32,13 @@ export default function Agencies() {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [items, setItems] = useState<AgencyCard[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const load = useCallback(async (query: string) => {
     try {
       const r = await api<{ items: AgencyCard[] }>(`/agencies${query ? `?q=${encodeURIComponent(query)}` : ''}`);
       setItems(r.items);
     } catch {
-      setItems([]);
+      setItems((x) => x ?? []);
     }
   }, []);
   useEffect(() => {
@@ -47,19 +49,22 @@ export default function Agencies() {
   return (
     <Screen>
       <Header title={t('agency.browse')} />
-      <Input value={q} onChangeText={setQ} placeholder={t('agency.search')} left={<Icon name="search" size={18} color={colors.textDim} />} />
+      <Input value={q} onChangeText={setQ} placeholder={t('agency.search')} autoCorrect={false} returnKeyType="search" left={<Icon name="search" size={18} color={colors.textDim} />} />
       <View style={styles.info}>
         <Icon name="sparkles" size={16} color={colors.brand} />
         <T v="tiny" color={colors.textMuted} style={{ flex: 1 }}>{t('agency.directoryInfo')}</T>
       </View>
-      {items === null ? <Loader full /> : (
+      {items === null ? <Loader full variant="list" n={5} /> : (
         <FlatList
           data={items}
           keyExtractor={(a) => a.id}
           contentContainerStyle={{ gap: 12, paddingBottom: 40, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<EmptyState icon="business" pose="search" title={t('agency.none')} />}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} tintColor={colors.brand} colors={[colors.brand]} onRefresh={async () => { setRefreshing(true); await load(q.trim()); setRefreshing(false); }} />}
+          ListEmptyComponent={<EmptyState icon="business" art="search" title={t('agency.none')} sub={t('u2.agenciesEmptySub')} />}
           renderItem={({ item, index }) => (
+            <Appear i={index}>
             <PressBox r={radius.lg} sh={1} onPress={() => router.push({ pathname: '/agency/[id]', params: { id: item.id } })} inner={styles.card}>
               <View style={[styles.logo, { backgroundColor: tintFor(item.name) }]}>
                 {item.logoUrl ? <Image source={{ uri: item.logoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text style={styles.logoText}>{item.name.slice(0, 1)}</Text>}
@@ -79,6 +84,7 @@ export default function Agencies() {
                 <T v="tiny" color={colors.textMuted}>{t('agency.hostShareShort')}</T>
               </View>
             </PressBox>
+            </Appear>
           )}
         />
       )}
