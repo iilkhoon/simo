@@ -74,7 +74,15 @@ async function main() {
       }
     });
 
-    void registerPhone; void onboard; void stamp;
+    await step('Şikayət: özünü şikayət etmək olmur (SELF_REPORT)', async () => {
+      const t = await registerPhone(`+99455${stamp.slice(-6)}1`);
+      const id = await onboard(t, 'Özü', 'MALE');
+      const r = await api('POST', '/reports', t, { targetUserId: id, reason: 'SPAM' });
+      assert.equal(r.status, 400);
+      assert.equal(r.data.error, 'SELF_REPORT');
+    });
+
+    void stamp;
     console.log(`\n${passed} QA testi keçdi ✅`);
   } finally {
     stopCallBilling();

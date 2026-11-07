@@ -384,7 +384,7 @@ export default async function userRoutes(app: FastifyInstance) {
     return { users: users.map((u) => presentUser(u)) };
   });
 
-  app.post('/reports', { preHandler: requireAuth }, async (req) => {
+  app.post('/reports', { preHandler: requireAuth, config: { rateLimit: { max: 30, timeWindow: '10 minutes' } } }, async (req) => {
     const b = z
       .object({
         targetUserId: z.string(),
@@ -394,6 +394,7 @@ export default async function userRoutes(app: FastifyInstance) {
         details: z.string().max(500).default(''),
       })
       .parse(req.body);
+    if (b.targetUserId === uid(req)) throw err.badRequest('SELF_REPORT');
     // Şikayət: həmin istifadəçi avtomatik gizlədilmir, amma admin panelində növbəyə düşür (24 saat ərzində baxılır)
     await prisma.report.create({ data: { ...b, reporterId: uid(req) } });
     return { ok: true };

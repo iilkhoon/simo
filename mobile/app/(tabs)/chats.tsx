@@ -12,7 +12,7 @@ import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { duration, timeAgo } from '@/lib/format';
 import { startCall } from '@/lib/calls';
-import { getSocket } from '@/lib/socket';
+import { useSocket } from '@/lib/socket';
 import { useStore } from '@/store';
 import type { Call, PublicUser } from '@/lib/types';
 
@@ -50,17 +50,22 @@ export default function Chats() {
     }
   }, []);
 
+  // useSocket: ekran socket yaranmamışdan əvvəl açıla bilər (soyuq başlanğıc) — getSocket() o an null idi və
+  // siyahı yeni mesaj/uyğunluqda yenilənmirdi (badge artırdı, siyahı boş qalırdı)
+  const sock = useSocket();
   useFocusEffect(
     useCallback(() => {
       void load();
       void loadCalls();
-      const s = getSocket();
+      const s = sock;
       const h = () => void load();
       s?.on('message:new', h);
+      s?.on('match', h);
       return () => {
         s?.off('message:new', h);
+        s?.off('match', h);
       };
-    }, [load, loadCalls]),
+    }, [load, loadCalls, sock]),
   );
 
   async function openMatch(u: PublicUser) {

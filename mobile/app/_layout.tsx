@@ -69,6 +69,8 @@ function useRealtime(authed: boolean) {
     void st().loadGifts();
     s.on('wallet:update', (p: { coins?: number }) => {
       if (typeof p.coins === 'number') st().patchMe({ coins: p.coins });
+      // Almaz paketi alışı ({ diamondsCredited }) — Almaz balansı ekranlarda yenilənsin
+      else void st().refreshMe();
     });
     // Tətbiq açıqdırsa — öz gələn zəng ekranımız (zəng edənin profil şəkli ilə);
     // fonda/kilid ekranında isə sistem zəng ekranı (CallKit / ConnectionService)

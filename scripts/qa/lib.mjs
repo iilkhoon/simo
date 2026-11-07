@@ -118,6 +118,55 @@ export function testPng(file) {
   return file;
 }
 
+/**
+ * İkon düymələri (IconBtn) mətnsizdir — vebdə Ionicons qlif simvolu kimi render olunur.
+ * Icon.tsx-dəki MAP + Ionicons glyphmap ilə ikon adına görə simvolu tapırıq.
+ */
+let glyphs = null;
+export function glyph(name) {
+  if (!glyphs) {
+    const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+    const gm = JSON.parse(fs.readFileSync(path.join(root, 'mobile/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/Ionicons.json'), 'utf8'));
+    const src = fs.readFileSync(path.join(root, 'mobile/src/components/Icon.tsx'), 'utf8');
+    const map = {};
+    for (const m of src.matchAll(/(\w+): '([a-z0-9-]+)'/g)) map[m[1]] = m[2];
+    glyphs = { gm, map };
+  }
+  const ion = glyphs.map[name] ?? name;
+  const code = glyphs.gm[ion];
+  if (!code) throw new Error(`ikon tapılmadı: ${name}`);
+  return String.fromCodePoint(code);
+}
+/** Görünən ikon düyməsini klikləyir (n — eyni ikonlu neçənci görünən element) */
+export async function iconBoxes(page, name) {
+  const g = glyph(name);
+  return page.evaluate((g) => [...document.querySelectorAll('div,span')]
+    .filter((e) => e.childElementCount === 0 && e.textContent === g)
+    .map((e) => {
+      const r = e.getBoundingClientRect();
+      const x = r.x + r.width / 2, y = r.y + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      // yalnız üstdə görünən (başqa ekran/modal altında qalmayan) ikonlar
+      const top = !!hit && (hit === e || e.contains(hit) || hit.contains(e) || hit.parentElement?.contains(e));
+      return { x, y, w: r.width, top };
+    })
+    .filter((b) => b.w > 0 && b.top && b.y > 0 && b.y < innerHeight), g);
+}
+/** Görünən ikon düyməsini klikləyir. n: neçənci (mənfi — sondan), pick: 'largest' */
+export async function clickIcon(page, name, n = 0, { timeout = 10000, pick } = {}) {
+  const t0 = Date.now();
+  for (;;) {
+    const boxes = await iconBoxes(page, name);
+    if (boxes.length) {
+      const b = pick === 'largest' ? boxes.sort((a, c) => c.w - a.w)[0] : boxes.at(n) ?? boxes[0];
+      await page.mouse.click(b.x, b.y);
+      return;
+    }
+    if (Date.now() - t0 > timeout) throw new Error(`ikon görünmür: ${name}`);
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
 /** Birbaşa SQL (yalnız QA hazırlığı üçün: admin rolu və s.). DATABASE_URL backend-in DB-si olmalıdır. */
 let pgPool = null;
 export async function sql(q, params = []) {
