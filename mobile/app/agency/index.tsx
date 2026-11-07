@@ -96,7 +96,7 @@ function OwnerView({ d, period, setPeriod, reload, refreshing, setRefreshing }: 
     const out: { label: string; value: number }[] = [];
     for (let i = 13; i >= 0; i--) {
       const day = new Date(Date.now() + 4 * 3600_000 - i * 86400_000).toISOString().slice(0, 10);
-      out.push({ label: day.slice(5).replace('-', '.'), value: map.get(day) ?? 0 });
+      out.push({ label: `${day.slice(8)}.${day.slice(5, 7)}`, value: map.get(day) ?? 0 });
     }
     return out;
   }, [d.series]);
