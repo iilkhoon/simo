@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, noPad, radius } from '@/theme';
-import { Btn, Header, Screen, T } from '@/components/ui';
+import { colors, fonts, noPad, radius, type GradientName } from '@/theme';
+import { Btn, GradientCard, Header, Screen, T } from '@/components/ui';
+import { Appear, Skeleton } from '@/components/motion';
 import { Icon, type IconName } from '@/components/Icon';
 import { CoinIcon } from '@/components/GiftIcon';
 import { NobleBadge } from '@/components/Badges';
@@ -12,10 +13,10 @@ import { useStore } from '@/store';
 import type { Me } from '@/lib/types';
 
 interface Plan { tier: 'BEY' | 'XAN' | 'SAH'; priceCoins: number; days: number; perks: string[] }
-const LOOK: Record<string, { bg: string; fg: string; accent: string }> = {
-  BEY: { bg: '#B8733A', fg: colors.white, accent: '#FFD9B8' },
-  XAN: { bg: '#5B3BE8', fg: colors.white, accent: '#CDB8FF' },
-  SAH: { bg: '#1A1512', fg: '#FFC23D', accent: '#FFC23D' },
+const LOOK: Record<string, { g: GradientName; fg: string; accent: string; glow: string }> = {
+  BEY: { g: 'bronze', fg: colors.white, accent: '#FFE2C4', glow: '#FFD9B8' },
+  XAN: { g: 'violet', fg: colors.white, accent: '#E2D6FF', glow: '#CDB8FF' },
+  SAH: { g: 'night', fg: '#FFC23D', accent: '#FFC23D', glow: '#FFB21E' },
 };
 const PERK_ICON: Record<string, IconName> = { frame: 'person', badge: 'crown', entry: 'sparkles', bubble: 'chat', mount: 'rocket', gifts: 'gift', top: 'trophy', antikick: 'shield' };
 
@@ -30,7 +31,7 @@ export default function Noble() {
     setBusy(tier);
     try {
       setMe(await api<Me>('/noble/buy', { body: { tier } }));
-      toast('👑', 'success');
+      toast(t('noble.title') + ' ✓', 'success');
     } catch (e) {
       toast(errorText(e), 'error');
     } finally {
@@ -43,10 +44,12 @@ export default function Noble() {
       <T v="small" color={colors.textMuted} style={{ marginBottom: 14 }}>{t('noble.sub')}</T>
       {me?.noble ? <View style={styles.current}><NobleBadge tier={me.noble.tier} /><T v="small">{t('noble.until', { d: me.nobleUntil ? dateOnly(me.nobleUntil) : '' })}</T></View> : null}
       <View style={{ gap: 14 }}>
-        {plans.map((p) => {
+        {!plans.length ? [0, 1, 2].map((i) => <Skeleton key={i} h={220} r={radius.xl} />) : null}
+        {plans.map((p, i) => {
           const l = LOOK[p.tier];
           return (
-            <View key={p.tier} style={[styles.card, { backgroundColor: l.bg }]}>
+            <Appear key={p.tier} i={i}>
+            <GradientCard g={l.g} glow={l.glow} shine={p.tier === 'SAH'} r={radius.xl} inner={styles.card}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={[styles.crown, { backgroundColor: 'rgba(255,255,255,0.15)' }]}><Icon name="crown" size={26} color={l.accent} /></View>
                 <View style={{ flex: 1 }}>
@@ -59,8 +62,9 @@ export default function Noble() {
                   <View key={k} style={styles.perk}><Icon name={PERK_ICON[k] ?? 'checkmark'} size={13} color={l.accent} /><Text style={[styles.perkText, { color: l.fg }]}>{t(`noble.perks.${k}`)}</Text></View>
                 ))}
               </View>
-              <Btn kind="light" title={me?.noble?.tier === p.tier ? t('noble.extend') : t('noble.buy')} loading={busy === p.tier} onPress={() => void buy(p.tier)} />
-            </View>
+              <Btn kind={p.tier === 'SAH' ? 'coin' : 'light'} title={me?.noble?.tier === p.tier ? t('noble.extend') : t('noble.buy')} loading={busy === p.tier} onPress={() => void buy(p.tier)} />
+            </GradientCard>
+            </Appear>
           );
         })}
       </View>
@@ -70,7 +74,7 @@ export default function Noble() {
 
 const styles = StyleSheet.create({
   current: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  card: { borderRadius: radius.xl, padding: 18, gap: 14 },
+  card: { padding: 18, gap: 14 },
   crown: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   name: { ...noPad, fontFamily: fonts.displayBlack, fontSize: 24, lineHeight: 30 },
   price: { ...noPad, fontFamily: fonts.bold, fontSize: 13, lineHeight: 17 },

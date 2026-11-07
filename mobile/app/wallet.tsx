@@ -3,8 +3,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { fmtAlmaz } from '@/lib/economy';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, noPad, radius } from '@/theme';
-import { Card, Header, Loader, PressBox, Screen, SectionTitle, T, Tabs } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, fonts, gradients, noPad, radius } from '@/theme';
+import { Card, GradientCard, Header, Loader, PressBox, Screen, SectionTitle, T, Tabs } from '@/components/ui';
+import { Appear } from '@/components/motion';
 import { router, useLocalSearchParams } from 'expo-router';
 import { track } from '@/lib/track';
 import { Icon } from '@/components/Icon';
@@ -92,8 +94,8 @@ export default function Wallet() {
     <Screen scroll>
       <Header title={t('wallet.title')} />
       {/* Balans kartı: tünd premium, iri Nar sikkəsi */}
-      <View style={styles.hero}>
-        <View style={styles.heroGlow} />
+      <Appear i={0}>
+      <GradientCard g="night" glow={colors.coin} shine r={radius.xl} inner={styles.hero}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Coin3D size={92} style={{ marginVertical: -12, marginLeft: -10 }} />
           <View style={{ flex: 1 }}>
@@ -107,16 +109,19 @@ export default function Wallet() {
             <View key={k} style={styles.usageItem}><Icon name={ic} size={14} color={colors.white} /><Text style={styles.usageText}>{t(`wallet.${k}`)}</Text></View>
           ))}
         </View>
-      </View>
+      </GradientCard>
+      </Appear>
 
       {first ? (
-        <View style={styles.promo}>
-          <View style={styles.promoIcon}><Icon name="gift" size={20} color={colors.ink} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.promoTitle}>{t('wallet.firstBonus')}</Text>
-            <T v="tiny" color="rgba(255,255,255,0.85)">{t('wallet.promoNote')}</T>
-          </View>
-        </View>
+        <Appear i={1}>
+          <GradientCard g="nar" glow={colors.coin} r={radius.lg} style={{ marginTop: 12 }} inner={styles.promo}>
+            <View style={styles.promoIcon}><Icon name="gift" size={20} color={colors.ink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.promoTitle}>{t('wallet.firstBonus')}</Text>
+              <T v="tiny" color="rgba(255,255,255,0.85)">{t('wallet.promoNote')}</T>
+            </View>
+          </GradientCard>
+        </Appear>
       ) : null}
 
       {offers.length ? (
@@ -140,7 +145,7 @@ export default function Wallet() {
         </View>
       ) : null}
 
-      <Tabs value={tab} onChange={setTab} options={[{ key: 'nar', label: `🪙 Nar` }, { key: 'almaz', label: `💎 ${t('almaz.title')}` }]} />
+      <View style={{ marginTop: 16 }}><Tabs value={tab} onChange={setTab} options={[{ key: 'nar', label: 'Nar', icon: 'coin' }, { key: 'almaz', label: t('almaz.title'), icon: 'diamond' }]} /></View>
       {tab === 'almaz' ? (
         <>
           <View style={styles.almazInfo}>
@@ -172,23 +177,26 @@ export default function Wallet() {
       ) : null}
       {tab === 'nar' ? <SectionTitle title={t('wallet.recharge')} /> : null}
       {tab === 'nar' ? <View style={styles.grid}>
-        {data.packages.map((p) => {
+        {data.packages.map((p, idx) => {
           const pid = STORE === 'apple' ? p.appleProductId : p.googleProductId;
           const total = p.coins + p.bonusCoins;
           const offer = offers.find((o) => o.package?.id === p.id);
           const gift = first ? firstBonus(total) : offer?.package?.bonus ?? 0;
           const pop = !!p.popular;
           return (
-            <PressBox key={p.id} disabled={!!buying} onPress={() => void buy(p)} style={{ width: CW }} r={22} sh={pop ? 2 : 1} bg={colors.card} inner={[styles.pkg, pop && styles.pkgPop]}>
+            <Appear key={p.id} i={idx + 2}>
+            <PressBox disabled={!!buying} onPress={() => void buy(p)} style={{ width: CW }} r={22} sh={pop ? 3 : 1} bg={pop ? '#FFF7F8' : colors.card} inner={[styles.pkg, pop && styles.pkgPop]}>
               {pop ? <View style={styles.popTag}><Text style={styles.popText}>{t('wallet.popular').toUpperCase()}</Text></View> : null}
               <CoinIcon size={40} />
               <Text style={styles.coins}>{total.toLocaleString('en-US')}</Text>
               <Text style={styles.bonus} numberOfLines={1}>{p.bonusCoins ? t('wallet.bonus', { n: p.bonusCoins }) : ' '}</Text>
               {gift ? <View style={styles.giftTag}><Icon name="gift" size={11} color={colors.ink} /><Text style={styles.giftText}>{t('wallet.firstGift', { n: gift })}</Text></View> : <View style={{ height: 22 }} />}
               <View style={[styles.price, pop && { backgroundColor: colors.brand }]}>
+                {pop ? <LinearGradient colors={gradients.nar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
                 {buying === p.id ? <ActivityIndicator color={colors.white} /> : <Text style={styles.priceText}>{prices[pid] ?? azn(p.priceQepik)}</Text>}
               </View>
             </PressBox>
+            </Appear>
           );
         })}
       </View> : null}
@@ -220,8 +228,7 @@ export default function Wallet() {
 }
 
 const styles = StyleSheet.create({
-  hero: { backgroundColor: colors.night, borderRadius: radius.xl, padding: 20, overflow: 'hidden' },
-  heroGlow: { position: 'absolute', left: -40, top: -50, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,194,61,0.10)' },
+  hero: { padding: 20 },
   heroNum: { ...noPad, color: colors.white, fontFamily: fonts.displayBlack, fontSize: 40, lineHeight: 46, letterSpacing: -1.5 },
   usage: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 16 },
   usageItem: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 28, paddingHorizontal: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)' },
@@ -233,7 +240,7 @@ const styles = StyleSheet.create({
   offerCta: { height: 38, minWidth: 64, paddingHorizontal: 14, borderRadius: 19, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
   offerCtaText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 13, lineHeight: 16 },
   almazInfo: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: colors.skySoft, borderRadius: radius.lg, padding: 14, marginTop: 14 },
-  promo: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.brand },
+  promo: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   promoIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coin, alignItems: 'center', justifyContent: 'center' },
   promoTitle: { ...noPad, color: colors.white, fontFamily: fonts.display, fontSize: 14, lineHeight: 18 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -245,7 +252,7 @@ const styles = StyleSheet.create({
   bonus: { ...noPad, color: colors.online, fontFamily: fonts.bold, fontSize: 11.5, lineHeight: 15 },
   giftTag: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 22, paddingHorizontal: 8, borderRadius: 11, backgroundColor: colors.highlight, marginTop: 4 },
   giftText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 10.5, lineHeight: 13 },
-  price: { marginTop: 10, backgroundColor: colors.ink, borderRadius: radius.pill, height: 40, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  price: { marginTop: 10, backgroundColor: colors.ink, borderRadius: radius.pill, height: 40, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   priceText: { ...noPad, color: colors.white, fontFamily: fonts.black, fontSize: 15, lineHeight: 19 },
   secure: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   hist: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderColor: colors.hairline },

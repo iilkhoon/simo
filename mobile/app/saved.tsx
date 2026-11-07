@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
+import { Dimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { Appear } from '@/components/motion';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, Header, Loader, Screen } from '@/components/ui';
 import { PostGrid, type Post } from '@/components/PostGrid';
@@ -13,7 +15,7 @@ export default function Saved() {
   return (
     <Screen>
       <Header title={t('me.saved')} />
-      {items === null ? <Loader full /> : items.length ? <PostGrid items={items} /> : <EmptyState icon="video" pose="coffee" title={t('posts.noSaved')} />}
+      {items === null ? <Loader full variant="grid" n={6} width={(Dimensions.get('window').width - 32 - 24) / 3} /> : items.length ? <Appear from="fade"><PostGrid items={items} /></Appear> : <EmptyState art="bookmark" title={t('posts.noSaved')} sub={t('ui.savedSub')} />}
     </Screen>
   );
 }

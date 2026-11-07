@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Appear, Pressable3 } from '@/components/motion';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, font , fonts } from '@/theme';
+import { colors, font, fonts, radius } from '@/theme';
 import { EmptyState, Header, Loader, Screen } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { GiftIcon } from '@/components/GiftIcon';
@@ -39,14 +40,16 @@ export default function Notifications() {
   return (
     <Screen>
       <Header title={t('notifications.title')} />
-      {!items ? <Loader full /> : (
+      {!items ? <Loader full variant="list" n={8} /> : (
         <FlatList
           data={items}
           keyExtractor={(n) => n.id}
           contentContainerStyle={{ flexGrow: 1 }}
-          ListEmptyComponent={<EmptyState icon="bell" title={t('notifications.empty')} />}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => open(item)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, opacity: item.read ? 0.75 : 1 }}>
+          ListEmptyComponent={<EmptyState icon="bell" title={t('notifications.empty')} sub={t('ui.notifSub')} />}
+          contentInsetAdjustmentBehavior="automatic"
+          renderItem={({ item, index }) => (
+            <Appear i={index}>
+            <Pressable3 onPress={() => open(item)} scaleTo={0.98} style={[styles.row, !item.read && styles.unread]}>
               <Avatar uri={item.actor?.avatarUrl} name={item.actor?.name} size={48} online={item.actor?.online} />
               <View style={{ flex: 1 }}>
                 <Text style={font.body}>
@@ -57,10 +60,16 @@ export default function Notifications() {
               </View>
               {item.type === 'gift' && item.data?.giftId ? <GiftIcon id={item.data.giftId} size={36} /> : null}
               {!item.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand }} /> : null}
-            </Pressable>
+            </Pressable3>
+            </Appear>
           )}
         />
       )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, marginBottom: 8, borderRadius: radius.md, backgroundColor: colors.card },
+  unread: { backgroundColor: '#FFF6F7', borderWidth: 1, borderColor: 'rgba(242,52,79,0.12)' },
+});

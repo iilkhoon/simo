@@ -3,12 +3,14 @@ import { Animated, Dimensions, Linking, Pressable, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, palette, type BlockName } from '@/theme';
+import { colors, elev, fonts } from '@/theme';
 import { LogoMark, Nazar } from '@/components/Logo';
 import { Mascot } from '@/components/Mascot';
 import { GiftIcon } from '@/components/GiftIcon';
-import { Btn, SpeechBlock, T } from '@/components/ui';
-import { Icon } from '@/components/Icon';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { Btn, T } from '@/components/ui';
+import { Icon, type IconName } from '@/components/Icon';
+import { Appear } from '@/components/motion';
 import { useStore } from '@/store';
 import { LANGUAGES } from '@/i18n';
 import { changeLanguage } from '@/lib/session';
@@ -30,6 +32,19 @@ function Float({ i, style, children }: { i: number; style: object; children: Rea
   return <Animated.View style={[{ position: 'absolute' }, style, { transform: [...((style as { transform?: object[] }).transform ?? []), { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }] }]}>{children}</Animated.View>;
 }
 
+/** Emoji-ni mətndən çıxarır (ikonla göstərilir) */
+const plain = (s: string) => s.replace(/\s*\p{Extended_Pictographic}\uFE0F?/gu, '').trim();
+
+/** Ağ "söhbət" kartı: solda rəngli ikon dairəsi */
+function Bubble({ icon, text, tint, gift }: { icon?: IconName; text: string; tint: string; gift?: boolean }) {
+  return (
+    <View style={styles.bubble}>
+      <View style={[styles.bubbleIcon, { backgroundColor: tint }]}>{gift ? <GiftIcon id="rose" size={20} /> : <Icon name={icon!} size={14} color={colors.ink} />}</View>
+      <Text style={styles.bubbleText}>{text}</Text>
+    </View>
+  );
+}
+
 export default function Welcome() {
   const { t, i18n } = useTranslation();
   // App Store 1.2 / EULA: 18+ və Şərtlərə aydın razılıq — işarələnmədən davam etmək olmur
@@ -39,7 +54,6 @@ export default function Welcome() {
   // Kiçik ekranlarda (360×740) aşağı hissə sığsın deyə yuxarı səhnə hündürlükdən asılıdır
   const topH = Math.max(300, Math.min(H * 0.48, 430));
   const words = t('auth.tagline').split(/(?<=\.)\s+/);
-  const wc: BlockName[] = ['nar', 'ink', 'lime'];
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={{ height: topH }}>
@@ -57,21 +71,35 @@ export default function Welcome() {
             );
           })}
         </SafeAreaView>
-        <View style={[styles.disc, { top: topH * 0.2, left: W / 2 - topH * 0.36, width: topH * 0.72, height: topH * 0.72, borderRadius: topH }]} />
-        <Float i={0} style={{ top: topH * 0.3, left: W / 2 - topH * 0.25 }}><Mascot size={topH * 0.56} pose="hero" float={false} /></Float>
-        <Float i={1} style={{ top: topH * 0.2, left: 18, transform: [{ rotate: '-6deg' }] }}><SpeechBlock color="lime" size="sm" tail="right">{t('auth.bubble1')}</SpeechBlock></Float>
-        <Float i={2} style={{ top: topH * 0.36, right: 14, transform: [{ rotate: '5deg' }] }}><SpeechBlock color="lilac" size="sm">{t('auth.bubble2')}</SpeechBlock></Float>
-        <Float i={3} style={{ top: topH * 0.74, left: 26, transform: [{ rotate: '4deg' }] }}><SpeechBlock color="saffron" size="sm" tail="right">{t('auth.bubble3')}</SpeechBlock></Float>
-        <Float i={4} style={{ top: topH * 0.7, right: 34 }}><Nazar size={44} /></Float>
-        <Float i={5} style={{ top: topH * 0.16, right: 64, transform: [{ rotate: '14deg' }] }}><View style={styles.giftDot}><GiftIcon id="rose" size={30} /></View></Float>
+        {/* Arxa fon: yumşaq nar işığı + konsentrik halqalar */}
+        <View pointerEvents="none" style={{ position: 'absolute', top: topH * 0.1, left: W / 2 - topH * 0.48 }}>
+          <Svg width={topH * 0.96} height={topH * 0.96} viewBox="0 0 100 100">
+            <Defs>
+              <RadialGradient id="wglow" cx="50%" cy="50%" r="50%">
+                <Stop offset="0" stopColor="#FF8FA2" stopOpacity={0.55} />
+                <Stop offset="0.55" stopColor="#FFC2CC" stopOpacity={0.35} />
+                <Stop offset="1" stopColor="#FFE1E5" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={50} cy={50} r={50} fill="url(#wglow)" />
+            <Circle cx={50} cy={50} r={36} fill="none" stroke="rgba(242,52,79,0.14)" strokeWidth={0.5} />
+            <Circle cx={50} cy={50} r={46} fill="none" stroke="rgba(242,52,79,0.08)" strokeWidth={0.5} strokeDasharray="1.5 2.5" />
+          </Svg>
+        </View>
+        <Float i={0} style={{ top: topH * 0.28, left: W / 2 - topH * 0.27 }}><Appear from="fade"><Mascot size={topH * 0.58} pose="hero" float={false} /></Appear></Float>
+        <Float i={1} style={{ top: topH * 0.19, left: 16, transform: [{ rotate: '-4deg' }] }}><Appear i={2}><Bubble icon="chat" tint={colors.highlight} text={plain(t('auth.bubble1'))} /></Appear></Float>
+        <Float i={2} style={{ top: topH * 0.4, right: 12, transform: [{ rotate: '4deg' }] }}><Appear i={3}><Bubble icon="videocam" tint={colors.violet} text={plain(t('auth.bubble2'))} /></Appear></Float>
+        <Float i={3} style={{ top: topH * 0.76, left: 22, transform: [{ rotate: '3deg' }] }}><Appear i={4}><Bubble gift tint={colors.coinSoft} text={plain(t('auth.bubble3'))} /></Appear></Float>
+        <Float i={4} style={{ top: topH * 0.7, right: 30 }}><Appear i={5}><Nazar size={42} /></Appear></Float>
+        <Float i={5} style={{ top: topH * 0.17, right: 70 }}><Appear i={6}><View style={styles.heartDot}><Icon name="heart" size={18} color={colors.white} /></View></Appear></Float>
       </View>
       <SafeAreaView edges={['bottom']} style={styles.bottom}>
-        <View style={styles.words}>
-          {words.map((w, i) => (
-            <SpeechBlock key={i} color={wc[i % 3]} tail={i === 0 ? 'left' : 'none'} size="md" rotate={[-2, 1.5, -1][i % 3]}>{w}</SpeechBlock>
-          ))}
-        </View>
-        <T v="body" color={colors.textMuted} style={{ marginTop: 14 }}>{t('auth.welcomeSub')}</T>
+        <Appear i={1}>
+          <Text style={styles.headline}>
+            {words.map((w, i) => <Text key={i} style={{ color: i === 0 ? colors.brand : colors.ink }}>{w}{i < words.length - 1 ? ' ' : ''}</Text>)}
+          </Text>
+        </Appear>
+        <Appear i={2}><T v="body" color={colors.textMuted} style={{ marginTop: 10 }}>{t('auth.welcomeSub')}</T></Appear>
         <View style={{ flex: 1, minHeight: 16 }} />
         <Pressable onPress={() => setAgree((v) => !v)} style={styles.consent} hitSlop={6} accessibilityRole="checkbox" accessibilityState={{ checked: agree }}>
           <View style={[styles.box, agree && styles.boxOn]}>{agree ? <Icon name="checkmark" size={16} color={colors.white} /> : null}</View>
@@ -102,10 +130,12 @@ const styles = StyleSheet.create({
   lang: { paddingHorizontal: 11, height: 32, justifyContent: 'center', borderRadius: 16, backgroundColor: colors.card, marginTop: 8 },
   langText: { color: colors.ink, fontFamily: fonts.black, fontSize: 12 },
   brandSm: { color: colors.ink, fontSize: 26, fontFamily: fonts.displayBlack, letterSpacing: -1.2, marginTop: -3 },
-  disc: { position: 'absolute', backgroundColor: palette.narSoft },
-  giftDot: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  heartDot: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', ...elev(2, colors.brand) },
+  bubble: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: 18, borderBottomLeftRadius: 6, paddingLeft: 6, paddingRight: 14, height: 40, ...elev(2) },
+  bubbleIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  bubbleText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink },
+  headline: { fontFamily: fonts.displayBlack, fontSize: 38, lineHeight: 42, letterSpacing: -1.6 },
   bottom: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
-  words: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6, rowGap: 8 },
   consent: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
   box: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: colors.ink, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   boxOn: { backgroundColor: colors.brand, borderColor: colors.brand },

@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, palette, radius, tintFor } from '@/theme';
+import { colors, fonts, glow, gradients, palette, radius, tintFor } from '@/theme';
+import { Appear, Pressable3, Pulse, Shine } from '@/components/motion';
 import { EmptyState, GlassPill, IconBtn, LiveDot, Loader, PressBox, Screen, Segmented, T, Tabs, Tag } from '@/components/ui';
 import Discover from './discover';
 import { Icon } from '@/components/Icon';
@@ -92,31 +93,36 @@ export default function LiveHub() {
 
       {/* Təsadüfi tanışlıq — əsas giriş nöqtəsi (düz rəng blokları) */}
       <View style={styles.quickRow}>
-        <Pressable style={({ pressed }) => [styles.quick, { backgroundColor: colors.brand }, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/match', params: { type: 'VIDEO' } })}>
+        <Pressable3 scaleTo={0.96} style={[styles.quick, { backgroundColor: colors.brand }, glow(colors.brand)]} onPress={() => router.push({ pathname: '/match', params: { type: 'VIDEO' } })}>
+          <LinearGradient colors={gradients.nar} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: radius.xl }]} />
+          <View style={styles.quickGlow} />
+          <Shine />
           <View style={styles.quickMascot}><Mascot size={92} pose="call" float={false} /></View>
           <View style={styles.quickIcon}><Icon name="videocam" size={20} color={colors.brand} /></View>
           <Text style={[styles.quickTitle, { color: colors.white }]}>{t('live.quickVideo')}</Text>
           <Text style={[styles.quickSub, { color: 'rgba(255,255,255,0.9)' }]}>{t('live.quickVideoSub')}</Text>
-        </Pressable>
+        </Pressable3>
         <View style={{ flex: 1, gap: 10 }}>
-          <Pressable style={({ pressed }) => [styles.quickSmall, { backgroundColor: colors.violet }, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/match', params: { type: 'VOICE' } })}>
+          <Pressable3 scaleTo={0.95} style={[styles.quickSmall, { backgroundColor: colors.violet }]} onPress={() => router.push({ pathname: '/match', params: { type: 'VOICE' } })}>
+            <LinearGradient colors={gradients.lilac} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
             <View style={[styles.quickIcon, { position: 'relative', top: 0, left: 0 }]}><Icon name="mic" size={18} color={colors.ink} /></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.quickTitleSm} numberOfLines={2}>{t('live.quickVoice')}</Text>
             </View>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.quickSmall, { backgroundColor: colors.highlight }, pressed && styles.pressed]} onPress={() => router.push('/leaderboard')}>
+          </Pressable3>
+          <Pressable3 scaleTo={0.95} style={[styles.quickSmall, { backgroundColor: colors.highlight }]} onPress={() => router.push('/leaderboard')}>
+            <LinearGradient colors={gradients.lime} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
             <View style={[styles.quickIcon, { position: 'relative', top: 0, left: 0 }]}><Icon name="trophy" size={18} color={colors.ink} /></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.quickTitleSm} numberOfLines={2}>{t('leaderboard.title')}</Text>
             </View>
-          </Pressable>
+          </Pressable3>
         </View>
       </View>
 
       <View style={styles.secRow}>
         <T v="h2" style={{ flex: 1 }}>{t('live.title')}</T>
-        <View style={styles.liveCount}><LiveDot /><Text style={styles.liveCountText}>{compact((liveNow ?? []).length)}</Text></View>
+        <View style={styles.liveCount}><View style={{ width: 7, height: 7, alignItems: 'center', justifyContent: 'center' }}><Pulse size={7} /><LiveDot /></View><Text style={styles.liveCountText}>{compact((liveNow ?? []).length)}</Text></View>
       </View>
       <Segmented<Tab>
         value={tab}
@@ -150,8 +156,8 @@ export default function LiveHub() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={header}
         refreshControl={<RefreshControl tintColor={colors.brand} refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(tab); setRefreshing(false); }} />}
-        ListEmptyComponent={rooms === null ? <Loader /> : <EmptyState icon={voice ? 'mic' : 'live'} title={t('live.empty')} tint={voice ? colors.diamondSoft : colors.brandSoft} />}
-        renderItem={({ item, index }) => (voice ? <VoiceRow room={item} onPress={() => open(item)} /> : <VideoCard room={item} rank={tab === 'popular' ? index : -1} onPress={() => open(item)} />)}
+        ListEmptyComponent={rooms === null ? <Loader variant={voice ? 'list' : 'grid'} width={W} n={4} /> : <EmptyState compact icon={voice ? 'mic' : 'live'} title={t('live.empty')} sub={t('ui.liveEmptySub')} />}
+        renderItem={({ item, index }) => <Appear i={index} from="fade">{voice ? <VoiceRow room={item} onPress={() => open(item)} /> : <VideoCard room={item} rank={tab === 'popular' ? index : -1} onPress={() => open(item)} />}</Appear>}
       />
       )}
     </Screen>
@@ -215,9 +221,10 @@ const styles = StyleSheet.create({
   storyName: { fontFamily: fonts.semibold, fontSize: 11.5, lineHeight: 14, color: colors.ink, maxWidth: 68, textAlign: 'center' },
   quickRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   quick: { flex: 1.15, padding: 16, height: 180, borderRadius: radius.xl, justifyContent: 'flex-end', overflow: 'hidden' },
-  quickSmall: { flex: 1, borderRadius: 24, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  quickSmall: { flex: 1, borderRadius: 24, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, overflow: 'hidden' },
   pressed: { transform: [{ scale: 0.97 }] },
   quickMascot: { position: 'absolute', right: -14, top: -10 },
+  quickGlow: { position: 'absolute', right: -40, top: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,214,120,0.35)' },
   quickIcon: { position: 'absolute', top: 14, left: 14, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   quickTitle: { fontFamily: fonts.displayBlack, fontSize: 21, lineHeight: 23, letterSpacing: -0.7 },
   quickTitleSm: { fontFamily: fonts.display, fontSize: 14, lineHeight: 17, letterSpacing: -0.3, color: colors.ink },

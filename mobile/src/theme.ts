@@ -3,7 +3,7 @@
  *
  * Dil: yumşaq, foto-birinci sosial UI (təmiz kartlar, iri radiuslar, yumşaq kölgələr)
  * + oynaq brend təbəqəsi (düz rəng blokları, çat-qabarcığı başlıqlar, stikerlər, nar maskotu).
- * Qradiyent yoxdur. Brend rəngi — Azərbaycan narından götürülmüş "Nar" qırmızısı.
+ * Qradiyent yalnız premium səthlərdə (aşağıda `gradients`). Brend rəngi — Azərbaycan narından götürülmüş "Nar" qırmızısı.
  * Yayın, zəng, video lent və canlı ekranlar "Gecə" (night) premium rejimindədir.
  *
  * Bütün ekranlar yalnız bu tokenlərdən istifadə edir. Ətraflı: /design/DESIGN_SYSTEM.md
@@ -171,4 +171,47 @@ export const font = {
   body: { ...type.body, color: colors.ink },
   small: { ...type.small, color: colors.textMuted },
   tiny: { ...type.tiny, color: colors.textMuted },
+};
+
+/* ───────────── Nar 3: premium qat (qradiyentlər, hərəkət, boşluq) ─────────────
+ * Qradiyentlər yalnız "dəyər" səthlərində: əsas düymə, premium kartlar (VIP, Zadəganlıq, balans),
+ * illüstrasiyalar və bayram anları (uyğunluq). Adi kartlar düz ağ qalır. */
+export const gradients = {
+  /** Əsas brend: nar qırmızısı → dərin nar (isti CTA) */
+  nar: ['#FF5A73', '#F2344F', '#DA1F48'] as const,
+  narSoft: ['#FFF0F2', '#FFDCE2'] as const,
+  /** Gecə premium kartı */
+  night: ['#2E2622', '#15110F'] as const,
+  /** VIP / Qızıl */
+  gold: ['#FFD978', '#FFB21E', '#F39200'] as const,
+  /** Almaz / Xəzər */
+  diamond: ['#78A3FF', '#2F6BFF', '#1B4ED4'] as const,
+  /** Səsli tanışlıq — yasəmən */
+  lilac: ['#EDE4FF', '#CDB8FF'] as const,
+  lime: ['#F2FBC4', '#D9F26B'] as const,
+  /** Bənövşəyi "Xan" */
+  violet: ['#9478FF', '#6D4AFF', '#4A2ECF'] as const,
+  bronze: ['#DDA067', '#B8733A', '#8A5223'] as const,
+  /** Uyğunluq / bayram fonu */
+  celebrate: ['#FF6A86', '#F2344F', '#7B1FA2'] as const,
+  /** Foto üzərində aşağı qaraltma */
+  scrim: ['rgba(16,14,13,0)', 'rgba(16,14,13,0.82)'] as const,
+};
+export type GradientName = keyof typeof gradients;
+
+/** Boşluq tokenləri (4 px şəbəkə) */
+export const spacing = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, huge: 48 } as const;
+
+/** Hərəkət tokenləri — reanimated üçün */
+export const motion = {
+  /** Toxunuş: sürətli, az sıçrayışlı */
+  press: { damping: 18, stiffness: 420, mass: 0.6 },
+  /** Elementin görünməsi */
+  enter: { damping: 18, stiffness: 180, mass: 0.9 },
+  /** Bayram: daha çox sıçrayış */
+  bouncy: { damping: 9, stiffness: 180, mass: 0.8 },
+  stagger: 45,
+  fast: 160,
+  base: 260,
+  slow: 420,
 };

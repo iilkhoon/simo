@@ -1,11 +1,14 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTabSpace } from '@/components/Glass';
 import { Share, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, vipColor } from '@/theme';
-import { Card, IconBtn, MenuRow, PressBox, Screen, T } from '@/components/ui';
-import { Burst } from '@/components/Burst';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import { colors, fonts, gradients, motion, vipColor } from '@/theme';
+import { Card, GradientCard, IconBtn, MenuRow, PressBox, Screen, T } from '@/components/ui';
+import { Illustration } from '@/components/Illustration';
+import { Appear } from '@/components/motion';
 import { Avatar } from '@/components/Avatar';
 import { CoinAmount, DiamondAmount, HostBadge, LevelBadge, VerifiedBadge, VipBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
@@ -23,9 +26,21 @@ function Progress({ label, level, xp, next, color }: { label: string; level: num
         <T v="label">Lv {level}</T>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${Math.max(6, pct * 100)}%`, backgroundColor: color }]} />
+        <Fill pct={Math.max(0.06, pct)} g={color === colors.coin ? gradients.gold : gradients.nar} />
       </View>
     </View>
+  );
+}
+
+/** Səviyyə zolağı — açılanda yay ilə dolur */
+function Fill({ pct, g }: { pct: number; g: readonly [string, string, ...string[]] }) {
+  const v = useSharedValue(0);
+  useEffect(() => { v.value = withDelay(250, withSpring(pct, motion.enter)); }, [pct, v]);
+  const a = useAnimatedStyle(() => ({ width: `${v.value * 100}%` }));
+  return (
+    <Animated.View style={[styles.fill, a]}>
+      <LinearGradient colors={g} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+    </Animated.View>
   );
 }
 
@@ -52,6 +67,7 @@ export default function MeTab() {
       </View>
 
       {/* Profil kartı */}
+      <Appear i={0}>
       <PressBox r={24} sh={2} onPress={() => router.push({ pathname: '/user/[id]', params: { id: me.id } })} inner={styles.head}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Avatar uri={me.avatarUrl} name={me.name} size={78} vipTier={me.vipTier} />
@@ -75,53 +91,61 @@ export default function MeTab() {
           <Progress label={t('me.charm')} level={me.charm.level} xp={me.charm.xp} next={me.charm.next} color={colors.brand} />
         </View>
       </PressBox>
+      </Appear>
 
       {/* Balanslar */}
-      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-        <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.coin} onPress={() => router.push('/wallet')} inner={styles.balance}>
-          <T v="label">{t('common.coins')}</T>
+      <Appear i={1} style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+        <GradientCard g="gold" glow={colors.white} style={{ flex: 1 }} r={24} inner={styles.balance} onPress={() => router.push('/wallet')}>
+          <T v="label" color="rgba(26,21,18,0.7)">{t('common.coins')}</T>
           <CoinAmount n={big(me.coins)} size={24} />
           <View style={styles.cta}><Text style={styles.ctaText}>{t('wallet.recharge')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
-          {!me.firstRechargeDone ? <View style={styles.x2}><Burst size={48} color={colors.brand} points={10} /><Text style={styles.x2Text}>+300</Text></View> : null}
-        </PressBox>
-        <PressBox style={{ flex: 1 }} r={22} sh={0} bg={colors.diamondSoft} onPress={() => router.push('/earnings')} inner={styles.balance}>
-          <T v="label">{t('common.diamonds')}</T>
-          <DiamondAmount n={me.diamonds} size={24} />
-          <View style={styles.cta}><Text style={styles.ctaText}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.bg} /></View>
-        </PressBox>
-      </View>
+          {!me.firstRechargeDone ? <View style={styles.x2}><Icon name="gift" size={11} color={colors.white} /><Text style={styles.x2Text}>+300</Text></View> : null}
+        </GradientCard>
+        <GradientCard g="diamond" glow={colors.white} style={{ flex: 1 }} r={24} inner={styles.balance} onPress={() => router.push('/earnings')}>
+          <T v="label" color="rgba(255,255,255,0.8)">{t('common.diamonds')}</T>
+          <DiamondAmount n={me.diamonds} size={24} color={colors.white} />
+          <View style={[styles.cta, { backgroundColor: colors.white }]}><Text style={[styles.ctaText, { color: colors.ink }]}>{t('me.earnings')}</Text><Icon name="arrowRight" size={13} color={colors.ink} /></View>
+        </GradientCard>
+      </Appear>
 
       {/* VIP */}
-      <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={me.vip ? vipColor(me.vip.tier).bg : colors.ink} onPress={() => router.push('/vip')} inner={styles.vip}>
-        <View style={[styles.vipIcon, { backgroundColor: me.vip ? colors.card : colors.coin }]}><Icon name="crown" size={22} color={colors.ink} /></View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.vipTitle, { color: me.vip ? vipColor(me.vip.tier).fg : colors.bg }]}>{t('vip.title')}</Text>
-          <Text style={[styles.vipSub, { color: me.vip ? vipColor(me.vip.tier).fg : colors.nightMuted }]} numberOfLines={2}>
-            {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: dateOnly(me.vipUntil) }) : t('vip.subtitle')}
-          </Text>
-        </View>
-        <Icon name="chevron" size={18} color={me.vip ? vipColor(me.vip.tier).fg : colors.bg} />
-      </PressBox>
+      <Appear i={2}>
+        <GradientCard g={me.vip ? (me.vip.tier === 'DIAMOND' ? 'diamond' : me.vip.tier === 'GOLD' ? 'gold' : ['#F4F6FA', '#C9D1DC']) : 'night'} glow={me.vip ? colors.white : colors.coin} shine style={{ marginTop: 12 }} r={24} inner={styles.vip} onPress={() => router.push('/vip')}>
+          <View style={styles.vipArt}><Illustration name="crown" bare size={44} float={false} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.vipTitle, { color: me.vip ? vipColor(me.vip.tier).fg : colors.bg }]}>{t('vip.title')}</Text>
+            <Text style={[styles.vipSub, { color: me.vip ? vipColor(me.vip.tier).fg : colors.nightMuted }]} numberOfLines={2}>
+              {me.vip && me.vipUntil ? t('vip.activeUntil', { tier: t(`vip.tiers.${me.vip.tier}`), date: dateOnly(me.vipUntil) }) : t('vip.subtitle')}
+            </Text>
+          </View>
+          <View style={[styles.go, { backgroundColor: me.vip ? 'rgba(255,255,255,0.35)' : colors.coin }]}><Icon name="chevron" size={16} color={colors.ink} /></View>
+        </GradientCard>
+      </Appear>
 
       {!isHost ? (
-        <PressBox style={{ marginTop: 12 }} r={22} sh={0} bg={colors.highlight} onPress={() => router.push('/host-tasks')} inner={styles.vip}>
-          <View style={[styles.vipIcon, { backgroundColor: colors.card }]}><Icon name="sparkles" size={20} color={colors.ink} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.vipTitle, { color: colors.ink }]}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost')}</Text>
-            <Text style={[styles.vipSub, { color: colors.textMuted }]}>{t('me.hostPitch')}</Text>
-          </View>
-          <Icon name="chevron" size={18} color={colors.ink} />
-        </PressBox>
+        <Appear i={3}>
+          <GradientCard g="lime" sh={1} style={{ marginTop: 12 }} r={24} inner={styles.vip} onPress={() => router.push('/host-tasks')}>
+            <View style={[styles.vipIcon, { backgroundColor: colors.card }]}><Icon name="mic" size={20} color={colors.ink} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.vipTitle, { color: colors.ink }]}>{me.hostStatus === 'PENDING' ? t('me.hostPending') : t('me.becomeHost').replace(/\s*\p{Extended_Pictographic}/gu, '')}</Text>
+              <Text style={[styles.vipSub, { color: colors.textMuted }]}>{t('me.hostPitch')}</Text>
+            </View>
+            <View style={[styles.go, { backgroundColor: colors.ink }]}><Icon name="chevron" size={16} color={colors.white} /></View>
+          </GradientCard>
+        </Appear>
       ) : null}
 
+      <Appear i={4}>
       <Card style={{ marginTop: 16 }}>
         <MenuRow icon="heart" label={t('me.likes')} tint={colors.brandSoft} onPress={() => router.push('/likes')} />
         <MenuRow icon="eye" label={t('me.visitors')} tint={colors.lilac} onPress={() => router.push('/visitors')} />
         <MenuRow icon="gift" label={t('me.rewards')} tint={colors.coinSoft} onPress={() => router.push('/rewards')} />
         <MenuRow icon="trophy" label={t('me.leaderboard')} tint={colors.highlight} onPress={() => router.push('/leaderboard')} />
         <MenuRow icon="crown" label={t('noble.title')} tint={colors.coinSoft} onPress={() => router.push('/noble')} />
-        <MenuRow icon="sparkles" label={t('raffles.title')} tint={colors.lilac} onPress={() => router.push('/raffles')} last />
+        <MenuRow icon="ticket" label={t('raffles.title')} tint={colors.lilac} onPress={() => router.push('/raffles')} last />
       </Card>
+      </Appear>
+      <Appear i={5}>
       <Card style={{ marginTop: 12 }}>
         {isHost || me.diamonds > 0 ? <MenuRow icon="cash" label={t('me.earnings')} tint={colors.diamondSoft} onPress={() => router.push('/earnings')} /> : null}
         <MenuRow icon="business" label={t('me.agency')} tint={colors.lilac} value={me.agency?.name ?? me.ownedAgency?.name} onPress={() => router.push('/agency')} />
@@ -141,19 +165,22 @@ export default function MeTab() {
         />
         <MenuRow icon="settings" label={t('me.settings')} tint={colors.bgSunken} onPress={() => router.push('/settings')} last />
       </Card>
+      </Appear>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   head: { padding: 16 },
-  track: { height: 12, borderRadius: 6, backgroundColor: colors.bgSunken, overflow: 'hidden' },
-  fill: { height: '100%', borderRightWidth: 1, borderColor: colors.hairline },
+  track: { height: 10, borderRadius: 5, backgroundColor: colors.bgSunken, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 5, overflow: 'hidden' },
   balance: { padding: 14, gap: 8, minHeight: 116 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: colors.ink, borderRadius: 10, paddingHorizontal: 9, height: 24 },
   ctaText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11.5 },
-  x2: { position: 'absolute', top: 8, right: 8, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '12deg' }] },
-  x2Text: { position: 'absolute', color: colors.white, fontFamily: fonts.display, fontSize: 13 },
+  x2: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 3, height: 22, paddingHorizontal: 8, borderRadius: 11, backgroundColor: colors.brand },
+  x2Text: { color: colors.white, fontFamily: fonts.black, fontSize: 11 },
+  vipArt: { width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  go: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   vip: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   vipIcon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   vipTitle: { fontFamily: fonts.displayBold, fontSize: 15 },

@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, radius, tintFor } from '@/theme';
 import { Box, Btn, GlassPill, Header, IconBtn, Screen, T, Tabs } from '@/components/ui';
-import { Mascot } from '@/components/Mascot';
+import { Illustration } from '@/components/Illustration';
 import { Avatar } from '@/components/Avatar';
 import { CoinAmount, CoinPill, LevelBadge, VerifiedBadge } from '@/components/Badges';
 import { api } from '@/lib/api';
@@ -77,7 +77,7 @@ export default function Match() {
     <Screen night edges={['top', 'bottom']}>
       <StatusBar style="light" />
       <Header night title={video ? t('live.quickVideo') : t('live.quickVoice')} right={<CoinPill n={me?.coins ?? 0} night onPress={() => router.push('/wallet')} />} />
-      <Tabs<Kind> night value={kind} onChange={setKind} options={[{ key: 'VIDEO', label: `📹  ${t('match.video')}` }, { key: 'VOICE', label: `🎙  ${t('match.voice')}` }]} />
+      <Tabs<Kind> night value={kind} onChange={setKind} options={[{ key: 'VIDEO', label: t('match.video'), icon: 'videocam' }, { key: 'VOICE', label: t('match.voice'), icon: 'mic' }]} />
 
       <View style={styles.stage}>
         {st.s === 'search' ? (
@@ -96,7 +96,7 @@ export default function Match() {
           </View>
         ) : st.s === 'none' ? (
           <View style={styles.center}>
-            <Mascot size={150} pose="search" />
+            <Illustration name="search" size={150} />
             <T v="h2" color={colors.white} center style={{ marginTop: 18 }}>{t('match.none')}</T>
             <T v="small" color={colors.nightMuted} center style={{ marginTop: 4, maxWidth: 280 }}>{t('match.noneSub')}</T>
             <Btn full={false} kind="light" icon="refresh" title={t('common.retry')} style={{ marginTop: 18 }} onPress={() => void search(kind)} />

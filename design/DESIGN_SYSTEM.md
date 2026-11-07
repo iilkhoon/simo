@@ -11,7 +11,10 @@ Simo-nun vizual dili iki qatdan ibarətdir.
 
 Qradiyent dekor kimi işlədilmir. Yeganə istisna foto üzərindəki tünd "scrim"dir: o, mətnin oxunması üçündür.
 
+
+**Nar 3 (2026-11) yeniləməsi:** qradiyentlər yalnız "dəyər" səthlərində işlədilir: əsas düymə, premium kartlar (VIP, Zadəganlıq, balans), illüstrasiyalar və bayram anları. Tokenlər: `gradients`, `spacing`, `motion` (`theme.ts`). Hərəkət primitivləri `components/motion.tsx`-dədir (Appear, Pressable3, Skeleton, Pulse, PopIn, Shine, Float). Boş vəziyyət illüstrasiyaları `components/Illustration.tsx`-dədir. Yeganə ikon ailəsi Ionicons-dur, tac və sikkə üçün eyni üslubda xüsusi SVG var. Əsas interfeysdə emoji işlədilmir. Araşdırma: `docs/DESIGN_RESEARCH.md`. Audit: `docs/SCREEN_AUDIT.md`.
 Yayın, zəng, video lent və təsadüfi tanışlıq ekranları **Gecə (night) premium** rejimindədir: tünd fon, şüşə (glass) həblər, parlaq aksentlər.
+
 
 Kod mənbələri:
 

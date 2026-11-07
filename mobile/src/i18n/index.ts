@@ -8,6 +8,10 @@ import { extra } from './extra';
 import { callLive } from './callLive';
 import { agencyText } from './agencyText';
 import { safetyI18n } from './safety';
+import { uiText } from './uiText';
+
+/** Əlavə lüğət bölmələri — yenisini bu siyahıya əlavə edin */
+const PACKS = [extra, callLive, agencyText, safetyI18n, uiText];
 
 /** Əsas lüğət + yeni bölmələr (dərin birləşmə; eyni bölmədə yeni açarlar əlavə olunur) */
 function merge<T extends Record<string, unknown>>(a: T, b: Record<string, unknown>): T {
@@ -34,9 +38,9 @@ function deviceLang(): Lang {
 
 void i18n.use(initReactI18next).init({
   resources: {
-    az: { translation: merge(merge(merge(merge(az, extra.az), callLive.az), agencyText.az), safetyI18n.az) },
-    ru: { translation: merge(merge(merge(merge(ru, extra.ru), callLive.ru), agencyText.ru), safetyI18n.ru) },
-    en: { translation: merge(merge(merge(merge(en, extra.en), callLive.en), agencyText.en), safetyI18n.en) },
+    az: { translation: PACKS.reduce((acc, p) => merge(acc, p.az), az) },
+    ru: { translation: PACKS.reduce((acc, p) => merge(acc, p.ru), ru) },
+    en: { translation: PACKS.reduce((acc, p) => merge(acc, p.en), en) },
   },
   lng: deviceLang(),
   fallbackLng: 'az',
