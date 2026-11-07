@@ -10,13 +10,13 @@ import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
 import { api } from '@/lib/api';
-import { duration, timeAgo } from '@/lib/format';
+import { duration, giftName, timeAgo } from '@/lib/format';
 import { startCall } from '@/lib/calls';
 import { useSocket } from '@/lib/socket';
 import { useStore } from '@/store';
 import type { Call, PublicUser } from '@/lib/types';
 
-interface Conv { id: string; user: PublicUser; lastMessageText: string; lastMessageAt: string; unread: number }
+interface Conv { id: string; user: PublicUser; lastMessageText: string; lastMessageAt: string; unread: number; lastGift?: { nameAz: string; nameRu: string; nameEn: string; count: number } }
 interface CallRow extends Call { createdAt: string; endedAt: string | null; peer: PublicUser | null }
 
 export default function Chats() {
@@ -127,7 +127,7 @@ export default function Chats() {
                     {item.user.verified ? <VerifiedBadge size={14} /> : null}
                     {item.user.isHost ? <View style={styles.hostDot} /> : null}
                   </View>
-                  <Text style={[styles.last, item.unread > 0 && { color: colors.ink, fontFamily: fonts.bold }]} numberOfLines={1}>{item.lastMessageText}</Text>
+                  <Text style={[styles.last, item.unread > 0 && { color: colors.ink, fontFamily: fonts.bold }]} numberOfLines={1}>{item.lastGift ? `🎁 ${giftName(item.lastGift)} ×${item.lastGift.count}` : item.lastMessageText}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                   <Text style={[styles.time, item.unread > 0 && { color: colors.brand }]}>{timeAgo(item.lastMessageAt)}</Text>

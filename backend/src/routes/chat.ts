@@ -88,11 +88,19 @@ export default async function chatRoutes(app: FastifyInstance) {
         }),
       ),
     );
+    // Son mesaj hədiyyədirsə ("🎁 <ad> xN") — tətbiq adı istifadəçinin dilində göstərsin deyə 3 dildə ad qaytarılır
+    const GIFT_RE = /^🎁 (.+) x(\d+)$/;
+    const giftNames = [...new Set(convs.map((c) => GIFT_RE.exec(c.lastMessageText ?? '')?.[1]).filter((x): x is string => !!x))];
+    const gifts = giftNames.length ? await prisma.gift.findMany({ where: { nameAz: { in: giftNames } }, select: { id: true, nameAz: true, nameRu: true, nameEn: true } }) : [];
+    const giftByName = new Map(gifts.map((g) => [g.nameAz, g]));
     return {
       items: convs.flatMap((c, i) => {
         const other = byId.get(otherIds[i]);
         if (!other) return [];
-        return [{ id: c.id, user: other, lastMessageText: c.lastMessageText, lastMessageAt: c.lastMessageAt, unread: unread[i] }];
+        const m = GIFT_RE.exec(c.lastMessageText ?? '');
+        const g = m ? giftByName.get(m[1]) : undefined;
+        const lastGift = g && m ? { ...g, count: Number(m[2]) } : undefined;
+        return [{ id: c.id, user: other, lastMessageText: c.lastMessageText, lastMessageAt: c.lastMessageAt, unread: unread[i], lastGift }];
       }),
     };
   });

@@ -145,7 +145,7 @@ export default function Wallet() {
         </View>
       ) : null}
 
-      <View style={{ marginTop: 16 }}><Tabs value={tab} onChange={setTab} options={[{ key: 'nar', label: 'Nar', icon: 'coin' }, { key: 'almaz', label: t('almaz.title'), icon: 'diamond' }]} /></View>
+      <View style={{ marginTop: 16 }}><Tabs value={tab} onChange={setTab} options={[{ key: 'nar', label: t('common.coins'), icon: 'coin' }, { key: 'almaz', label: t('almaz.title'), icon: 'diamond' }]} /></View>
       {tab === 'almaz' ? (
         <>
           <View style={styles.almazInfo}>
