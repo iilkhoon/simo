@@ -3,7 +3,7 @@
  *
  * Dil: yumşaq, foto-birinci sosial UI (təmiz kartlar, iri radiuslar, yumşaq kölgələr)
  * + oynaq brend təbəqəsi (düz rəng blokları, çat-qabarcığı başlıqlar, stikerlər, nar maskotu).
- * Qradiyent yoxdur. Brend rəngi — Azərbaycan narından götürülmüş "Nar" qırmızısı.
+ * Qradiyent yalnız premium səthlərdə (aşağıda `gradients`). Brend rəngi — Azərbaycan narından götürülmüş "Nar" qırmızısı.
  * Yayın, zəng, video lent və canlı ekranlar "Gecə" (night) premium rejimindədir.
  *
  * Bütün ekranlar yalnız bu tokenlərdən istifadə edir. Ətraflı: /design/DESIGN_SYSTEM.md
