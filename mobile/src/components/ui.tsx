@@ -9,11 +9,11 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
-import { blocks, colors, elev, fonts, glow, gradients, motion, noPad, radius, shadow as SH, type, type BlockName, type TypeName, webNoOutline } from '../theme';
+import { blocks, colors, elev, fonts, glow, gradients, motion, noPad, radius, shadow as SH, type, type BlockName, type GradientName, type TypeName, webNoOutline } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Mascot, type MascotPose } from './Mascot';
 import { Illustration, type IllustrationName } from './Illustration';
-import { Appear, Pressable3, SkeletonGrid, SkeletonList } from './motion';
+import { Appear, Pressable3, Shine, SkeletonGrid, SkeletonList } from './motion';
 import { LogoMark } from './Logo';
 
 export const tap = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -389,6 +389,32 @@ export function Card({ children, style, bg, sh = SH.md, r = radius.lg, hard }: {
   for (const [k, v] of Object.entries(flat)) (OUTER_KEYS.has(k) ? outer : innerS)[k] = v;
   const tinted = bg && bg !== colors.card;
   return <Box bg={bg} sh={tinted && !hard ? 0 : sh} r={r} hard={hard} style={outer as ViewStyle} inner={innerS as ViewStyle}>{children}</Box>;
+}
+
+/**
+ * Qradiyentli premium kart: VIP, balans, Zadəganlıq, promo blokları.
+ * `glow` — küncdə yumşaq işıq kürəsi, `shine` — hərdən keçən işıq zolağı.
+ */
+export function GradientCard({ g, children, style, inner, r = radius.lg, glow: glowColor, shine, onPress, sh = SH.lg }: {
+  g: GradientName | readonly string[]; children?: React.ReactNode; style?: StyleProp<ViewStyle>; inner?: StyleProp<ViewStyle>; r?: number;
+  glow?: string; shine?: boolean; onPress?: () => void; sh?: number;
+}) {
+  const colorsArr = (typeof g === 'string' ? gradients[g] : g) as unknown as readonly [string, string, ...string[]];
+  const body = (
+    <View style={[{ borderRadius: r, overflow: 'hidden' }, inner]}>
+      <LinearGradient colors={colorsArr} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      {glowColor ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'flex-end' }]}>
+          <View style={{ width: 220, height: 220, borderRadius: 110, marginTop: -90, marginRight: -70, backgroundColor: glowColor, opacity: 0.35 }} />
+        </View>
+      ) : null}
+      {shine ? <Shine /> : null}
+      {children}
+    </View>
+  );
+  const outer = [{ borderRadius: r }, elev(sh, colorsArr[colorsArr.length - 1]), style];
+  if (!onPress) return <View style={outer}>{body}</View>;
+  return <Pressable3 onPress={() => { tap(); onPress(); }} scaleTo={0.97} style={outer}>{body}</Pressable3>;
 }
 
 export function SectionTitle({ title, action, onAction, style }: { title: string; action?: string; onAction?: () => void; style?: StyleProp<ViewStyle> }) {

@@ -12,7 +12,7 @@ import { Float } from './motion';
 
 export type IllustrationName =
   | 'heart' | 'chat' | 'bell' | 'eye' | 'bookmark' | 'shield' | 'search' | 'trophy' | 'ticket'
-  | 'mic' | 'video' | 'pin' | 'call' | 'people' | 'camera' | 'gift' | 'spark';
+  | 'mic' | 'video' | 'pin' | 'call' | 'people' | 'camera' | 'gift' | 'spark' | 'crown';
 
 type Tone = { bg: [string, string]; a: [string, string]; b: [string, string] };
 const T = {
@@ -25,7 +25,7 @@ const T = {
 
 const TONE: Record<IllustrationName, Tone> = {
   heart: T.nar, chat: T.lilac, bell: T.gold, eye: T.blue, bookmark: T.nar, shield: T.mint, search: T.blue, trophy: T.gold,
-  ticket: T.gold, mic: T.lilac, video: T.nar, pin: T.nar, call: T.mint, people: T.lilac, camera: T.nar, gift: T.nar, spark: T.gold,
+  ticket: T.gold, mic: T.lilac, video: T.nar, pin: T.nar, call: T.mint, people: T.lilac, camera: T.nar, gift: T.nar, spark: T.gold, crown: T.gold,
 };
 
 /** 4 guşəli parıltı */
@@ -204,6 +204,20 @@ function Art({ name, id }: { name: IllustrationName; id: string }) {
           <Path d="M44 86 v26" stroke={W} strokeWidth={6} strokeLinecap="round" />
         </G>
       );
+    case 'crown':
+      return (
+        <G>
+          <Path d="M26 62 l30 26 l24 -46 l24 46 l30 -26 l-10 62 a8 8 0 0 1 -8 7 h-72 a8 8 0 0 1 -8 -7Z" fill={A} strokeLinejoin="round" stroke={A} strokeWidth={6} />
+          <Circle cx={26} cy={58} r={9} fill={A} />
+          <Circle cx={80} cy={36} r={10} fill={A} />
+          <Circle cx={134} cy={58} r={9} fill={A} />
+          <Rect x={40} y={112} width={80} height={10} rx={5} fill="rgba(255,255,255,0.35)" />
+          <Path d={HEART(80, 94, 11)} fill={B} />
+          <Circle cx={52} cy={100} r={5} fill="#fff" opacity={0.9} />
+          <Circle cx={108} cy={100} r={5} fill="#fff" opacity={0.9} />
+          <Path d="M44 78 l10 8" stroke="rgba(255,255,255,0.6)" strokeWidth={5} strokeLinecap="round" />
+        </G>
+      );
     case 'spark':
     default:
       return (
@@ -215,9 +229,22 @@ function Art({ name, id }: { name: IllustrationName; id: string }) {
   }
 }
 
-export function Illustration({ name, size = 160, float = true }: { name: IllustrationName; size?: number; float?: boolean }) {
+/** `bare` — fon dairəsi və kölgəsiz (qradiyentli kartların üstündə) */
+export function Illustration({ name, size = 160, float = true, bare }: { name: IllustrationName; size?: number; float?: boolean; bare?: boolean }) {
   const t = TONE[name] ?? T.nar;
-  const id = `il-${name}-`;
+  const id = `il-${name}-${bare ? 'x' : ''}`;
+  if (bare) {
+    const svg = (
+      <Svg width={size} height={size} viewBox="0 0 160 160">
+        <Defs>
+          <LinearGradient id={`${id}a`} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.a[0]} /><Stop offset="1" stopColor={t.a[1]} /></LinearGradient>
+          <LinearGradient id={`${id}b`} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={t.b[0]} /><Stop offset="1" stopColor={t.b[1]} /></LinearGradient>
+        </Defs>
+        <Art name={name} id={id} />
+      </Svg>
+    );
+    return float ? <Float amp={4}>{svg}</Float> : svg;
+  }
   const svg = (
     <Svg width={size} height={size} viewBox="0 0 160 160">
       <Defs>

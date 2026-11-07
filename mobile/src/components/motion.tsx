@@ -141,6 +141,25 @@ export function Float({ children, amp = 6, duration = 2200, style }: { children:
   return <Animated.View style={[a, style]}>{children}</Animated.View>;
 }
 
+/** Premium kartlar üzərində hərdən keçən diaqonal işıq zolağı */
+export function Shine({ every = 3800, opacity = 0.22 }: { every?: number; opacity?: number }) {
+  const reduce = useReducedMotion();
+  const x = useSharedValue(-1);
+  const w = useSharedValue(0);
+  useEffect(() => {
+    if (reduce) return;
+    x.value = withRepeat(withSequence(withTiming(-1, { duration: 0 }), withDelay(every - 900, withTiming(1.6, { duration: 900, easing: Easing.inOut(Easing.quad) }))), -1, false);
+  }, [x, every, reduce]);
+  const a = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * w.value }, { rotate: '18deg' }] }));
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} onLayout={(e) => { w.value = e.nativeEvent.layout.width; }}>
+      <Animated.View style={[{ position: 'absolute', top: -60, bottom: -60, width: 70 }, a]}>
+        <LinearGradient start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} colors={['rgba(255,255,255,0)', `rgba(255,255,255,${opacity})`, 'rgba(255,255,255,0)']} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+    </View>
+  );
+}
+
 const sk = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.lg },
 });

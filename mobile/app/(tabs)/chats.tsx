@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts } from '@/theme';
 import { Badge, Btn, EmptyState, IconBtn, Loader, Screen, T, Tabs, TitleBar } from '@/components/ui';
+import { Appear } from '@/components/motion';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/Badges';
 import { Icon } from '@/components/Icon';
@@ -80,7 +81,7 @@ export default function Chats() {
       <View style={{ height: 10 }} />
       {tab === 'chats' ? (
         items === null ? (
-          <Loader full />
+          <Loader full variant="list" n={7} />
         ) : (
           <FlatList
             data={items.filter((c) => c.lastMessageText)}
@@ -111,7 +112,8 @@ export default function Chats() {
             ListEmptyComponent={
               <EmptyState icon="chat" title={t('chat.empty')} sub={t('chat.emptySub')} action={<Btn full={false} size="md" kind="dark" title={t('tabs.discover')} onPress={() => router.push('/(tabs)/discover')} />} />
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
+              <Appear i={index} from="fade">
               <Pressable onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })} style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.bgSunken }]}>
                 <Avatar uri={item.user.avatarUrl} name={item.user.name} size={54} online={item.user.online} vipTier={item.user.vipTier} />
                 <View style={{ flex: 1, gap: 2 }}>
@@ -127,11 +129,12 @@ export default function Chats() {
                   {item.unread > 0 ? <Badge n={item.unread} /> : <Icon name="check2" size={14} color={colors.textDim} />}
                 </View>
               </Pressable>
+              </Appear>
             )}
           />
         )
       ) : calls === null ? (
-        <Loader full />
+        <Loader full variant="list" n={7} />
       ) : (
         <FlatList
           data={calls.filter((c) => c.peer)}
