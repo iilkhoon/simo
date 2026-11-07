@@ -16,7 +16,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { LevelBadge } from '@/components/Badges';
 import { GiftSheet } from '@/components/GiftSheet';
-import { GuestStrip, HostPanel, PkBar, type Guest, type PkState } from '@/components/LiveExtras';
+import { GuestStrip, HostPanel, JoinTicker, LiveUsersSheet, PkBar, type Guest, type PkState } from '@/components/LiveExtras';
 import { WEB_URL } from '@/config';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { Hearts, type HeartsHandle } from '@/components/Hearts';
@@ -67,6 +67,12 @@ export default function LiveRoom() {
   const [requests, setRequests] = useState(0);
   const [giftTo, setGiftTo] = useState<PublicUser | null>(null);
   const [requested, setRequested] = useState(false);
+  // Otaqdakılar vərəqəsi (izləyicilər / top dəstəkçilər), adi giriş zolağı, bağlantı vəziyyəti
+  const [usersSheet, setUsersSheet] = useState<null | 'viewers' | 'top'>(null);
+  const [ticker, setTicker] = useState<{ name: string; level: number; k: string } | null>(null);
+  const [connUp, setConnUp] = useState(true);
+  const [saidHi, setSaidHi] = useState(false);
+  const lastTap = useRef(0);
   const overlay = useRef<GiftOverlayHandle>(null);
   const hearts = useRef<HeartsHandle>(null);
   const likeBatch = useRef(0);
@@ -143,11 +149,31 @@ export default function LiveRoom() {
       if (p.effect || p.user.vipTier !== 'NONE' || p.user.wealthLevel >= 10) {
         setEnter(p);
         setTimeout(() => setEnter(null), 3000);
+      } else {
+        setTicker({ name: p.user.name, level: p.user.wealthLevel, k: `${p.user.id}${Date.now()}` });
       }
     };
     const onLike = (p: { count: number }) => hearts.current?.burst(Math.min(3, p.count));
     const onSeats = (p: { seats: Seat[] }) => setSeats(p.seats);
     const onEnded = () => setEnded(true);
+    // Şəbəkə kəsilib bərpa olunanda server yeni soketi otaqda tanımır: yenidən qoşul və vəziyyəti yenilə
+    // (əks halda şərhlər/hədiyyələr gəlmir, host isə 60 saniyədən sonra "çıxmış" sayılır)
+    const onConnect = () => {
+      setConnUp(true);
+      s.emit('live:join', { roomId: id }, (ack: { ok: boolean; viewers?: number }) => {
+        if (!ack?.ok) { setEnded(true); return; }
+        if (typeof ack.viewers === 'number') setViewers(ack.viewers);
+      });
+      void api<{ seats: Seat[]; guests?: Guest[]; pk?: PkState | null; topGifters: { user: PublicUser; coins: number }[]; room: Room }>(`/live/${id}`)
+        .then((r) => {
+          if (r.room.status !== 'LIVE') { setEnded(true); return; }
+          setSeats(r.seats); setGuests(r.guests ?? []); setPk(r.pk ?? null); setTop(r.topGifters);
+        })
+        .catch(() => {});
+    };
+    const onDisconnect = () => setConnUp(false);
+    s.on('connect', onConnect);
+    s.on('disconnect', onDisconnect);
     const onKicked = async (p: { userId: string }) => {
       if (p.userId === me?.id && creds) {
         const r = await api<{ rtc: RtcCreds }>(`/live/${id}/seat/leave`, { body: {} }).catch(() => null);
@@ -178,6 +204,10 @@ export default function LiveRoom() {
     };
     const onGuestRemoved = () => { if (creds) rtc.setPublishing(creds, false); };
     const onPk = (p: PkState) => setPk(p);
+    // PK bitəndə nəticə 8 saniyə görünür, sonra zolaq gizlənir
+    const onPkEnd = (p: PkState) => { setPk(p); setTimeout(() => setPk((cur) => (cur?.id === p.id && cur.status === 'ENDED' ? null : cur)), 8000); };
+    const onPkDeclined = (p: { expired?: boolean }) => { if (p?.expired) toast(t('errors.PK_EXPIRED'), 'info'); };
+    s.on('pk:declined', onPkDeclined);
     const onPkInvite = (p: { battleId: string; from: PublicUser }) => {
       Alert.alert(t('pk.invited', { name: p.from.name }), t('pk.rules'), [
         { text: t('pk.decline'), style: 'cancel', onPress: () => void api(`/pk/${p.battleId}/decline`, { body: {} }).catch(() => {}) },
@@ -191,7 +221,7 @@ export default function LiveRoom() {
     s.on('live:guest-removed', onGuestRemoved);
     s.on('pk:start', onPk);
     s.on('pk:score', onPk);
-    s.on('pk:end', onPk);
+    s.on('pk:end', onPkEnd);
     s.on('pk:invite', onPkInvite);
     return () => {
       s.off('live:guests', onGuests);
@@ -201,7 +231,7 @@ export default function LiveRoom() {
       s.off('live:guest-removed', onGuestRemoved);
       s.off('pk:start', onPk);
       s.off('pk:score', onPk);
-      s.off('pk:end', onPk);
+      s.off('pk:end', onPkEnd);
       s.off('pk:invite', onPkInvite);
       s.off('live:viewers', onViewers);
       s.off('live:comment', onComment);
@@ -211,6 +241,9 @@ export default function LiveRoom() {
       s.off('live:seats', onSeats);
       s.off('live:ended', onEnded);
       s.off('live:kicked-seat', onKicked);
+      s.off('connect', onConnect);
+      s.off('disconnect', onDisconnect);
+      s.off('pk:declined', onPkDeclined);
     };
   }, [id, me?.id, creds, pushLine, t]);
 
@@ -248,11 +281,23 @@ export default function LiveRoom() {
     }
   }
 
-  function sendComment() {
-    const v = text.trim();
+  function sendComment(preset?: string) {
+    const v = (preset ?? text).trim();
     if (!v) return;
+    tap();
     getSocket()?.emit('live:comment', { roomId: id, text: v });
-    setText('');
+    setSaidHi(true);
+    if (!preset) setText('');
+  }
+
+  /** Videoya iki dəfə toxunmaq — bəyənmə (TikTok/Bigo kimi) */
+  function onStageTap() {
+    const n = Date.now();
+    if (n - lastTap.current < 300 && !isHost) {
+      hearts.current?.burst(2);
+      likeBatch.current += 1;
+      lastTap.current = 0;
+    } else lastTap.current = n;
   }
 
   async function toggleSeat(seat: Seat) {
@@ -370,27 +415,31 @@ export default function LiveRoom() {
         </>
       )}
 
+      {!voice ? <Pressable style={StyleSheet.absoluteFill} onPress={onStageTap} accessible={false} /> : null}
       <SafeAreaView edges={['top']} style={styles.top}>
         <View style={styles.hostPill}>
           <Avatar uri={room.host.avatarUrl} name={room.host.name} size={34} ring={false} />
           <View style={{ maxWidth: 104 }}>
             <Text style={styles.hostName} numberOfLines={1}>{room.host.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <Pressable onPress={() => setUsersSheet('viewers')} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
               <Icon name="eye" size={10} color={colors.nightMuted} />
               <Text style={styles.hostSub}>{compact(viewers)}</Text>
-            </View>
+            </Pressable>
           </View>
           {!isHost && !following ? (
             <Pressable onPress={follow} style={styles.follow}><Icon name="add" size={16} color={colors.white} /></Pressable>
           ) : null}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
-          {top.slice(0, 3).map((g, i) => (
-            <View key={g.user.id} style={{ marginLeft: i ? -8 : 0, zIndex: 3 - i }}>
-              <Avatar uri={g.user.avatarUrl} name={g.user.name} size={30} ring={false} />
-              <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
-            </View>
-          ))}
+          <Pressable onPress={() => setUsersSheet(top.length ? 'top' : 'viewers')} hitSlop={6} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {top.slice(0, 3).map((g, i) => (
+              <View key={g.user.id} style={{ marginLeft: i ? -8 : 0, zIndex: 3 - i }}>
+                <Avatar uri={g.user.avatarUrl} name={g.user.name} size={30} ring={false} />
+                <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
+              </View>
+            ))}
+            <View style={styles.viewersChip}><Text style={styles.viewersChipText}>{compact(viewers)}</Text></View>
+          </Pressable>
           {isHost ? <IconBtn name="stats" size={36} sh={0} bg={colors.glass} color={colors.white} badge={requests} style={{ marginLeft: 8 }} onPress={() => setPanel(true)} /> : null}
           <IconBtn name="share" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => void Share.share({ message: `${room.host.name} · ${room.title} — Simo ${WEB_URL}` })} />
           {!isHost ? <IconBtn name="flag" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => openReport({ targetUserId: room.host.id, targetType: 'LIVE', targetId: room.id })} /> : null}
@@ -401,7 +450,12 @@ export default function LiveRoom() {
         <Tag label={voice ? t('tags.voice') : t('tags.live')} icon={voice ? 'mic' : 'radio'} bg={colors.brand} fg={colors.white} />
         {room.title ? <GlassPill label={room.title} /> : null}
       </View>
-      {pk && !voice ? <View style={[styles.pkWrap, { top: insets.top + 96 }]}><PkBar pk={pk} /></View> : null}
+      {pk && !voice ? <View style={[styles.pkWrap, { top: insets.top + 96 }]}><PkBar pk={pk} selfRoomId={room.id} /></View> : null}
+      {!connUp && !ended ? (
+        <View style={[styles.connBanner, { top: insets.top + (pk && !voice ? 170 : 96) }]} pointerEvents="none">
+          <Text style={styles.connText}>{t('cl.liveReconnecting')}</Text>
+        </View>
+      ) : null}
 
       {voice ? (
         <View style={[styles.stage, { top: insets.top + 98 }]}>
@@ -424,6 +478,7 @@ export default function LiveRoom() {
       ) : null}
 
       <KeyboardAvoidingView behavior="padding" style={styles.bottom}>
+        {ticker ? <JoinTicker key={ticker.k} k={ticker.k} name={ticker.name} level={ticker.level} /> : null}
         <FlatList
           inverted
           data={lines}
@@ -445,6 +500,13 @@ export default function LiveRoom() {
             </Pressable>
           )}
         />
+        {!isHost && !saidHi ? (
+          <View style={styles.hiRow}>
+            {(t('cl.quickHi', { returnObjects: true }) as string[]).map((h) => (
+              <Pressable key={h} onPress={() => sendComment(h)} style={styles.hiChip}><Text style={styles.hiText}>{h}</Text></Pressable>
+            ))}
+          </View>
+        ) : null}
         {!isHost ? (
           <View style={styles.quick}>
             {QUICK.map((g) => (
@@ -457,7 +519,12 @@ export default function LiveRoom() {
         ) : null}
         <SafeAreaView edges={['bottom']} style={styles.inputRow}>
           <View style={[styles.inputBox, night && { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
-            <TextInput value={text} onChangeText={setText} onSubmitEditing={sendComment} placeholder={t('live.commentPlaceholder')} placeholderTextColor={night ? colors.nightMuted : colors.textDim} style={[styles.input, { color: night ? colors.nightText : colors.ink }]} returnKeyType="send" maxLength={200} />
+            <TextInput value={text} onChangeText={setText} onSubmitEditing={() => sendComment()} placeholder={t('live.commentPlaceholder')} placeholderTextColor={night ? colors.nightMuted : colors.textDim} style={[styles.input, { color: night ? colors.nightText : colors.ink }]} returnKeyType="send" maxLength={200} blurOnSubmit={false} />
+            {text.trim() ? (
+              <Pressable onPress={() => sendComment()} hitSlop={8} accessibilityLabel={t('cl.sendComment')} style={styles.sendBtn}>
+                <Icon name="send" size={16} color={colors.white} />
+              </Pressable>
+            ) : null}
           </View>
           {isHost ? (
             <>
@@ -483,6 +550,14 @@ export default function LiveRoom() {
       <GiftOverlay ref={overlay} />
       {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} /> : null}
       {isHost ? <HostPanel visible={panel} onClose={() => { setPanel(false); setRequests(0); }} roomId={room.id} video={room.type === 'VIDEO'} /> : null}
+      <LiveUsersSheet
+        visible={!!usersSheet}
+        initialTab={usersSheet ?? 'viewers'}
+        onClose={() => setUsersSheet(null)}
+        roomId={room.id}
+        top={top}
+        onOpenUser={(u) => { setUsersSheet(null); router.push({ pathname: '/user/[id]', params: { id: u.id } }); }}
+      />
       <GuestStrip guests={guests} canKick={isHost} onKick={(uid) => void api(`/live/${id}/guests/remove`, { body: { userId: uid } }).catch(() => {})} />
 
       <Modal visible={ended || !!summary} transparent animationType="fade">
@@ -551,8 +626,16 @@ const styles = StyleSheet.create({
   qg: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.coinSoft, alignItems: 'center', justifyContent: 'center' },
   quickHint: { fontFamily: fonts.semibold, fontSize: 11, marginLeft: 4 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10 },
-  inputBox: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.card, justifyContent: 'center', paddingHorizontal: 14 },
-  input: { minWidth: 0, ...webNoOutline, fontFamily: fonts.medium, fontSize: 14 },
+  inputBox: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', paddingLeft: 14, paddingRight: 5 },
+  input: { flex: 1, minWidth: 0, ...webNoOutline, fontFamily: fonts.medium, fontSize: 14 },
+  sendBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+  hiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  hiChip: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingHorizontal: 10, height: 28, justifyContent: 'center' },
+  hiText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12.5 },
+  viewersChip: { marginLeft: 6, backgroundColor: colors.glass, borderRadius: 15, paddingHorizontal: 9, height: 30, justifyContent: 'center' },
+  viewersChipText: { color: colors.white, fontFamily: fonts.black, fontSize: 12 },
+  connBanner: { position: 'absolute', alignSelf: 'center', backgroundColor: 'rgba(16,14,13,0.75)', borderRadius: 14, paddingHorizontal: 14, height: 30, justifyContent: 'center' },
+  connText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12.5 },
   endWrap: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
   endCard: { padding: 22, alignItems: 'center', gap: 14 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignSelf: 'stretch' },
