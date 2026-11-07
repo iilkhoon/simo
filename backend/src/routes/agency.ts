@@ -5,6 +5,7 @@
  */
 import crypto from 'node:crypto';
 import { z } from 'zod';
+import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { config } from '../config.js';
@@ -73,7 +74,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     const b = z.object({
       name: z.string().trim().min(3).max(40),
       description: z.string().max(500).default(''),
-      logoUrl: z.string().url().optional(),
+      logoUrl: mediaUrl().optional(),
       city: z.string().trim().min(2).max(40),
       contactName: z.string().trim().min(3).max(80),
       contactPhone: z.string().trim().min(7).max(20),

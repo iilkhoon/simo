@@ -92,11 +92,12 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 }
 
 /** Fayl yükləmə (şəkil/video) — irəliləyiş göstəricisi ilə */
-export async function upload(uri: string, mime: string, onProgress?: (p: number) => void): Promise<{ url: string }> {
+export async function upload(uri: string, mime: string, onProgress?: (p: number) => void, purpose: 'media' | 'kyc' = 'media'): Promise<{ url: string }> {
   await loaded;
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${API_URL}/uploads`);
+    // purpose=kyc: sənəd/selfi şəxsi qovluğa yazılır (ictimai /files/ altında açılmır)
+    xhr.open('POST', `${API_URL}/uploads${purpose === 'kyc' ? '?purpose=kyc' : ''}`);
     if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100));
     xhr.onload = () => {

@@ -2,6 +2,7 @@
  * Story-lər (24 saat), private content abunəsi, çəkilişlər (pulsuz iştirak) və profil nişanları.
  */
 import { z } from 'zod';
+import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
@@ -41,7 +42,7 @@ export default async function socialRoutes(app: FastifyInstance) {
   /* ───────── Story-lər ───────── */
   app.post('/stories', { preHandler: requireAuth, config: { rateLimit: { max: 30, timeWindow: '1 hour' } } }, async (req) => {
     const me = uid(req);
-    const b = z.object({ mediaUrl: z.string().url(), mediaType: z.enum(['PHOTO', 'VIDEO']).default('PHOTO') }).parse(req.body);
+    const b = z.object({ mediaUrl: mediaUrl(), mediaType: z.enum(['PHOTO', 'VIDEO']).default('PHOTO') }).parse(req.body);
     const story = await prisma.story.create({ data: { userId: me, ...b, expiresAt: new Date(Date.now() + ECONOMY.storyHours * 3600_000) } });
     return { story };
   });

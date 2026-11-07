@@ -10,9 +10,11 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/e2e.ts && tsx test/calls-live.ts && tsx test/money.ts && tsx test/safety.ts && tsx test/growth.ts",
+    "test": "tsx test/e2e.ts && tsx test/calls-live.ts && tsx test/money.ts && tsx test/safety.ts && tsx test/growth.ts && tsx test/security.ts",
     "test:money": "tsx test/money.ts",
-    "local": "node scripts/local.mjs"
+    "local": "node scripts/local.mjs",
+    "admin": "tsx scripts/admin.ts",
+    "test:security": "tsx test/security.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

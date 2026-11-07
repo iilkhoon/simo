@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getRoom } from '../realtime/liveState.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
@@ -24,7 +25,7 @@ export default async function giftRoutes(app: FastifyInstance) {
         receiverId: z.string(),
         count: z.number().int().refine((n) => [1, 5, 10, 33, 99, 520, 1314].includes(n)).default(1),
         context: z.enum(['CHAT', 'LIVE', 'VIDEO', 'CALL', 'PROFILE']),
-        contextId: z.string().optional(),
+        contextId: z.string().max(64).optional(),
       })
       .parse(req.body);
     if (b.receiverId === me) throw err.badRequest('SELF_GIFT');
@@ -34,6 +35,25 @@ export default async function giftRoutes(app: FastifyInstance) {
     if (!receiver) throw err.notFound('USER_NOT_FOUND');
     const blocked = await prisma.block.findFirst({ where: { OR: [{ blockerId: me, blockedId: b.receiverId }, { blockerId: b.receiverId, blockedId: me }] } });
     if (blocked) throw err.forbidden('BLOCKED');
+
+    // Kontekst yoxlaması: hədiyyə başqasının zənginə / yayınına / postuna "yazılmasın" (statistika və animasiya saxtalaşdırılması)
+    if (b.context === 'CALL') {
+      if (!b.contextId) throw err.badRequest('INVALID_CONTEXT');
+      const call = await prisma.call.findUnique({ where: { id: b.contextId }, select: { callerId: true, calleeId: true } });
+      const pair = call ? [call.callerId, call.calleeId] : [];
+      if (!pair.includes(me) || !pair.includes(b.receiverId)) throw err.badRequest('INVALID_CONTEXT');
+    }
+    if (b.context === 'LIVE' && b.contextId) {
+      const room = await prisma.liveRoom.findUnique({ where: { id: b.contextId }, select: { hostId: true, status: true } });
+      if (!room || room.status !== 'LIVE') throw err.badRequest('LIVE_ENDED');
+      const st = getRoom(b.contextId);
+      const pkOpponent = st?.pk ? getRoom(st.pk.opponentRoomId)?.hostId : undefined;
+      if (room.hostId !== b.receiverId && !st?.viewers.has(b.receiverId) && pkOpponent !== b.receiverId) throw err.badRequest('INVALID_CONTEXT');
+    }
+    if (b.context === 'VIDEO' && b.contextId) {
+      const v = await prisma.video.findUnique({ where: { id: b.contextId }, select: { userId: true } });
+      if (!v || v.userId !== b.receiverId) throw err.badRequest('INVALID_CONTEXT');
+    }
 
     const coins = gift.price * b.count;
     const almaz = gift.currency === 'DIAMOND';

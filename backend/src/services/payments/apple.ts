@@ -39,6 +39,7 @@ export async function fetchAppleTransaction(transactionId: string): Promise<Appl
   for (const host of hosts) {
     const res = await fetch(`${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (res.status === 404) continue;
     if (!res.ok) throw new Error(`APPLE_${res.status}`);

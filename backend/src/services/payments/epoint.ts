@@ -16,6 +16,7 @@ export function epointEncode(payload: Record<string, unknown>) {
 }
 
 export function epointVerify(data: string, signature: string): boolean {
+  if (!config.epoint.privateKey) return false;
   const expected = epointSign(data);
   const a = Buffer.from(expected);
   const b = Buffer.from(signature);
@@ -49,6 +50,7 @@ export async function epointCreatePayment(opts: {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ data, signature }).toString(),
+    signal: AbortSignal.timeout(15_000),
   });
   const body = (await res.json()) as { status: string; redirect_url?: string; message?: string };
   if (body.status !== 'success' || !body.redirect_url) throw new Error(`EPOINT_ERROR:${body.message ?? body.status}`);

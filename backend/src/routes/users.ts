@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { disconnectUser } from '../realtime/hub.js';
+import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { refillTester } from '../services/tester.js';
@@ -115,8 +117,8 @@ const onboardingSchema = z.object({
   languages: z.array(z.enum(['az', 'ru', 'en', 'tr'])).default(['az']),
   city: z.string().max(40).default(''),
   bio: z.string().max(300).default(''),
-  avatarUrl: z.string().url(),
-  photos: z.array(z.string().url()).max(6).default([]),
+  avatarUrl: mediaUrl(),
+  photos: z.array(mediaUrl()).max(6).default([]),
   ageMin: z.number().int().min(18).max(80).optional(),
   ageMax: z.number().int().min(18).max(99).optional(),
   extra: extraSchema.default({}),
@@ -127,7 +129,7 @@ const patchSchema = onboardingSchema
   .omit({ gender: true, birthDate: true, avatarUrl: true, photos: true, extra: true, notifPrefs: true })
   .partial()
   .extend({
-    avatarUrl: z.string().url().optional(),
+    avatarUrl: mediaUrl().optional(),
     ageMin: z.number().int().min(18).max(80).optional(),
     ageMax: z.number().int().min(18).max(99).optional(),
     maxDistanceKm: z.number().int().min(1).max(5000).optional(),
@@ -216,7 +218,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
   app.put('/me/photos', { preHandler: requireAuth }, async (req) => {
     const id = uid(req);
-    const b = z.object({ photos: z.array(z.string().url()).max(6) }).parse(req.body);
+    const b = z.object({ photos: z.array(mediaUrl()).max(6) }).parse(req.body);
     await prisma.$transaction([
       prisma.photo.deleteMany({ where: { userId: id } }),
       prisma.photo.createMany({ data: b.photos.map((url, order) => ({ userId: id, url, order })) }),
@@ -264,7 +266,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
   app.post('/me/host/apply', { preHandler: requireAuth }, async (req) => {
     const id = uid(req);
-    const b = z.object({ verificationUrl: z.string().url() }).parse(req.body);
+    const b = z.object({ verificationUrl: mediaUrl() }).parse(req.body);
     const me = await prisma.user.findUniqueOrThrow({ where: { id } });
     if (!me.onboarded) throw err.badRequest('ONBOARDING_REQUIRED');
     if (me.hostStatus === 'APPROVED') return presentMe(id);
@@ -287,6 +289,8 @@ export default async function userRoutes(app: FastifyInstance) {
         },
       }),
     ]);
+    // Açıq soket bağlantıları da bağlanır (silinmiş hesab real-time hadisə almasın)
+    disconnectUser(id);
     return { ok: true };
   });
 
@@ -384,7 +388,7 @@ export default async function userRoutes(app: FastifyInstance) {
     return { users: users.map((u) => presentUser(u)) };
   });
 
-  app.post('/reports', { preHandler: requireAuth }, async (req) => {
+  app.post('/reports', { preHandler: requireAuth, config: { rateLimit: { max: 30, timeWindow: '1 hour' } } }, async (req) => {
     const b = z
       .object({
         targetUserId: z.string(),

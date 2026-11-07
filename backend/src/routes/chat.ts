@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { filterProfanity } from '../lib/moderation.js';
@@ -152,7 +153,7 @@ export default async function chatRoutes(app: FastifyInstance) {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = z
-      .object({ type: z.enum(['TEXT', 'IMAGE']).default('TEXT'), text: z.string().max(1000).default(''), mediaUrl: z.string().url().optional() })
+      .object({ type: z.enum(['TEXT', 'IMAGE']).default('TEXT'), text: z.string().max(1000).default(''), mediaUrl: mediaUrl().optional() })
       .parse(req.body);
     if (b.type === 'TEXT' && !b.text.trim()) throw err.badRequest('EMPTY_MESSAGE');
     if (b.type === 'IMAGE' && !b.mediaUrl) throw err.badRequest('MEDIA_REQUIRED');

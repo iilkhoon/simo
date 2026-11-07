@@ -9,6 +9,33 @@ import { sanitizeText } from '../routes/chat.js';
 import { activeVip, levelFromXp } from '../economy.js';
 import { OFFLINE_GRACE_MS, finishCall } from '../services/calls.js';
 import { hostCameOnline } from '../services/growth.js';
+import { config } from '../config.js';
+
+/** "typing" yalnız söhbətin iştirakçısına (başqasına saxta "yazır…" / spam göndərmək olmur). Qısa keş. */
+const convCache = new Map<string, { a: string; b: string; at: number }>();
+async function conversationPeer(conversationId: string, userId: string): Promise<string | null> {
+  if (typeof conversationId !== 'string' || conversationId.length > 64) return null;
+  let c = convCache.get(conversationId);
+  if (!c || Date.now() - c.at > 10 * 60_000) {
+    const row = await prisma.conversation.findUnique({ where: { id: conversationId }, select: { userAId: true, userBId: true } }).catch(() => null);
+    if (!row) return null;
+    c = { a: row.userAId, b: row.userBId, at: Date.now() };
+    if (convCache.size > 20_000) convCache.clear();
+    convCache.set(conversationId, c);
+  }
+  if (c.a === userId) return c.b;
+  if (c.b === userId) return c.a;
+  return null;
+}
+
+/** Hadisə axını limiti (soket başına): saniyədə ~20 hadisə */
+function floodGuard(socket: Socket): boolean {
+  const d = socket.data as { evWin?: number; evCount?: number };
+  const now = Date.now();
+  if (!d.evWin || now - d.evWin > 1000) { d.evWin = now; d.evCount = 0; }
+  d.evCount = (d.evCount ?? 0) + 1;
+  return d.evCount <= 20;
+}
 
 interface Data {
   userId: string;
@@ -52,18 +79,31 @@ async function leaveLive(socket: Socket, roomId: string, userId: string) {
 }
 
 export function createSocketServer(http: HttpServer) {
-  const io = new Server(http, { cors: { origin: '*' }, pingInterval: 20_000, pingTimeout: 20_000 });
+  const io = new Server(http, {
+    // Mobil tətbiq Origin göndərmir; brauzerdən yalnız icazəli mənbələr (CORS_ORIGINS / WEB_URL) — inkişafda hamısı
+    cors: { origin: config.isProd ? [...config.corsOrigins, ...(() => { try { const w = new URL(config.webUrl); return [w.origin, `${w.protocol}//www.${w.host}`]; } catch { return []; } })()] : '*' },
+    pingInterval: 20_000,
+    pingTimeout: 20_000,
+    // Hadisə ölçüsü: şərh/typing üçün 16 KB kifayətdir (standart 1 MB — yaddaş hücumu)
+    maxHttpBufferSize: 16 * 1024,
+  });
   setIo(io);
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = (socket.handshake.auth?.token as string | undefined) ?? (socket.handshake.query.token as string | undefined);
-    if (!token) return next(new Error('UNAUTHORIZED'));
+    if (!token || typeof token !== 'string') return next(new Error('UNAUTHORIZED'));
+    let userId: string;
     try {
-      (socket.data as Data).userId = verifyAccess(token).id;
-      next();
+      userId = verifyAccess(token).id;
     } catch {
-      next(new Error('UNAUTHORIZED'));
+      return next(new Error('UNAUTHORIZED'));
     }
+    // Bloklanmış / silinmiş hesab real-time kanala qoşula bilməz (REST-dəki requireAuth ilə eyni)
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { banned: true, deletedAt: true } }).catch(() => null);
+    if (!u || u.deletedAt) return next(new Error('UNAUTHORIZED'));
+    if (u.banned) return next(new Error('BANNED'));
+    (socket.data as Data).userId = userId;
+    next();
   });
 
   io.on('connection', async (socket) => {
@@ -75,13 +115,28 @@ export function createSocketServer(http: HttpServer) {
       void hostCameOnline(userId).catch(() => {});
     }
 
-    socket.on('typing', async (p: { conversationId: string; to: string }) => {
-      if (typeof p?.to === 'string') emitToUser(p.to, 'typing', { conversationId: p.conversationId, from: userId });
+    socket.use((_packet, next) => (floodGuard(socket) ? next() : next(new Error('RATE_LIMIT'))));
+    // socket.use xətası "error" hadisəsi kimi gəlir — dinləyici olmasa proses çökərdi
+    socket.on('error', () => {});
+
+    socket.on('typing', async (p: { conversationId: string; to?: string }) => {
+      if (!p || typeof p.conversationId !== 'string') return;
+      const peer = await conversationPeer(p.conversationId, userId);
+      // Göndərən söhbətin iştirakçısı deyilsə və ya "to" başqa adamdırsa — heç nə
+      if (!peer || (p.to !== undefined && p.to !== peer)) return;
+      emitToUser(peer, 'typing', { conversationId: p.conversationId, from: userId });
     });
 
     socket.on('live:join', async (p: { roomId: string }, ack?: (r: unknown) => void) => {
-      const state = await ensureRoomState(p?.roomId);
+      if (typeof ack !== 'function') ack = undefined;
+      if (!p || typeof p.roomId !== 'string' || p.roomId.length > 64) return ack?.({ ok: false, error: 'BAD_REQUEST' });
+      const state = await ensureRoomState(p.roomId);
       if (!state) return ack?.({ ok: false, error: 'LIVE_ENDED' });
+      // Host bu istifadəçini bloklayıbsa — otağa (şərhlər, hədiyyələr axını) girə bilməz (REST GET /live/:id ilə eyni)
+      if (state.hostId !== userId) {
+        const blocked = await prisma.block.findFirst({ where: { blockerId: state.hostId, blockedId: userId } }).catch(() => null);
+        if (blocked) return ack?.({ ok: false, error: 'BLOCKED' });
+      }
       await socket.join(`live:${p.roomId}`);
       if (state.hostId === userId) {
         if (state.hostLeftTimer) clearTimeout(state.hostLeftTimer);
@@ -110,7 +165,7 @@ export function createSocketServer(http: HttpServer) {
     });
 
     socket.on('live:leave', async (p: { roomId: string }) => {
-      if (p?.roomId) await leaveLive(socket, p.roomId, userId);
+      if (typeof p?.roomId === 'string') await leaveLive(socket, p.roomId, userId);
     });
 
     socket.on('live:comment', async (p: { roomId: string; text: string }) => {

@@ -22,7 +22,7 @@ const { frameVerdict, strikeAction } = await import('../src/lib/moderation.js');
 const { setModerationProvider, queueProvider, sightengineScores, rekognitionScores, signAws } = await import('../src/services/safetyProviders.js');
 const safety = await import('../src/services/safety.js');
 
-const PORT = 4556;
+const PORT = Number(process.env.TEST_PORT_SAFETY ?? 4556);
 const BASE = `http://127.0.0.1:${PORT}`;
 let passed = 0;
 

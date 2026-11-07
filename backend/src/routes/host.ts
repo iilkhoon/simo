@@ -15,6 +15,23 @@ import { agencyTerms, heldDiamonds } from '../services/wallet.js';
 import { hostTargets, hostsStats, periodStart } from '../services/hostStats.js';
 import { cooldownUntil, createJoinRequest } from './agency.js';
 import { recordSelfDeclaredMinor } from '../services/safety.js';
+import { isAcceptableMediaUrl, mediaUrl, privateRel } from '../lib/security.js';
+import { config } from '../config.js';
+
+/**
+ * KYC sənəd linki: istehsalda yalnız bu istifadəçinin özünün ŞƏXSİ yüklədiyi fayl (POST /uploads?purpose=kyc).
+ * Başqasının sənədini, ictimai faylı və ya xarici linki göndərmək olmur.
+ */
+function assertKycFile(url: string | undefined, me: string) {
+  if (!url) return;
+  const rel = privateRel(url);
+  if (rel) {
+    if (rel.split('/')[0] !== 'kyc' || rel.split('/')[1] !== me) throw err.badRequest('KYC_FILE_INVALID');
+    return;
+  }
+  if (config.isProd && !config.staging) throw err.badRequest('KYC_FILE_INVALID');
+  if (!isAcceptableMediaUrl(url)) throw err.badRequest('KYC_FILE_INVALID');
+}
 
 /** Host olmaq üçün şərtlərin vəziyyəti */
 export async function hostRequirements(userId: string) {
@@ -86,10 +103,11 @@ export default async function hostRoutes(app: FastifyInstance) {
       lastName: z.string().trim().min(2).max(40),
       birthDate: z.coerce.date(),
       docType: z.enum(['ID_CARD', 'PASSPORT', 'DRIVER_LICENSE']).default('ID_CARD'),
-      docFrontUrl: z.string().url(),
-      docBackUrl: z.string().url().optional(),
-      selfieUrl: z.string().url(),
+      docFrontUrl: z.string().url().max(600),
+      docBackUrl: z.string().url().max(600).optional(),
+      selfieUrl: z.string().url().max(600),
     }).parse(req.body);
+    for (const u of [b.docFrontUrl, b.docBackUrl, b.selfieUrl]) assertKycFile(u, me);
     if ((ageFrom(b.birthDate) ?? 0) < 18) { await recordSelfDeclaredMinor(me, b.birthDate); throw err.badRequest('UNDERAGE'); }
     const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (u.kycStatus === 'APPROVED') throw err.badRequest('KYC_ALREADY_APPROVED');
@@ -192,7 +210,7 @@ export default async function hostRoutes(app: FastifyInstance) {
     const b = z.object({
       defaultMsgPrice: z.number().int().min(ECONOMY.msgPrice.min).max(100).optional(),
       description: z.string().max(500).optional(),
-      logoUrl: z.string().url().optional(),
+      logoUrl: mediaUrl().optional(),
       city: z.string().max(40).optional(),
     }).parse(req.body);
     const a = await prisma.agency.findUnique({ where: { ownerId: me } });

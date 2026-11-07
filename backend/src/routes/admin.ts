@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { signPrivateUrl } from '../lib/security.js';
+import { disconnectUser } from '../realtime/hub.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
@@ -51,7 +53,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       take: 100,
       select: { id: true, shortId: true, name: true, phone: true, email: true, gender: true, avatarUrl: true, verificationUrl: true, hostStatus: true, verified: true, coins: true, diamonds: true, banned: true, createdAt: true, role: true },
     });
-    return { items };
+    // Şəxsi sənəd/selfi: yalnız 15 dəqiqəlik imzalı link
+    return { items: items.map((u) => ({ ...u, verificationUrl: signPrivateUrl(u.verificationUrl) })) };
   });
 
   app.post('/admin/users/:id', async (req) => {
@@ -66,7 +69,12 @@ export default async function adminRoutes(app: FastifyInstance) {
       await tx.user.update({ where: { id }, data: { ...data, ...(data.hostStatus === 'APPROVED' ? { verified: true } : {}) } });
       if (grantCoins && grantCoins > 0) await creditCoins(tx, id, grantCoins, 'ADMIN', undefined, 'admin grant');
     });
-    if (b.banned) emitToUser(id, 'force-logout', { reason: 'BANNED' });
+    if (b.banned) {
+      emitToUser(id, 'force-logout', { reason: 'BANNED' });
+      // Bloklanan istifadəçinin bütün sessiyaları dərhal bağlanır
+      await prisma.refreshToken.updateMany({ where: { userId: id, revoked: false }, data: { revoked: true } });
+      disconnectUser(id);
+    }
     return { ok: true };
   });
 
@@ -81,7 +89,9 @@ export default async function adminRoutes(app: FastifyInstance) {
     const r = await prisma.report.update({ where: { id }, data: { status: b.status } });
     if (b.banUser) {
       await prisma.user.update({ where: { id: r.targetUserId }, data: { banned: true } });
+      await prisma.refreshToken.updateMany({ where: { userId: r.targetUserId, revoked: false }, data: { revoked: true } });
       emitToUser(r.targetUserId, 'force-logout', { reason: 'BANNED' });
+      disconnectUser(r.targetUserId);
     }
     if (r.targetType === 'VIDEO' && r.targetId && b.status === 'RESOLVED') await prisma.video.updateMany({ where: { id: r.targetId }, data: { status: 'REMOVED' } });
     if (r.targetType === 'LIVE' && r.targetId && b.status === 'RESOLVED') await endLive(r.targetId, 'MODERATION');
@@ -95,7 +105,7 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.get('/admin/kyc', async (req) => {
     const q = z.object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).default('PENDING') }).parse(req.query);
     const items = await prisma.verification.findMany({ where: { status: q.status }, orderBy: { createdAt: 'asc' }, take: 100, include: { user: { select: { id: true, shortId: true, name: true, avatarUrl: true, birthDate: true, gender: true } } } });
-    return { items };
+    return { items: items.map((v) => ({ ...v, docFrontUrl: signPrivateUrl(v.docFrontUrl), docBackUrl: signPrivateUrl(v.docBackUrl), selfieUrl: signPrivateUrl(v.selfieUrl) })) };
   });
 
   app.post('/admin/kyc/:id', async (req) => {
