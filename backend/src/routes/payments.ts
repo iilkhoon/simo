@@ -2,6 +2,8 @@ import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { refillTester } from '../services/tester.js';
+import { creditCoins } from '../services/wallet.js';
+import { emitToUser } from '../realtime/hub.js';
 import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
@@ -126,7 +128,22 @@ export default async function paymentRoutes(app: FastifyInstance) {
       const pkg = await prisma.coinPackage.findUnique({ where: { id: b.packageId } });
       if (!pkg) throw err.badRequest('PACKAGE_NOT_FOUND');
       await refillTester(uid(req));
-      return { ok: true, credited: pkg.currency === 'DIAMOND' ? 0 : pkg.coins + pkg.bonusCoins, demo: true };
+      // Demo alış balansda görünməlidir (əvvəl yalnız "+N Nar" bildirişi çıxırdı, balans dəyişmirdi).
+      // Nar promo kimi yazılır — xərclənəndə hosta nağdlaşan Almaz yaratmır; Almaz "alınmış" kimi — nağdlaşmır.
+      const me = uid(req);
+      const amount = pkg.coins + pkg.bonusCoins;
+      if (pkg.currency === 'DIAMOND') {
+        const d = await prisma.$transaction(async (tx) => {
+          const u = await tx.user.update({ where: { id: me }, data: { diamonds: { increment: pkg.coins }, diamondsBought: { increment: pkg.coins } }, select: { diamonds: true } });
+          await tx.walletTransaction.create({ data: { userId: me, currency: 'DIAMOND', amount: pkg.coins, balanceAfter: u.diamonds, type: 'TEST_PURCHASE', note: `demo:${pkg.id}` } });
+          return u.diamonds;
+        });
+        emitToUser(me, 'wallet:update', { diamondsCredited: pkg.coins });
+        return { ok: true, credited: 0, diamonds: d, demo: true };
+      }
+      const coins = await prisma.$transaction((tx) => creditCoins(tx, me, amount, 'TEST_PURCHASE', undefined, `demo:${pkg.id}`, true));
+      emitToUser(me, 'wallet:update', { coins, credited: amount });
+      return { ok: true, credited: amount, coins, demo: true };
     }
     if (!config.devMode) throw err.notFound();
     const payment = await createPending(uid(req), 'DEV', b.packageId, `dev_${Date.now()}_${Math.random()}`);

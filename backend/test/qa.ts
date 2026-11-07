@@ -82,6 +82,27 @@ async function main() {
       assert.equal(r.data.error, 'SELF_REPORT');
     });
 
+    await step('Test hesabı: demo alış balansı artırır (promo — hosta Almaz yaratmır), real-time wallet:update', async () => {
+      const phone = '+994990000002';
+      const r1 = await api('POST', '/auth/otp/request', undefined, { phone });
+      assert.equal(r1.status, 200);
+      const t = (await api('POST', '/auth/otp/verify', undefined, { phone, code: '111111' })).data.accessToken as string;
+      const before = await api('GET', '/me', t);
+      assert.equal(before.data.isTester, true);
+      const { io } = await import('socket.io-client');
+      const s = io(BASE, { auth: { token: t }, transports: ['websocket'] });
+      await new Promise<void>((r) => s.once('connect', () => r()));
+      const upd = new Promise<{ coins: number }>((r) => s.once('wallet:update', r));
+      const buy = await api('POST', '/payments/dev/purchase', t, { packageId: 'coins_600' });
+      assert.equal(buy.status, 200, JSON.stringify(buy.data));
+      const after = (await api('GET', '/me', t)).data;
+      assert.equal(after.coins, before.data.coins + buy.data.credited, 'balans alış qədər artır');
+      assert.equal((await upd).coins, after.coins);
+      s.close();
+      const u = await prisma.user.findUniqueOrThrow({ where: { id: after.id }, select: { coins: true, promoCoins: true } });
+      assert.ok(u.promoCoins >= buy.data.credited, 'demo Nar promo kimi yazılır');
+    });
+
     void stamp;
     console.log(`\n${passed} QA testi keçdi ✅`);
   } finally {
