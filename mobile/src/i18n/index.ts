@@ -5,6 +5,7 @@ import az from './az';
 import ru from './ru';
 import en from './en';
 import { extra } from './extra';
+import { agencyText } from './agencyText';
 
 /** Əsas lüğət + yeni bölmələr (dərin birləşmə; eyni bölmədə yeni açarlar əlavə olunur) */
 function merge<T extends Record<string, unknown>>(a: T, b: Record<string, unknown>): T {
@@ -30,7 +31,11 @@ function deviceLang(): Lang {
 }
 
 void i18n.use(initReactI18next).init({
-  resources: { az: { translation: merge(az, extra.az) }, ru: { translation: merge(ru, extra.ru) }, en: { translation: merge(en, extra.en) } },
+  resources: {
+    az: { translation: merge(merge(az, extra.az), agencyText.az) },
+    ru: { translation: merge(merge(ru, extra.ru), agencyText.ru) },
+    en: { translation: merge(merge(en, extra.en), agencyText.en) },
+  },
   lng: deviceLang(),
   fallbackLng: 'az',
   interpolation: { escapeValue: false },
