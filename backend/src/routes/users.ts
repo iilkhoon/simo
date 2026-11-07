@@ -11,6 +11,7 @@ import { creditCoins, spendCoins } from '../services/wallet.js';
 import { notify } from '../services/notify.js';
 import { recordEvents } from '../services/taste.js';
 import { filterProfanity, hasProfanity } from '../lib/moderation.js';
+import { recordSelfDeclaredMinor } from '../services/safety.js';
 
 export const INTERESTS = [
   'music', 'travel', 'cooking', 'sport', 'fitness', 'movies', 'books', 'art', 'dance', 'gaming',
@@ -152,7 +153,8 @@ export default async function userRoutes(app: FastifyInstance) {
     const id = uid(req);
     const b = onboardingSchema.parse(req.body);
     const age = ageFrom(b.birthDate) ?? 0;
-    if (age < 18) throw err.badRequest('UNDERAGE');
+    // 18-dən kiçik doğum tarixi: hesab bloklanır (başqa tarixlə yenidən cəhd etmək olmur) — bax services/safety.ts
+    if (age < 18) { await recordSelfDeclaredMinor(id, b.birthDate); throw err.badRequest('UNDERAGE'); }
     if (hasProfanity(b.name)) throw err.badRequest('INAPPROPRIATE_NAME');
     if (age > 100) throw err.badRequest('INVALID_BIRTHDATE');
     const before = await prisma.user.findUniqueOrThrow({ where: { id }, select: { onboarded: true } });

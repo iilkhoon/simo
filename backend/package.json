@@ -10,7 +10,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/e2e.ts",
+    "test": "tsx test/e2e.ts && tsx test/safety.ts",
     "local": "node scripts/local.mjs"
   },
   "dependencies": {

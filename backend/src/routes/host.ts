@@ -13,6 +13,7 @@ import { presentUser, publicUserSelect } from '../lib/present.js';
 import { AGENCY_TIERS, ECONOMY, ageFrom, agencyTier, levelFromXp, maxMsgPriceForLevel } from '../economy.js';
 import { agencyMonthly } from '../services/wallet.js';
 import { notify } from '../services/notify.js';
+import { assertHostAgreement, recordSelfDeclaredMinor } from '../services/safety.js';
 
 /** Host olmaq üçün şərtlərin vəziyyəti */
 export async function hostRequirements(userId: string) {
@@ -89,7 +90,7 @@ export default async function hostRoutes(app: FastifyInstance) {
       docBackUrl: z.string().url().optional(),
       selfieUrl: z.string().url(),
     }).parse(req.body);
-    if ((ageFrom(b.birthDate) ?? 0) < 18) throw err.badRequest('UNDERAGE');
+    if ((ageFrom(b.birthDate) ?? 0) < 18) { await recordSelfDeclaredMinor(me, b.birthDate); throw err.badRequest('UNDERAGE'); }
     const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (u.kycStatus === 'APPROVED') throw err.badRequest('KYC_ALREADY_APPROVED');
     if (u.kycStatus === 'PENDING') throw err.badRequest('KYC_PENDING');
@@ -141,6 +142,8 @@ export default async function hostRoutes(app: FastifyInstance) {
     if (a.ownerId === me) throw err.badRequest('OWN_AGENCY');
     const reqs = await hostRequirements(me);
     if (!reqs.eligible) throw err.badRequest('HOST_REQUIREMENTS', { items: reqs.items });
+    // Host müqaviləsi (müstəqil podratçı, cinsi xidmət qadağası, vergi) qəbul edilməlidir
+    await assertHostAgreement(me);
     const pending = await prisma.agencyJoinRequest.findFirst({ where: { userId: me, status: 'PENDING' } });
     if (pending) throw err.badRequest('REQUEST_PENDING');
     const request = await prisma.agencyJoinRequest.create({ data: { agencyId: a.id, userId: me } });

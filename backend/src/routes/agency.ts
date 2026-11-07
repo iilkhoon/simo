@@ -8,6 +8,7 @@ import { presentUser, publicUserSelect } from '../lib/present.js';
 import { hostRequirements } from './host.js';
 import { AGENCY_TIERS, ECONOMY, agencyTier } from '../economy.js';
 import { agencyMonthly } from '../services/wallet.js';
+import { assertAgencyAgreement, assertHostAgeEligible } from '../services/safety.js';
 
 function agencyCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -34,6 +35,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     if (owned) throw err.badRequest('AGENCY_EXISTS');
     const u = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (u.kycStatus !== 'PENDING' && u.kycStatus !== 'APPROVED') throw err.badRequest('KYC_REQUIRED');
+    await assertAgencyAgreement(me);
     if (u.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
     let code = agencyCode();
     while (await prisma.agency.findUnique({ where: { code } })) code = agencyCode();
@@ -115,6 +117,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     if (p.action === 'approve') {
       const user = await prisma.user.findUniqueOrThrow({ where: { id: r.userId } });
       if (user.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
+      await assertHostAgeEligible(user.id, me);
       await prisma.$transaction([
         prisma.agencyJoinRequest.update({ where: { id: r.id }, data: { status: 'APPROVED' } }),
         // Agentliyə qəbul = host statusu (qazanc başlayır)
@@ -135,6 +138,7 @@ export default async function agencyRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.agencyId !== agency.id) throw err.notFound();
     if (!user.verificationUrl) throw err.badRequest('VERIFICATION_REQUIRED');
+    await assertHostAgeEligible(user.id, me);
     await prisma.user.update({ where: { id: userId }, data: { hostStatus: 'APPROVED', verified: true } });
     return { ok: true };
   });

@@ -838,3 +838,115 @@ model ServiceOrder {
   @@index([sellerId, status])
   @@index([buyerId, createdAt])
 }
+
+/* ───────── Təhlükəsizlik və moderasiya (zəng/yayın kadr yoxlaması, xəbərdarlıqlar, yaş yoxlaması) ───────── */
+
+/// İstifadəçinin təhlükəsizlik profili: razılıqlar, xəbərdarlıq sayı, dayandırılma (User modelinə toxunmadan, 1:1)
+model SafetyProfile {
+  userId                 String    @id
+  /// "Zənglər avtomatik yoxlanılır" bildirişinin qəbulu (ilk görüntülü zəngdən əvvəl)
+  videoNoticeAt          DateTime?
+  videoNoticeVersion     String?
+  hostAgreementAt        DateTime?
+  hostAgreementVersion   String?
+  agencyAgreementAt      DateTime?
+  agencyAgreementVersion String?
+  /// Aktiv (ləğv edilməmiş, müddəti bitməmiş) xəbərdarlıqların sayı — keş
+  strikes                Int       @default(0)
+  lastStrikeAt           DateTime?
+  /// Avtomatik dayandırma: banned=true qoyulur, bu tarixdən sonra avtomatik götürülür (permanentBan deyilsə)
+  suspendedUntil         DateTime?
+  suspensionActive       Boolean   @default(false)
+  suspendReason          String?
+  permanentBan           Boolean   @default(false)
+  /// Qeydiyyatda 18-dən kiçik doğum tarixi yazılıb — hesab bloklanır
+  declaredMinorAt        DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+/// Xəbərdarlıq (strike): avtomatik aşkarlama və ya moderator qərarı
+model SafetyStrike {
+  id          String    @id @default(cuid())
+  userId      String
+  reason      String
+  /// AUTO | ADMIN | REPORTS
+  source      String    @default("AUTO")
+  contextType String?
+  contextId   String?
+  evidenceId  String?
+  actorId     String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([contextType, contextId])
+}
+
+/// Sübut: zəng/yayın kadrı (avtomatik) və ya şikayətə əlavə olunan ekran görüntüsü. Fayl ictimai /files qovluğunda saxlanmır.
+model SafetyEvidence {
+  id           String    @id @default(cuid())
+  /// AUTO_FRAME | REPORT_FRAME
+  kind         String
+  /// CALL | LIVE
+  contextType  String
+  contextId    String
+  /// Şəkildəki şəxs (kadrı göndərən və ya şikayət olunan)
+  subjectId    String
+  peerId       String?
+  reporterId   String?
+  reportId     String?
+  filePath     String?
+  sha256       String?
+  provider     String
+  scores       Json      @default("{}")
+  maxScore     Float     @default(0)
+  /// SAFE | SUSPECT | VIOLATION | UNSCANNED
+  verdict      String
+  /// PENDING | CONFIRMED | DISMISSED
+  reviewStatus String    @default("PENDING")
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String    @default("")
+  /// Hüquq-mühafizə orqanının sorğusu və ya azyaşlı şübhəsi: avtomatik silinmir
+  legalHold    Boolean   @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  @@index([reviewStatus, createdAt])
+  @@index([subjectId, createdAt])
+  @@index([contextType, contextId])
+  @@index([expiresAt])
+}
+
+/// Yaş yoxlaması qeydi (host təsdiqi, KYC baxışı, özünü 18-dən kiçik bildirmə)
+model AgeCheck {
+  id                String    @id @default(cuid())
+  userId            String
+  verificationId    String?
+  /// SELF_DECLARED | KYC_REVIEW | HOST_APPROVAL
+  source            String
+  declaredBirthDate DateTime?
+  idBirthDate       DateTime?
+  ageYears          Int?
+  passed            Boolean
+  actorId           String?
+  note              String    @default("")
+  createdAt         DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/// Təhlükəsizlik jurnalı: moderator hərəkətləri, avtomatik qərarlar, məlumat ixracı (hüquq-mühafizə sorğuları)
+model SafetyAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  action       String
+  targetUserId String?
+  data         Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([targetUserId, createdAt])
+  @@index([action, createdAt])
+}

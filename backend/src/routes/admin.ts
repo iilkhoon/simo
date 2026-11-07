@@ -7,6 +7,7 @@ import { agencyMonthly, creditCoins } from '../services/wallet.js';
 import { agencyTier } from '../economy.js';
 import { endLive } from '../services/live.js';
 import { emitToUser } from '../realtime/hub.js';
+import { assertHostAgeEligible, assertKycAdult } from '../services/safety.js';
 
 export default async function adminRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAdmin);
@@ -59,6 +60,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       .object({ banned: z.boolean().optional(), verified: z.boolean().optional(), hostStatus: z.enum(['NONE', 'PENDING', 'APPROVED', 'REJECTED']).optional(), grantCoins: z.number().int().optional() })
       .parse(req.body);
     const { grantCoins, ...data } = b;
+    // Host təsdiqi: şəxsiyyət sənədinə görə 18+ (AgeCheck yazılır)
+    if (data.hostStatus === 'APPROVED') await assertHostAgeEligible(id, req.user?.id);
     await prisma.$transaction(async (tx) => {
       await tx.user.update({ where: { id }, data: { ...data, ...(data.hostStatus === 'APPROVED' ? { verified: true } : {}) } });
       if (grantCoins && grantCoins > 0) await creditCoins(tx, id, grantCoins, 'ADMIN', undefined, 'admin grant');
@@ -119,6 +122,8 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.post('/admin/agencies/:id', async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = z.object({ status: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED']).optional(), rejectReason: z.string().max(300).optional() }).parse(req.body);
+    // Sahib host olur — şəxsiyyət sənədinə görə 18+ olmalıdır
+    if (b.status === 'ACTIVE') await assertHostAgeEligible((await prisma.agency.findUniqueOrThrow({ where: { id } })).ownerId, req.user?.id);
     const a = await prisma.agency.update({ where: { id }, data: { ...b, reviewedAt: new Date() } });
     if (b.status === 'ACTIVE') {
       // Agentlik sahibi də qazanc əldə edə bilsin deyə agentliyin üzvü və host olur
@@ -138,6 +143,7 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.post('/admin/kyc/:id', async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = z.object({ status: z.enum(['APPROVED', 'REJECTED']), note: z.string().max(300).default('') }).parse(req.body);
+    if (b.status === 'APPROVED') await assertKycAdult(id, req.user?.id);
     const v = await prisma.verification.update({ where: { id }, data: { status: b.status, note: b.note, reviewedAt: new Date() } });
     await prisma.user.update({ where: { id: v.userId }, data: { kycStatus: b.status, ...(b.status === 'APPROVED' ? { verified: true } : {}) } });
     emitToUser(v.userId, 'kyc:status', { status: b.status, note: b.note });

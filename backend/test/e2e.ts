@@ -65,9 +65,13 @@ async function main() {
     let manId = '', girlId = '', convId = '';
 
     await step('OTP qeydiyyat (+994) və onboarding, 18+ yoxlaması', async () => {
-      man = await registerPhone(`050${stamp}`);
-      const under = await api('PUT', '/me/onboarding', man, { name: 'Elvin', gender: 'MALE', birthDate: '2015-01-01', avatarUrl: 'https://x.az/a.jpg' });
+      // 18-dən kiçik doğum tarixi yazan hesab bloklanır (başqa tarixlə yenidən cəhd olmur)
+      const kid = await registerPhone(`052${stamp}`);
+      const under = await api('PUT', '/me/onboarding', kid, { name: 'Elvin', gender: 'MALE', birthDate: '2015-01-01', avatarUrl: 'https://x.az/a.jpg' });
       assert.equal(under.data.error, 'UNDERAGE');
+      const retry = await api('PUT', '/me/onboarding', kid, { name: 'Elvin', gender: 'MALE', birthDate: '1995-05-05', avatarUrl: 'https://x.az/a.jpg' });
+      assert.equal(retry.status, 403, 'azyaşlı hesabı bloklanıb');
+      man = await registerPhone(`050${stamp}`);
       const ok = await api('PUT', '/me/onboarding', man, {
         name: 'Elvin', gender: 'MALE', birthDate: '1995-05-05', avatarUrl: 'https://x.az/a.jpg', interests: ['music', 'tea'], languages: ['az', 'ru'],
       });
@@ -99,8 +103,12 @@ async function main() {
       const stats = await api('GET', '/admin/stats', admin);
       assert.equal(stats.status, 200);
       assert.equal((await api('GET', '/admin/stats', man)).status, 403);
+      // Host təsdiqi şəxsiyyət sənədi (18+) olmadan alınmır
+      const noId = await api('POST', `/admin/users/${girlId}`, admin, { hostStatus: 'APPROVED' });
+      assert.equal(noId.data.error, 'HOST_KYC_REQUIRED');
+      await api('POST', '/kyc', girl, { firstName: 'Aysel', lastName: 'Əliyeva', birthDate: '1999-03-03', docFrontUrl: 'https://x.az/id2.jpg', selfieUrl: 'https://x.az/s2.jpg' });
       const up = await api('POST', `/admin/users/${girlId}`, admin, { hostStatus: 'APPROVED' });
-      assert.equal(up.status, 200);
+      assert.equal(up.status, 200, JSON.stringify(up.data));
       // Qazanc yalnız aktiv agentlikdə: test agentliyi (Bürünc səviyyə: agentlik 15%, host 15%, Simo 70%)
       const owner = await prisma.user.create({ data: { name: 'Fixture Agency', email: `fx${stamp}@test.az` } });
       const fx = await prisma.agency.create({ data: { name: `Fixture ${stamp}`, code: `FX${stamp}`.slice(0, 8), ownerId: owner.id, status: 'ACTIVE', defaultMsgPrice: 10 } });
@@ -291,6 +299,10 @@ async function main() {
       assert.equal(noKyc.data.error, 'KYC_REQUIRED');
       const kyc = await api('POST', '/kyc', agent, { firstName: 'Leyla', lastName: 'Məmmədova', birthDate: '1990-01-01', docFrontUrl: 'https://x.az/id.jpg', selfieUrl: 'https://x.az/s.jpg' });
       assert.equal(kyc.status, 200, JSON.stringify(kyc.data));
+      const noAgr = await api('POST', '/agencies', agent, form);
+      assert.equal(noAgr.data.error, 'AGENCY_AGREEMENT_REQUIRED');
+      const agv = (await api('GET', '/safety/me', agent)).data.versions.AGENCY_AGREEMENT;
+      await api('POST', '/safety/consent', agent, { kind: 'AGENCY_AGREEMENT', version: agv });
       const a = await api('POST', '/agencies', agent, form);
       assert.equal(a.data.agency.status, 'PENDING');
       await api('POST', `/admin/agencies/${a.data.agency.id}`, admin, { status: 'ACTIVE' });
@@ -311,6 +323,9 @@ async function main() {
       }
       const reqs = await api('GET', '/host/requirements', girl);
       assert.equal(reqs.data.eligible, true, JSON.stringify(reqs.data));
+      const noHostAgr = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
+      assert.equal(noHostAgr.data.error, 'HOST_AGREEMENT_REQUIRED');
+      await api('POST', '/safety/consent', girl, { kind: 'HOST_AGREEMENT', version: (await api('GET', '/safety/me', girl)).data.versions.HOST_AGREEMENT });
       const j = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
       assert.equal(j.status, 200, JSON.stringify(j.data));
       const dash = await api('GET', '/agencies/me', agent);
