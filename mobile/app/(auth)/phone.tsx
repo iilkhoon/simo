@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { KeyboardAvoidingView } from '../../src/lib/keyboard';
@@ -33,6 +33,9 @@ export default function Phone() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { style: shakeStyle, shake } = useShake();
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  // Giriş animasiyası bitəndən sonra fokus (autoFocus animasiyalı konteynerdə bəzən itir)
+  useEffect(() => { const id = setTimeout(() => inputRef.current?.focus(), 350); return () => clearTimeout(id); }, []);
   const badPrefix = digits.length >= 2 && !PREFIXES.includes(digits.slice(0, 2));
   const ok = digits.length === 9 && !badPrefix;
 
@@ -66,6 +69,7 @@ export default function Phone() {
               <Text style={styles.prefixText}>+994</Text>
             </View>
             <TextInput
+              ref={inputRef}
               autoFocus
               value={formatAz(digits)}
               onChangeText={(v) => { setDigits(normalizeAz(v)); setError(null); }}

@@ -159,8 +159,8 @@ export default function Onboarding() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <Animated.ScrollView
           key={step}
-          style={{ opacity: enterV, transform: [{ translateX: enterV.interpolate({ inputRange: [0, 1], outputRange: [dir * 40, 0] }) }] }}
-          contentContainerStyle={{ gap: 16, paddingBottom: 20 }}
+          style={{ marginHorizontal: -16, opacity: enterV, transform: [{ translateX: enterV.interpolate({ inputRange: [0, 1], outputRange: [dir * 40, 0] }) }] }}
+          contentContainerStyle={{ gap: 16, paddingBottom: 20, paddingHorizontal: 16, paddingTop: 2 }}
           keyboardShouldPersistTaps="handled"
         >
           {cur.key === 'name' && (

@@ -140,7 +140,7 @@ function ProfilePeek({ u, myInterests }: { u: PublicUser; myInterests: string[] 
       </View>
       {shared.length ? (
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 300 }}>
-          {shared.slice(0, 4).map((i) => <Tag key={i} label={t(`interests.${i}`)} icon="heart" bg={colors.brandSoft} />)}
+          {shared.slice(0, 4).map((i) => <Tag key={i} label={t(`interests.${i}`)} bg={colors.brandSoft} />)}
         </View>
       ) : null}
       <View style={styles.safetyRow}>
