@@ -474,6 +474,56 @@ async function main() {
     await F.ctx.close(); await O.ctx.close();
   });
 
+  // ───────────── 7. Canlı yayın (səsli otaq — vebdə kamera/Agora yoxdur) ─────────────
+  if (want(7)) await R.run('7. Canlı: host yayına çıxır, izləyici qoşulur, şərh, bəyənmə, hədiyyə, izləyici siyahısı, host bitirir', async () => {
+    const h = await makeHost(`Aysu${stamp}`);
+    const m = await makeUser({ gender: 'MALE', name: `Emil${stamp}` });
+    await fundUser(m, 'coins_600');
+    const H = await newCtx(browser, h);
+    const M = await newCtx(browser, m);
+    await H.page.goto(`${WEB}/live/start`);
+    await H.page.getByText(/^Səsli otaq$/).filter({ visible: true }).first().click().catch(() => {});
+    await H.page.locator('input:visible').first().fill('QA axşam söhbəti');
+    await H.page.getByText(/^Başla$/).filter({ visible: true }).first().click();
+    await H.page.waitForURL(/\/live\/(?!start)/, { timeout: 15000 });
+    const roomId = new URL(H.page.url()).pathname.split('/live/')[1];
+    await sleep(1500);
+    await shot(H.page, '7-host-live');
+    const lives = await api('GET', '/live', m.accessToken);
+    assert.ok(JSON.stringify(lives.data).includes(roomId), 'yayın siyahıda görünməlidir');
+    await M.page.goto(`${WEB}/live/${roomId}`);
+    await seeText(M.page, /QA axşam söhbəti/);
+    await sleep(1500);
+    const viewers = await api('GET', `/live/${roomId}/viewers`, h.accessToken);
+    assert.ok(JSON.stringify(viewers.data).includes(m.me.id), `izləyici siyahısında olmalıdır: ${JSON.stringify(viewers.data).slice(0, 200)}`);
+    // şərh
+    const box = M.page.getByPlaceholder(/Şərh|şərh|Yaz/).filter({ visible: true }).first();
+    await box.fill('Salam hamıya!');
+    await box.press('Enter');
+    await seeText(H.page, /Salam hamıya!/);
+    // bəyənmə (toplu göndərilir)
+    for (let i = 0; i < 3; i++) await clickIcon(M.page, 'heart', 0, { pick: 'largest' });
+    await sleep(2500);
+    // hədiyyə
+    const c0 = (await meOf(m)).coins;
+    await clickIcon(M.page, 'gift', 0, { pick: 'largest' });
+    await M.page.getByText(/^Romantik$/).filter({ visible: true }).first().click();
+    await M.page.getByText(/^Gül dəstəsi$/).filter({ visible: true }).first().click();
+    await M.page.getByText(/^Göndər$/).filter({ visible: true }).first().click();
+    await sleep(2000);
+    assert.equal((await meOf(m)).coins, c0 - 99, 'yayında hədiyyə');
+    await shot(M.page, '7-viewer');
+    await shot(H.page, '7-host-after-gift');
+    // host bitirir (vebdə Alert.alert işləmir — API ilə; telefonda əl ilə yoxlanılmalıdır)
+    const end = await api('POST', `/live/${roomId}/end`, h.accessToken, {});
+    assert.equal(end.status, 200);
+    assert.ok(end.data.summary.giftsCoins >= 99, JSON.stringify(end.data.summary));
+    assert.ok(end.data.summary.likes >= 1, `bəyənmələr sayılmalıdır: ${JSON.stringify(end.data.summary)}`);
+    await seeText(M.page, /Yayın bitdi/);
+    await shot(M.page, '7-viewer-ended');
+    await H.ctx.close(); await M.ctx.close();
+  });
+
   await browser.close();
   await closeSql();
   srv.close();
