@@ -3,6 +3,7 @@
  * Əvvəl bu kodlar üçün istifadəçi yalnız "Xəta baş verdi" görürdü.
  */
 const az = {
+  kyc: { birthPh: 'GG.AA.İİİİ' },
   wallet: {
     types: {
       FILTER_CHANGE: 'Video filtri', NOBLE_PURCHASE: 'Zadəgan statusu', OFFER_BONUS: 'Təklif bonusu', PK_WIN: 'PK qələbəsi',
@@ -62,6 +63,7 @@ const az = {
 };
 
 const ru: typeof az = {
+  kyc: { birthPh: 'ДД.ММ.ГГГГ' },
   wallet: {
     types: {
       FILTER_CHANGE: 'Видеофильтр', NOBLE_PURCHASE: 'Статус знати', OFFER_BONUS: 'Бонус предложения', PK_WIN: 'Победа в PK',
@@ -121,6 +123,7 @@ const ru: typeof az = {
 };
 
 const en: typeof az = {
+  kyc: { birthPh: 'DD.MM.YYYY' },
   wallet: {
     types: {
       FILTER_CHANGE: 'Video filter', NOBLE_PURCHASE: 'Noble status', OFFER_BONUS: 'Offer bonus', PK_WIN: 'PK win',

@@ -636,6 +636,78 @@ async function main() {
     await U.ctx.close();
   });
 
+  // ───────────── 10. Dil: AZ/RU/EN — bütün ekranlarda xam açar və qarışıq dil axtarışı; bildiriş ayarları ─────────────
+  if (want(10)) await R.run('10. Ayarlar: dil AZ/RU/EN (xam i18n açarı / qarışıq dil skanı), bildiriş ayarları yadda qalır', async () => {
+    const tk = await login('+994990000002');
+    const meId = (await api('GET', '/me', tk.accessToken)).data.id;
+    const host = (await sql(`SELECT id FROM "User" WHERE phone='+994990000001'`))[0].id;
+    const conv = (await api('POST', `/conversations/with/${host}`, tk.accessToken, {})).data.id;
+    const routes = ['/', '/videos', '/chats', '/me', '/wallet', '/settings', '/notif-settings', '/notifications', '/vip', '/noble', '/rewards',
+      '/leaderboard', '/likes', '/visitors', '/saved', '/blocked', '/call-settings', '/earnings', '/host-tasks', '/agencies', '/agency', '/verify',
+      '/edit-profile', '/raffles', '/services', '/orders', '/search', '/nearby', '/live/start', '/video/upload', '/story/new', `/user/${host}`, `/chat/${conv}`, `/user/${meId}`];
+    const M = await newCtx(browser, tk);
+    // istifadəçi məzmunu (adlar, bio) skandan çıxarılır
+    // (dil seçicidəki "Azərbaycanca/Русский" adları və QA istifadəçi adları — 6 rəqəmli işarə ilə — da)
+    const userContent = /Test (Aysel|Elvin)|Test hesabı|QA|\d{6}|Bakı|simo|^Azərbaycanca$|^Русский$|^English$|^🇦🇿/i;
+    const AZ = /[əğışƏĞİŞ]/, CYR = /[а-яА-ЯёЁ]/;
+    const problems = [];
+    await M.page.goto(`${WEB}/settings`);
+    for (const [lang, label] of [['ru', 'Русский'], ['en', 'English'], ['az', 'Azərbaycanca']]) {
+      await M.page.goto(`${WEB}/settings`);
+      await M.page.getByText(new RegExp(`^${label}$`)).filter({ visible: true }).first().click();
+      await sleep(800);
+      assert.equal((await api('GET', '/me', tk.accessToken)).data.locale, lang, 'dil serverdə yadda qalmalıdır');
+      for (const r of routes) {
+        await M.page.goto(WEB + r);
+        await sleep(1800);
+        const texts = await visibleTexts(M.page);
+        for (const k of rawKeys(texts)) problems.push(`[${lang}] ${r}: xam açar "${k}"`);
+        for (const t of texts) {
+          if (userContent.test(t) || t.length < 3) continue;
+          const bad = lang === 'az' ? CYR.test(t) : lang === 'ru' ? AZ.test(t) : AZ.test(t) || CYR.test(t);
+          if (bad) problems.push(`[${lang}] ${r}: qarışıq dil "${t.slice(0, 80)}"`);
+        }
+        if (lang !== 'az') await shot(M.page, `10-${lang}${r.replace(/\//g, '_').slice(0, 40)}`);
+      }
+    }
+    // girişdən əvvəlki ekranlar (welcome → telefon) hər dildə
+    for (const [lang, code] of [['ru', 'RU'], ['en', 'EN']]) {
+      const G = await newCtx(browser, null);
+      await G.page.goto(WEB);
+      await G.page.getByText(new RegExp(`^${code}$`)).filter({ visible: true }).first().click();
+      await sleep(800);
+      for (const step of ['welcome', 'phone']) {
+        if (step === 'phone') { await G.page.getByRole('checkbox').first().click(); await clickIcon(G.page, 'phone', 0, { pick: 'largest' }); await sleep(1200); }
+        const texts = await visibleTexts(G.page);
+        for (const k of rawKeys(texts)) problems.push(`[${lang}] ${step}: xam açar "${k}"`);
+        for (const t of texts) if (!userContent.test(t) && t.length >= 3 && AZ.test(t) && !/Azercell|Bakcell/.test(t)) problems.push(`[${lang}] ${step}: qarışıq dil "${t.slice(0, 80)}"`);
+        await shot(G.page, `10-${lang}-${step}`);
+      }
+      await G.ctx.close();
+    }
+    const uniq = [...new Set(problems)];
+    console.log(uniq.map((p) => '      ' + p).join('\n'));
+    // bildiriş ayarları
+    await M.page.goto(`${WEB}/notif-settings`);
+    await sleep(1500);
+    const sw = M.page.locator('input[type="checkbox"]:visible, [role="switch"]:visible');
+    const n = await sw.count();
+    assert.ok(n >= 3, `bildiriş açarları: ${n}`);
+    const before = (await api('GET', '/me', tk.accessToken)).data.notifPrefs ?? {};
+    await sw.nth(1).click();
+    await sleep(1200);
+    const after = (await api('GET', '/me', tk.accessToken)).data.notifPrefs ?? {};
+    assert.notDeepEqual(after, before, 'bildiriş ayarı serverdə dəyişməlidir');
+    await M.page.reload();
+    await sleep(2000);
+    const checked = await M.page.locator('input[type="checkbox"]:visible, [role="switch"]:visible').nth(1).evaluate((e) => e.checked ?? e.getAttribute('aria-checked'));
+    await sw.nth(1).click(); // geri qaytar
+    await sleep(800);
+    assert.ok(checked === false || checked === 'false', `yenidən açanda ayar yadda qalmalıdır (${checked})`);
+    await M.ctx.close();
+    assert.equal(uniq.length, 0, `${uniq.length} dil problemi`);
+  });
+
   await browser.close();
   await closeSql();
   srv.close();

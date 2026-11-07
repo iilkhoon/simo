@@ -81,7 +81,7 @@ export default function Verify() {
       <View style={{ gap: 12 }}>
         <Input label={t('kyc.firstName')} value={f.firstName} onChangeText={(v) => setF({ ...f, firstName: v })} autoCapitalize="words" />
         <Input label={t('kyc.lastName')} value={f.lastName} onChangeText={(v) => setF({ ...f, lastName: v })} autoCapitalize="words" />
-        <Input label={t('kyc.birth')} value={f.birth} placeholder="GG.AA.İİİİ" keyboardType="number-pad" maxLength={10}
+        <Input label={t('kyc.birth')} value={f.birth} placeholder={t('kyc.birthPh')} keyboardType="number-pad" maxLength={10}
           onChangeText={(v) => { const d = v.replace(/\D/g, '').slice(0, 8); setF({ ...f, birth: [d.slice(0, 2), d.slice(2, 4), d.slice(4)].filter(Boolean).join('.') }); }} />
         <T v="label" color={colors.textMuted}>{t('kyc.docType')}</T>
         <Tabs<Doc> value={f.doc} onChange={(doc) => setF({ ...f, doc })} options={[{ key: 'ID_CARD', label: t('kyc.docs.ID_CARD') }, { key: 'PASSPORT', label: t('kyc.docs.PASSPORT') }, { key: 'DRIVER_LICENSE', label: t('kyc.docs.DRIVER_LICENSE') }]} />
