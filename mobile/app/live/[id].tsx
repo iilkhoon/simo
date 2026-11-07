@@ -313,8 +313,9 @@ export default function LiveRoom() {
       return;
     }
     try {
-      const r = await api<{ coins: number }>('/gifts/send', { body: { giftId, receiverId: room.hostId, count: 1, context: 'LIVE', contextId: room.id } });
+      const r = await api<{ coins: number; event: GiftEvent }>('/gifts/send', { body: { giftId, receiverId: room.hostId, count: 1, context: 'LIVE', contextId: room.id } });
       patchMe({ coins: r.coins });
+      overlay.current?.push(r.event); // socket əks-sədası eyni id ilə gəlir — örtük təkrarı süzür
     } catch (e) {
       toast(errorText(e), 'error');
     }
@@ -481,7 +482,7 @@ export default function LiveRoom() {
 
       <Hearts ref={hearts} />
       <GiftOverlay ref={overlay} />
-      {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} /> : null}
+      {!isHost || giftTo ? <GiftSheet visible={giftOpen} onClose={() => { setGiftOpen(false); setGiftTo(null); }} receiverId={giftTo?.id ?? room.hostId} receiverName={giftTo?.name ?? room.host.name} context="LIVE" contextId={room.id} onSent={(e) => overlay.current?.push(e)} /> : null}
       {isHost ? <HostPanel visible={panel} onClose={() => { setPanel(false); setRequests(0); }} roomId={room.id} video={room.type === 'VIDEO'} /> : null}
       <GuestStrip guests={guests} canKick={isHost} onKick={(uid) => void api(`/live/${id}/guests/remove`, { body: { userId: uid } }).catch(() => {})} />
 

@@ -240,6 +240,9 @@ export default function CallScreen() {
         </Animated.View>
       ) : null}
 
+      {/* Hədiyyələr: videonun üstündə, idarə düymələrinin altında; göndərən özü yalnız kiçik "Sən göndərdin" banneri görür */}
+      <GiftOverlay ref={overlay} compactSelf />
+
       <Animated.View style={[StyleSheet.absoluteFill, remoteVideo ? topStyle : null]} pointerEvents={uiOn ? 'box-none' : 'none'}>
       <SafeAreaView style={styles.top} edges={['top']} pointerEvents="box-none">
         {remoteVideo ? (
@@ -288,7 +291,6 @@ export default function CallScreen() {
         </View>
       </SafeAreaView>
       </Animated.View>
-      <GiftOverlay ref={overlay} />
       <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} receiverName={peer.name} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
     </View>
   );
