@@ -544,7 +544,7 @@ function RocketLaunch({ W, H }: FxProps) {
     <>
       <Backdrop W={W} H={H} color="rgba(10,14,40,0.55)" />
       <Scene ps={ps} />
-      <Layer x={cx} y={base + S * 0.5 + S * 0.16} w={S * 0.38} h={S * 0.32} k={{ y: Y, x: X, s: kf([0.12, 0.5], [0.2, 1], [0.42, 1.2], [0.6, 2]), o: kf([0, 0], [0.12, 0], [0.16, 1], [0.74, 1], [0.75, 0]) }} osc={[{ p: 'sy', a: 0.18, f: 30 }]}>
+      <Layer x={cx} y={base + S * 0.44} w={S * 0.38} h={S * 0.32} k={{ y: Y, x: X, s: kf([0.12, 0.5], [0.2, 1], [0.42, 1.2], [0.6, 2]), o: kf([0, 0], [0.12, 0], [0.16, 1], [0.74, 1], [0.75, 0]) }} osc={[{ p: 'sy', a: 0.18, f: 30 }]}>
         <Sprite xml={PART.rocketFlame} w={S * 0.38} h={S * 0.32} />
       </Layer>
       <Layer x={cx} y={base} w={S} h={S} k={{ y: Y, x: X, o: kf([0, 1], [0.74, 1], [0.75, 0]) }}><Sprite xml={PART.rocket} w={S} /></Layer>
@@ -555,7 +555,7 @@ function RocketLaunch({ W, H }: FxProps) {
 function YachtSail({ W, H }: FxProps) {
   const { cx, U } = geo(W, H);
   const S = U * 0.95;
-  const seaY = H * 0.6;
+  const seaY = H * 0.68;
   const ps = useMemo(() => {
     const r = rng(37);
     return [
@@ -567,12 +567,12 @@ function YachtSail({ W, H }: FxProps) {
     <>
       <Backdrop W={W} H={H} color="rgba(8,30,60,0.45)" />
       <Glow x={W * 0.75} y={H * 0.16} size={U * 0.8} color="#FFD56A" k={{ o: showFrom(0.05, 1, 0.1, 0.1) }} />
-      <Layer x={W} y={seaY + H * 0.22} w={W * 2} h={H * 0.44} k={{ x: kf([0, 0], [1, -W * 0.6]), o: showFrom(0, 1, 0.08, 0.1) }}><Sprite xml={PART.wave} w={W * 2} h={H * 0.44} /></Layer>
-      <Layer x={cx} y={seaY - S * 0.18} w={S} h={S} k={{ x: kf([0, W * 0.9], [0.32, 0], [0.72, 0], [1, -W * 0.95]), o: kf([0, 1], [1, 1]) }} osc={[{ p: 'y', a: 7, f: 4 }, { p: 'r', a: 2.5, f: 4, ph: 0.25 }]}>
+      <Layer x={W} y={seaY + H * 0.16} w={W * 2} h={H * 0.32} k={{ x: kf([0, 0], [1, -W * 0.6]), o: showFrom(0, 1, 0.08, 0.1) }}><Sprite xml={PART.wave} w={W * 2} h={H * 0.32} /></Layer>
+      <Layer x={cx} y={seaY - S * 0.2} w={S} h={S} k={{ x: kf([0, W * 0.9], [0.32, 0], [0.72, 0], [1, -W * 0.95]), o: kf([0, 1], [1, 1]) }} osc={[{ p: 'y', a: 7, f: 4 }, { p: 'r', a: 2.5, f: 4, ph: 0.25 }]}>
         <Sprite xml={PART.yachtBoat} w={S} />
       </Layer>
       <Scene ps={ps} />
-      <Layer x={W} y={seaY + H * 0.3} w={W * 2} h={H * 0.3} k={{ x: kf([0, -W * 0.3], [1, -W * 1.2]), o: kf([0, 0], [0.08, 0.8], [0.9, 0.8], [1, 0]) }}><Sprite xml={PART.wave} w={W * 2} h={H * 0.3} /></Layer>
+      <Layer x={W} y={seaY + H * 0.24} w={W * 2} h={H * 0.2} k={{ x: kf([0, -W * 0.3], [1, -W * 1.2]), o: kf([0, 0], [0.08, 0.8], [0.9, 0.8], [1, 0]) }}><Sprite xml={PART.wave} w={W * 2} h={H * 0.2} /></Layer>
       {[0, 1].map((i) => (
         <Layer key={i} x={W + 40} y={H * (0.2 + i * 0.08)} w={40 - i * 8} h={20 - i * 4} k={{ x: kf([0.1 + i * 0.15, 0], [0.8 + i * 0.1, -W - 80]) }} osc={[{ p: 'sy', a: 0.45, f: 16 + i * 3 }, { p: 'y', a: 8, f: 2 }]}>
           <Sprite xml={PART.gull} w={40 - i * 8} h={20 - i * 4} />
