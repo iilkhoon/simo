@@ -62,6 +62,8 @@ export async function buildApp() {
       },
     },
     bodyLimit: 2 * 1024 * 1024,
+    // İstehsalda hər sorğu log-lanmır (həcm); yavaş və xətalı cavablar aşağıdakı hook ilə yazılır. LOG_REQUESTS=true — hamısı
+    disableRequestLogging: config.isProd && process.env.LOG_REQUESTS !== 'true',
     trustProxy: config.trustProxy,
     // Sorğu ID: proksidən gələn X-Request-Id (etibarlı formatdadırsa) və ya yeni UUID — log-larda izləmək üçün
     genReqId: (req) => {
@@ -71,6 +73,12 @@ export async function buildApp() {
   });
   app.addHook('onSend', async (req, reply) => {
     reply.header('X-Request-Id', req.id);
+  });
+  app.addHook('onResponse', async (req, reply) => {
+    const ms = reply.elapsedTime;
+    if (reply.statusCode >= 500 || ms > 1500) {
+      req.log.warn({ method: req.method, url: redactUrl(req.url), status: reply.statusCode, ms: Math.round(ms) }, reply.statusCode >= 500 ? 'Xətalı cavab' : 'Yavaş sorğu');
+    }
   });
 
   const origins = allowedOrigins();

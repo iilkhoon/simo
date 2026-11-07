@@ -143,7 +143,7 @@ Bu açarları `backend/.env` faylına yazın:
    - Eyni ID-lərlə məhsullar yaradın.
    - Service account JSON faylını `GOOGLE_SERVICE_ACCOUNT_JSON` dəyişəninə yazın.
 5. **Epoint.az** merchant hesabı: `EPOINT_PUBLIC_KEY` və `EPOINT_PRIVATE_KEY`. Huawei versiyası və veb yükləmə bu hesabla işləyir.
-6. **Təhlükəsizlik**: `JWT_SECRET` üçün uzun təsadüfi sətir yazın, `DEV_MODE=false` və `NODE_ENV=production` qoyun.
+6. **Təhlükəsizlik**: `JWT_SECRET` üçün uzun təsadüfi sətir yazın, `DEV_MODE=false` və `NODE_ENV=production` qoyun, `SIMO_STAGING` sətrini silin. Tam siyahı: [docs/PRODUCTION.md](docs/PRODUCTION.md) (server dev parametrləri ilə istehsalda başlamır).
 7. **Fayl yükləmə**: istehsalda S3 və ya Cloudflare R2 tövsiyə olunur. İndiki halda fayllar `UPLOAD_DIR` qovluğunda saxlanır.
 8. **Miqyas**: çox serverli rejimdə canlı otaq vəziyyəti və Socket.IO üçün Redis adapteri qoşulmalıdır.
 

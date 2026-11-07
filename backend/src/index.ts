@@ -88,8 +88,7 @@ async function main() {
   });
 
   await app.listen({ port: config.port, host: config.host });
-  app.log.info(`Simo API: ${config.publicUrl} (${config.host}:${config.port})`);
-  console.log(`Simo API: ${config.publicUrl} (port ${config.port})`);
+  console.log(`Simo API: ${config.publicUrl} (${config.host}:${config.port})`);
 }
 
 main().catch((e) => {
