@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { disconnectUser } from '../realtime/hub.js';
 import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
@@ -288,6 +289,8 @@ export default async function userRoutes(app: FastifyInstance) {
         },
       }),
     ]);
+    // Açıq soket bağlantıları da bağlanır (silinmiş hesab real-time hadisə almasın)
+    disconnectUser(id);
     return { ok: true };
   });
 
@@ -385,7 +388,7 @@ export default async function userRoutes(app: FastifyInstance) {
     return { users: users.map((u) => presentUser(u)) };
   });
 
-  app.post('/reports', { preHandler: requireAuth }, async (req) => {
+  app.post('/reports', { preHandler: requireAuth, config: { rateLimit: { max: 30, timeWindow: '1 hour' } } }, async (req) => {
     const b = z
       .object({
         targetUserId: z.string(),

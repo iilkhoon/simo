@@ -8,6 +8,12 @@ function env(name: string, fallback?: string): string {
   return v;
 }
 
+/** Boş dəyər (KEY=) da "təyin olunmayıb" sayılır — yollar və ünvanlar üçün (boş yol = cari qovluq olardı) */
+function envNonEmpty(name: string, fallback: string): string {
+  const v = process.env[name];
+  return v === undefined || v.trim() === '' ? fallback : v;
+}
+
 const isProd = process.env.NODE_ENV === 'production';
 const list = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
 const num = (name: string, fallback: number) => {
@@ -19,16 +25,16 @@ export const config = {
   isProd,
   port: Number(env('PORT', '4000')),
   /** Dinləmə ünvanı. VPS-də 127.0.0.1 (yalnız Caddy vasitəsilə), Docker-də 0.0.0.0 */
-  host: env('HOST', '0.0.0.0'),
+  host: envNonEmpty('HOST', '0.0.0.0'),
   /**
    * Hansı proksiyə etibar edilir (X-Forwarded-For → real IP, rate-limit üçün vacibdir).
    * Standart: yalnız eyni maşındakı proksi (Caddy). Docker / bulud LB üçün: TRUST_PROXY=true və ya IP/CIDR siyahısı.
    */
-  trustProxy: ((v: string): boolean | string => (v === 'true' ? true : v === 'false' ? false : v))(env('TRUST_PROXY', 'loopback')),
+  trustProxy: ((v: string): boolean | string => (v === 'true' ? true : v === 'false' ? false : v))(envNonEmpty('TRUST_PROXY', 'loopback')),
   /** Brauzerdən API-yə icazə verilən mənbələr (vergüllə). Boşdursa: istehsalda yalnız WEB_URL, inkişafda hamısı */
   corsOrigins: list(env('CORS_ORIGINS', '')),
   /** pino log səviyyəsi */
-  logLevel: env('LOG_LEVEL', isProd ? 'info' : 'warn'),
+  logLevel: envNonEmpty('LOG_LEVEL', isProd ? 'info' : 'warn'),
   /** İstəyə bağlı: Sentry DSN (paket quraşdırılıbsa istifadə olunur, yoxdursa sadəcə log) */
   sentryDsn: env('SENTRY_DSN', ''),
   /**
@@ -49,9 +55,9 @@ export const config = {
   jwtSecret: env('JWT_SECRET', isProd ? undefined : 'dev-secret-change-me'),
   accessTtlSec: num('ACCESS_TTL_SEC', 60 * 60 * 24),
   refreshTtlSec: num('REFRESH_TTL_SEC', 60 * 60 * 24 * 90),
-  uploadDir: env('UPLOAD_DIR', './uploads'),
+  uploadDir: envNonEmpty('UPLOAD_DIR', './uploads'),
   /** Şəxsi fayllar (KYC sənədləri): /files/ altında DEYİL, yalnız imzalı müvəqqəti link ilə açılır */
-  privateUploadDir: path.resolve(env('PRIVATE_UPLOAD_DIR', path.join(env('UPLOAD_DIR', './uploads'), '..', 'private-uploads'))),
+  privateUploadDir: path.resolve(envNonEmpty('PRIVATE_UPLOAD_DIR', path.join(envNonEmpty('UPLOAD_DIR', './uploads'), '..', 'private-uploads'))),
   /** İstifadəçinin göndərdiyi media linkləri üçün əlavə icazəli hostlar (CDN). Öz PUBLIC_URL hostu həmişə icazəlidir */
   mediaHosts: list(env('MEDIA_HOSTS', '')),
   otp: {

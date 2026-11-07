@@ -47,7 +47,7 @@ export const SAFETY = {
   get queueSample() { return num('SAFETY_QUEUE_SAMPLE', 0.25); },
   /** Eyni istifadəçiyə 24 saatda neçə fərqli şikayətçi (çılpaqlıq/azyaşlı) — baxışa qədər müvəqqəti dayandırma */
   get reportsToSuspend() { return Math.max(2, num('SAFETY_REPORTS_TO_SUSPEND', 3)); },
-  get evidenceDir() { return path.resolve(process.env.SAFETY_EVIDENCE_DIR ?? path.join(config.uploadDir, '..', 'safety-evidence')); },
+  get evidenceDir() { return path.resolve(process.env.SAFETY_EVIDENCE_DIR?.trim() || path.join(config.uploadDir, '..', 'safety-evidence')); },
   /** Saxlama müddətləri (gün) */
   retention: {
     get unscanned() { return num('SAFETY_RETENTION_UNSCANNED_DAYS', 3); },

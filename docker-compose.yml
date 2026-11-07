@@ -1,29 +1,52 @@
+# Docker ilə işə salma (VPS üçün əsas yol deploy/setup.sh-dır).
+# Diqqət: Docker portları ufw qaydalarını keçir — buna görə portlar yalnız 127.0.0.1-ə bağlanır;
+# xaricə HTTPS proksi (Caddy/nginx) vasitəsilə açın. Parolu dəyişin: POSTGRES_PASSWORD=... docker compose up -d
 services:
   db:
     image: postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_USER: simo
-      POSTGRES_PASSWORD: simo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-simo}
       POSTGRES_DB: simo
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Baza xaricə açılmır (yalnız bu maşından: psql -h 127.0.0.1)
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simo -d simo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build: ./backend
     restart: unless-stopped
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql://simo:simo@db:5432/simo
+      DATABASE_URL: postgresql://simo:${POSTGRES_PASSWORD:-simo}@db:5432/simo
+      HOST: 0.0.0.0
       UPLOAD_DIR: /data/uploads
+      PRIVATE_UPLOAD_DIR: /data/private-uploads
+      SAFETY_EVIDENCE_DIR: /data/safety-evidence
+      # Proksi Docker şəbəkəsindən gəlir (loopback deyil)
+      TRUST_PROXY: ${TRUST_PROXY:-172.16.0.0/12}
     volumes:
       - uploads:/data/uploads
+      - private:/data/private-uploads
+      - evidence:/data/safety-evidence
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
+    stop_grace_period: 20s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   web:
     image: nginx:alpine
@@ -31,8 +54,10 @@ services:
     volumes:
       - ./web:/usr/share/nginx/html:ro
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
 volumes:
   pgdata:
   uploads:
+  private:
+  evidence:

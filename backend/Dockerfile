@@ -6,5 +6,9 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate && npx tsc
 ENV NODE_ENV=production
+# Qovluqlar həcm (volume) kimi bağlanır; proses root olmadan işləyir
+RUN mkdir -p /data/uploads /data/private-uploads /data/safety-evidence && chown -R node:node /data
+USER node
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && node dist/src/index.js"]
+# Miqrasiyalar → hədiyyə/paket kataloqu (demo istifadəçisiz) → zərif dayanma üçün node birbaşa PID 1-də (exec)
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && exec node dist/src/index.js"]
