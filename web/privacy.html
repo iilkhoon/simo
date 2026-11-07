@@ -29,11 +29,21 @@
           <li><b>Təsdiq (KYC):</b> ad, soyad, doğum tarixi, şəxsiyyət vəsiqəsinin və ya pasportun fotosu və üz fotosu (selfi). Üz fotosu biometrik məlumat sayıla bildiyi üçün yalnız sizin <b>açıq razılığınızla</b> toplanır və yalnız şəxsiyyəti yoxlamaq üçün istifadə olunur.</li>
           <li><b>Məkan:</b> kəşf və "Yaxınlıqdakılar" üçün təxmini koordinatlar, yalnız icazə verdikdə. Digər istifadəçilərə dəqiq ünvan yox, təxmini məsafə və şəhər göstərilir.</li>
           <li><b>Məzmun:</b> paylaşdığınız video, foto, hekayə, şərh, bəyənmə, saxlama, canlı yayım və otaq məlumatları.</li>
-          <li><b>Ünsiyyət:</b> mesajlar və onlardakı foto/videolar, zəng qeydləri (müddət, vaxt, qiymət), hədiyyələr. <b>Zənglərin və canlı yayımların səsi və görüntüsü qeyd olunmur.</b></li>
+          <li><b>Ünsiyyət:</b> mesajlar və onlardakı foto/videolar, zəng qeydləri (müddət, vaxt, qiymət), hədiyyələr. <b>Zənglərin və canlı yayımların səsi və tam görüntüsü qeyd olunmur</b>; görüntülü zəng və video yayım zamanı təhlükəsizlik üçün yalnız ayrı-ayrı kadrlar yoxlanılır (bax 1.1).</li>
           <li><b>Ödənişlər və qazanc:</b> alış, xərc, Almaz qazancı və çıxarış tarixçəsi, çıxarış üçün bank rekvizitləri. Kart məlumatlarını App Store, Google Play və Epoint emal edir; Simo kart nömrəsini görmür və saxlamır.</li>
           <li><b>Agentlik müraciəti:</b> agentlik adı, şəhər, əlaqə şəxsi və telefon, təcrübə.</li>
           <li><b>Dəvət:</b> sizi kimin dəvət etdiyi və dəvət etdiyiniz şəxslərin alışlarından hesablanan bonuslar (alışın məbləği dəvət edənə göstərilmir).</li>
           <li><b>Texniki məlumatlar:</b> cihaz modeli, əməliyyat sistemi, tətbiq versiyası, dil, IP ünvanı, bildiriş tokeni, xəta qeydləri.</li>
+        </ul>
+
+        <div class="note" style="background:#fde2dc"><p><b>LAYİHƏ — hüquqşünas baxışı tələb olunur:</b> 1.1-ci bölmə və təhlükəsizlik moderasiyası ilə bağlı əlavələr (6 noyabr 2026).</p></div>
+        <h2>1.1. Görüntülü zəng və yayımların təhlükəsizlik yoxlaması</h2>
+        <ul>
+          <li><b>Nə toplanır:</b> görüntülü zəng və video yayım zamanı cihazınız təsadüfi intervallarla (təxminən hər 10–20 saniyədən bir) <b>öz kameranızın</b> aşağı keyfiyyətli (ən çox 640 px) kadrını göndərir. Kadrdan metadata (EXIF, məkan) silinir. Şikayət etdikdə qarşı tərəfin videosunun bir kadrı da sübut kimi əlavə olunur.</li>
+          <li><b>Məqsəd və əsas:</b> çılpaqlıq, cinsi məzmun və azyaşlıların istismarının qarşısını almaq, istifadəçiləri qorumaq, qanuni vəzifələrimizi yerinə yetirmək. Hüquqi əsas — ilk görüntülü zəngdən əvvəl verdiyiniz <b>açıq razılıq</b>, İstifadə şərtlərinin icrası və təhlükəsizliyə dair qanuni marağımız.</li>
+          <li><b>Avtomatik qərar:</b> kadr avtomatik moderasiya modeli ilə qiymətləndirilir (konfiqurasiyadan asılı olaraq Sightengine və ya Amazon Rekognition; açar olmadıqda yalnız Simo moderatorları). Yüksək balda video qarşı tərəfə göstərilmir, xəbərdarlıq yazılır, təkrarda zəng bitirilir. Avtomatik qərarlar moderator tərəfindən yoxlanılır və onlardan şikayət edə bilərsiniz.</li>
+          <li><b>Saxlama:</b> qaydalara uyğun kadrlar <b>saxlanılmır</b>. Şübhəli kadrlar — 30 gün, pozuntu və şikayət kadrları — 180 gün, moderatorun təsdiqlədiyi pozuntular — 1 il, yanlış aşkarlamalar — 7 gün saxlanılır. Azyaşlı şübhəsi, rəsmi sorğu və ya məhkəmə prosesi olduqda sübut silinmədən saxlanılır. Müddət bitdikdən sonra şəkil silinir, qərar və ballar jurnal kimi qalır.</li>
+          <li><b>Kim görür:</b> yalnız Simo-nun səlahiyyətli moderatorları (hər baxış jurnala yazılır) və qanuni sorğu əsasında səlahiyyətli dövlət orqanları. Kadrlar ictimai keçidlə əlçatan deyil, reklam və ya model təlimi üçün istifadə olunmur.</li>
         </ul>
 
         <h2>2. Məlumatları nə üçün istifadə edirik</h2>
@@ -63,6 +73,7 @@
         <h2>5. Üçüncü tərəf xidmətlər</h2>
         <ul>
           <li><b>Agora:</b> real vaxt səs və video ötürülməsi (zənglər, canlı yayım, səsli otaqlar).</li>
+          <li><b>Sightengine (Fransa) və ya Amazon Web Services (Rekognition):</b> görüntülü zəng/yayın kadrlarının avtomatik təhlükəsizlik yoxlaması (bax 1.1).</li>
           <li><b>Apple, Google və Epoint:</b> ödənişlər.</li>
           <li><b>Expo / Apple Push / Firebase:</b> push bildirişlər.</li>
           <li><b>SMS provayderi:</b> təsdiq kodları.</li>
@@ -113,11 +124,21 @@
           <li><b>Верификация (KYC):</b> имя, фамилия, дата рождения, фото удостоверения личности или паспорта и фото лица (селфи). Фото лица может считаться биометрическими данными, поэтому собирается только с вашего <b>явного согласия</b> и используется только для проверки личности.</li>
           <li><b>Местоположение:</b> приблизительные координаты для поиска и «Рядом», только с разрешения. Другим показывается расстояние и город, а не точный адрес.</li>
           <li><b>Контент:</b> видео, фото, истории, комментарии, лайки, сохранения, эфиры и комнаты.</li>
-          <li><b>Общение:</b> сообщения и фото/видео в них, записи о звонках (длительность, время, цена), подарки. <b>Звук и видео звонков и эфиров не записываются.</b></li>
+          <li><b>Общение:</b> сообщения и фото/видео в них, записи о звонках (длительность, время, цена), подарки. <b>Звук и полное видео звонков и эфиров не записываются</b>; во время видеозвонков и видеоэфиров в целях безопасности проверяются только отдельные кадры (см. 1.1).</li>
           <li><b>Платежи и заработок:</b> история покупок, трат, Алмазов и выводов, банковские реквизиты для вывода. Данные карт обрабатывают App Store, Google Play и Epoint; Simo их не видит и не хранит.</li>
           <li><b>Заявка агентства:</b> название, город, контактное лицо и телефон, опыт.</li>
           <li><b>Приглашения:</b> кто вас пригласил и бонусы с покупок приглашённых (сумма покупки пригласившему не показывается).</li>
           <li><b>Технические данные:</b> модель устройства, ОС, версия приложения, язык, IP-адрес, push-токен, логи ошибок.</li>
+        </ul>
+
+        <div class="note" style="background:#fde2dc"><p><b>ПРОЕКТ — требуется проверка юристом:</b> раздел 1.1 и дополнения о модерации безопасности (6 ноября 2026).</p></div>
+        <h2>1.1. Проверка безопасности видеозвонков и эфиров</h2>
+        <ul>
+          <li><b>Что собирается:</b> во время видеозвонка и видеоэфира ваше устройство через случайные интервалы (примерно каждые 10–20 секунд) отправляет кадр <b>вашей камеры</b> низкого качества (не более 640 px). Метаданные (EXIF, местоположение) удаляются. При жалобе как доказательство прикладывается и кадр видео собеседника.</li>
+          <li><b>Цель и основание:</b> предотвращение наготы, сексуального контента и эксплуатации несовершеннолетних, защита пользователей, исполнение наших правовых обязанностей. Основание — ваше <b>явное согласие</b> перед первым видеозвонком, исполнение Условий и наш законный интерес в безопасности.</li>
+          <li><b>Автоматическое решение:</b> кадр оценивается моделью автоматической модерации (в зависимости от настроек — Sightengine или Amazon Rekognition; без ключа — только модераторы Simo). При высокой оценке видео перестаёт показываться собеседнику, начисляется предупреждение, при повторе звонок завершается. Решения проверяются модератором и могут быть обжалованы.</li>
+          <li><b>Хранение:</b> кадры без нарушений <b>не хранятся</b>. Подозрительные — 30 дней, нарушения и кадры жалоб — 180 дней, подтверждённые модератором нарушения — 1 год, ложные срабатывания — 7 дней. При подозрении на несовершеннолетних, официальном запросе или суде доказательства сохраняются без удаления. По истечении срока изображение удаляется, решение и оценки остаются в журнале.</li>
+          <li><b>Кто видит:</b> только уполномоченные модераторы Simo (каждый просмотр журналируется) и компетентные органы по законному запросу. Кадры недоступны по публичной ссылке и не используются для рекламы или обучения моделей.</li>
         </ul>
 
         <h2>2. Зачем мы используем данные</h2>
@@ -147,6 +168,7 @@
         <h2>5. Сторонние сервисы</h2>
         <ul>
           <li><b>Agora:</b> передача аудио и видео в реальном времени.</li>
+          <li><b>Sightengine (Франция) или Amazon Web Services (Rekognition):</b> автоматическая проверка кадров видеозвонков/эфиров (см. 1.1).</li>
           <li><b>Apple, Google и Epoint:</b> платежи.</li>
           <li><b>Expo / Apple Push / Firebase:</b> push-уведомления.</li>
           <li><b>SMS-провайдер:</b> коды подтверждения.</li>
@@ -196,11 +218,21 @@
           <li><b>Verification (KYC):</b> first name, last name, date of birth, a photo of your ID card or passport and a face photo (selfie). A face photo may count as biometric data, so it is collected only with your <b>explicit consent</b> and used only to verify identity.</li>
           <li><b>Location:</b> approximate coordinates for discovery and "Nearby", only with permission. Others see a distance and city, never your exact address.</li>
           <li><b>Content:</b> videos, photos, stories, comments, likes, saves, live streams and rooms.</li>
-          <li><b>Communication:</b> messages and the photos/videos in them, call records (duration, time, price), gifts. <b>Audio and video of calls and streams are not recorded.</b></li>
+          <li><b>Communication:</b> messages and the photos/videos in them, call records (duration, time, price), gifts. <b>Audio and full video of calls and streams are not recorded</b>; during video calls and video streams only individual frames are checked for safety (see 1.1).</li>
           <li><b>Payments and earnings:</b> purchase, spending, Diamonds and withdrawal history, bank details for withdrawals. Card data is processed by the App Store, Google Play and Epoint; Simo never sees or stores it.</li>
           <li><b>Agency application:</b> name, city, contact person and phone, experience.</li>
           <li><b>Invites:</b> who invited you and bonuses from invitees' purchases (purchase amounts are not shown to the inviter).</li>
           <li><b>Technical data:</b> device model, OS, app version, language, IP address, push token, error logs.</li>
+        </ul>
+
+        <div class="note" style="background:#fde2dc"><p><b>DRAFT — requires review by a lawyer:</b> section 1.1 and the safety-moderation additions (6 November 2026).</p></div>
+        <h2>1.1. Safety checks of video calls and streams</h2>
+        <ul>
+          <li><b>What is collected:</b> during a video call or video stream your device sends a low-resolution (max 640 px) frame from <b>your own camera</b> at random intervals (roughly every 10–20 seconds). Metadata (EXIF, location) is stripped. When you report someone, a frame of their video is attached as evidence.</li>
+          <li><b>Purpose and legal basis:</b> preventing nudity, sexual content and the exploitation of minors, protecting users and meeting our legal obligations. The basis is your <b>explicit consent</b> given before your first video call, performance of the Terms and our legitimate interest in safety.</li>
+          <li><b>Automated decision:</b> the frame is scored by an automated moderation model (Sightengine or Amazon Rekognition depending on configuration; without a key, Simo moderators only). At a high score your video stops being shown to the other person, a strike is recorded and a repeat ends the call. Automated decisions are reviewed by a moderator and can be appealed.</li>
+          <li><b>Retention:</b> frames that comply with the rules are <b>not stored</b>. Suspected frames 30 days, violations and report frames 180 days, moderator-confirmed violations 1 year, false positives 7 days. Where a minor is suspected, or there is an official request or court proceedings, evidence is preserved. After expiry the image is deleted; the decision and scores remain in the audit log.</li>
+          <li><b>Who can see it:</b> only authorised Simo moderators (every view is logged) and competent authorities on a lawful request. Frames are not reachable via a public link and are not used for advertising or model training.</li>
         </ul>
 
         <h2>2. Why we use it</h2>
@@ -230,6 +262,7 @@
         <h2>5. Third-party services</h2>
         <ul>
           <li><b>Agora:</b> real-time audio and video.</li>
+          <li><b>Sightengine (France) or Amazon Web Services (Rekognition):</b> automated safety checks of video call/stream frames (see 1.1).</li>
           <li><b>Apple, Google and Epoint:</b> payments.</li>
           <li><b>Expo / Apple Push / Firebase:</b> push notifications.</li>
           <li><b>SMS provider:</b> verification codes.</li>
