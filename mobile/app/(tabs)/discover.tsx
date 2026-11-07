@@ -154,7 +154,7 @@ export default function Discover({ embedded }: { embedded?: boolean } = {}) {
                 if (id) router.push({ pathname: '/chat/[id]', params: { id } });
               }}
             />
-            <Btn kind="ghost" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} title={t('discover.keepSwiping')} onPress={() => setMatch(null)} />
+            <Btn kind="ghost" fg={colors.white} style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} title={t('discover.keepSwiping')} onPress={() => setMatch(null)} />
           </View>
         </MatchCelebration>
       </Modal>

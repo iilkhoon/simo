@@ -113,11 +113,11 @@ const BTN: Record<BtnKind, { bg: string; fg: string }> = {
   ghost: { bg: 'rgba(26,21,18,0.06)', fg: colors.ink },
 };
 
-export function Btn({ title, onPress, loading, disabled, kind = 'primary', size = 'lg', icon, iconRight, style, full = true }: {
-  title: string; onPress?: () => void; loading?: boolean; disabled?: boolean; kind?: BtnKind; size?: 'lg' | 'md' | 'sm';
+export function Btn({ title, onPress, loading, disabled, kind = 'primary', size = 'lg', icon, iconRight, style, full = true, fg }: {
+  title: string; /** Mətn rəngini dəyişmək (məs. rəngli fonda ghost) */ fg?: string; onPress?: () => void; loading?: boolean; disabled?: boolean; kind?: BtnKind; size?: 'lg' | 'md' | 'sm';
   icon?: IconName; iconRight?: React.ReactNode; style?: StyleProp<ViewStyle>; full?: boolean;
 }) {
-  const c = BTN[kind];
+  const c = fg ? { ...BTN[kind], fg } : BTN[kind];
   const h = size === 'lg' ? 56 : size === 'md' ? 46 : 36;
   const off = disabled || loading;
   const grad = !disabled ? (kind === 'primary' ? gradients.nar : kind === 'coin' ? gradients.gold : kind === 'diamond' ? gradients.diamond : kind === 'dark' ? gradients.night : null) : null;
