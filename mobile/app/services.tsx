@@ -36,7 +36,7 @@ export default function MyServices() {
       else await api('/services', { body });
       setEdit(null);
       load();
-      toast('✓', 'success');
+      toast(t('u2.saved'), 'success');
     } catch (e) { toast(errorText(e), 'error'); } finally { setBusy(false); }
   }
 

@@ -70,7 +70,7 @@ export default function Earnings() {
     try {
       setMe(await api<Me>('/wallet/exchange', { body: { diamonds: almazToUnits(Number(exchange)) } }));
       setExchange('');
-      toast('✓', 'success');
+      toast(t('u2.saved'), 'success');
     } catch (e) {
       toast(errorText(e), 'error');
     }
@@ -79,7 +79,7 @@ export default function Earnings() {
   async function savePrices() {
     try {
       setMe(await api<Me>('/me/call-prices', { method: 'PATCH', body: { videoCallPrice: Number(video), voiceCallPrice: Number(voice) } }));
-      toast('✓', 'success');
+      toast(t('u2.saved'), 'success');
     } catch (e) {
       toast(errorText(e), 'error');
     }

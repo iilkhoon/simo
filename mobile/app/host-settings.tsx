@@ -24,7 +24,7 @@ export default function HostSettings() {
     try {
       await api('/host/settings', { method: 'PATCH', body: { msgPrice: price ? Number(price) : null, freeChat: free, privatePrice: priv ? Number(priv) : null } });
       await refreshMe();
-      toast('✓', 'success');
+      toast(t('u2.saved'), 'success');
       router.back();
     } catch (e) {
       toast(errorText(e), 'error');
