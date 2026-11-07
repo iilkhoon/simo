@@ -61,6 +61,8 @@ export default function CallScreen() {
   const [speaker, setSpeaker] = useState(true);
   const [beauty, setBeauty] = useState(true);
   const [lowBalance, setLowBalance] = useState<number | null>(null);
+  /** Host tərəfi: zəng edənin balansı bitir (server call:ending-soon) — zəng nə vaxt kəsilə bilər */
+  const [endingSoon, setEndingSoon] = useState<{ endsAt: number; chargeAt: number } | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [rtcError, setRtcError] = useState(false);
@@ -201,8 +203,15 @@ export default function CallScreen() {
     const onLow = (p: { callId: string; minutesLeft: number }) => {
       if (p.callId === id) setLowBalance(p.minutesLeft);
     };
+    const onEndingSoon = (p: { callId: string; secondsLeft?: number; endsAt?: string; nextChargeAt?: string }) => {
+      if (p.callId !== id) return;
+      const endsAt = p.endsAt ? new Date(p.endsAt).getTime() + skew.current : Date.now() + (p.secondsLeft ?? 60) * 1000;
+      setEndingSoon({ endsAt, chargeAt: p.nextChargeAt ? new Date(p.nextChargeAt).getTime() : 0 });
+    };
     const onTick = (p: { callId: string; coinsSpent?: number; coins?: number; minutesLeft?: number; earned?: number; nextChargeAt?: string }) => {
       if (p.callId !== id) return;
+      // Host: növbəti dəqiqə də ödənildisə (zəng edən balansı yüklədi) — "tezliklə bitir" banneri gizlənir
+      if (p.nextChargeAt) { const nc = new Date(p.nextChargeAt).getTime(); setEndingSoon((e) => (e && nc > e.chargeAt ? null : e)); }
       setBilling((b) => ({
         coinsSpent: p.coinsSpent ?? b.coinsSpent,
         coins: p.coins ?? b.coins,
@@ -219,6 +228,7 @@ export default function CallScreen() {
     s.on('call:accepted', onAccepted);
     s.on('call:ended', onEnded);
     s.on('call:low-balance', onLow);
+    s.on('call:ending-soon', onEndingSoon);
     s.on('call:tick', onTick);
     s.on('call:gift', onGift);
     s.on('connect', onConnect);
@@ -230,6 +240,7 @@ export default function CallScreen() {
       s.off('call:accepted', onAccepted);
       s.off('call:ended', onEnded);
       s.off('call:low-balance', onLow);
+      s.off('call:ending-soon', onEndingSoon);
       s.off('call:tick', onTick);
       s.off('call:gift', onGift);
       s.off('connect', onConnect);
@@ -436,6 +447,16 @@ export default function CallScreen() {
           </View>
           <Text style={styles.lowCta}>{t('cl.recharge')}</Text>
         </PressBox>
+      ) : null}
+
+      {endingSoon && !isCaller && connected ? (
+        <Box bg={colors.coin} r={18} sh={4} style={styles.low} inner={styles.lowInner}>
+          <Icon name="time" size={20} color={colors.ink} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.lowTitle}>{t('growth.endingTitle')}</Text>
+            <Text style={styles.lowText}>{t('growth.endingSub', { s: Math.max(0, Math.round((endingSoon.endsAt - now) / 1000)) })}</Text>
+          </View>
+        </Box>
       ) : null}
 
       <Animated.View style={[styles.controlsWrap, remoteVideo ? dockStyle : null]} pointerEvents={uiOn ? 'box-none' : 'none'}>

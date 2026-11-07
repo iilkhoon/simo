@@ -14,6 +14,7 @@ import { Avatar } from '@/components/Avatar';
 import { CoinPill, LevelBadge } from '@/components/Badges';
 import { Wordmark } from '@/components/Logo';
 import { Mascot } from '@/components/Mascot';
+import { CampaignBanner } from '@/components/CampaignBanner';
 import { compact } from '@/lib/format';
 import { api } from '@/lib/api';
 import { useStore } from '@/store';
@@ -90,6 +91,9 @@ export default function LiveHub() {
           </Pressable>
         ))}
       </ScrollView>
+
+      {/* Mövsümi kampaniya (Novruz, 8 Mart...) — yoxdursa heç nə göstərmir */}
+      <CampaignBanner style={{ marginTop: 6 }} />
 
       {/* Təsadüfi tanışlıq — əsas giriş nöqtəsi (düz rəng blokları) */}
       <View style={styles.quickRow}>

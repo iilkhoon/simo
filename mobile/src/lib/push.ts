@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { api } from './api';
+import { listenPushTaps } from './pushRoutes';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -17,6 +18,8 @@ Notifications.setNotificationHandler({
 export async function registerPush() {
   try {
     if (!Device.isDevice) return;
+    // Bildirişə toxunanda uyğun ekran (host profili, kampaniya, söhbət...)
+    listenPushTaps(Notifications);
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Simo',

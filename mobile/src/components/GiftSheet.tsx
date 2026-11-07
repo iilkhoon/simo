@@ -14,11 +14,13 @@ import type { Gift, GiftEvent } from '../lib/types';
 import { CoinIcon, DiamondIcon, GiftIcon } from './GiftIcon';
 import { Icon } from './Icon';
 import { gs, type GiftStr } from './gifts/strings';
+import { loc, useLiveGiftCampaign } from '../lib/campaigns';
 
 const COUNTS = [1, 10, 33, 99, 520];
 const ALMAZ_COUNTS = [1, 5, 10];
 const CATS = ['popular', 'azerbaijan', 'romantic', 'luxury', 'almaz'] as const;
-type Cat = (typeof CATS)[number];
+/** 'event' — gedən mövsümi kampaniyanın hədiyyələri (lib/campaigns.ts), yalnız kampaniya olanda görünür */
+type Cat = (typeof CATS)[number] | 'event';
 const COMBO_MS = 3000;
 
 const hap = {
@@ -28,7 +30,7 @@ const hap = {
   err: () => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {}),
 };
 
-function inCat(g: Gift, c: Cat) {
+function inCat(g: Gift, c: (typeof CATS)[number]) {
   if (c === 'almaz') return g.currency === 'DIAMOND';
   if (g.currency === 'DIAMOND') return false;
   return c === 'popular' ? true : g.category === c;
@@ -114,7 +116,14 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
   }, [visible, loadGifts]);
   useEffect(() => () => { if (comboTimer.current) clearTimeout(comboTimer.current); }, []);
 
-  const list = useMemo(() => gifts.filter((g) => inCat(g, cat)), [gifts, cat]);
+  const campaign = useLiveGiftCampaign();
+  const eventTab = useRef(false);
+  // Kampaniya gedirsə — pəncərə ilk dəfə "bayram" tabında açılır (Bigo/Chamet kimi)
+  useEffect(() => { if (visible && campaign && !eventTab.current) { eventTab.current = true; setCat('event'); } }, [visible, campaign]);
+  const list = useMemo(() => {
+    if (cat === 'event') return (campaign?.giftIds ?? []).map((id) => gifts.find((g) => g.id === id)).filter((g): g is Gift => !!g);
+    return gifts.filter((g) => inCat(g, cat));
+  }, [gifts, cat, campaign]);
   const gift = gifts.find((g) => g.id === selected);
   const almaz = cat === 'almaz' || gift?.currency === 'DIAMOND';
   const counts = almaz ? ALMAZ_COUNTS : COUNTS;
@@ -180,6 +189,12 @@ export function GiftSheet({ visible, onClose, receiverId, receiverName, context,
           </Pressable>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+          {campaign ? (
+            <Pressable onPress={() => { hap.pick(); setCat('event'); setSelected(null); setCount(1); setCombo(null); }} style={styles.tab}>
+              <Text style={[styles.tabText, cat === 'event' && styles.tabTextOn, { maxWidth: 150 }]} numberOfLines={1}>{campaign.emoji} {loc(campaign.title)}</Text>
+              {cat === 'event' ? <LinearGradient colors={[campaign.color, campaign.color2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tabBar} /> : null}
+            </Pressable>
+          ) : null}
           {CATS.map((c) => {
             const on = c === cat;
             return (

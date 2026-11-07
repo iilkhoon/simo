@@ -33,6 +33,7 @@ export default function Notifications() {
     else if (n.type === 'visit_digest') router.push('/visitors');
     else if (n.type === 'like_digest') router.push('/likes');
     else if (n.type === 'picks') router.push('/(tabs)');
+    else if (n.type === 'campaign' && n.data?.campaignId) router.push({ pathname: '/campaign/[id]', params: { id: n.data.campaignId } });
     else if ((n.type === 'comment' || n.type === 'post_live') && n.data?.videoId) router.push({ pathname: '/post/[id]', params: { id: String(n.data.videoId) } });
     else if (n.actor) router.push({ pathname: '/user/[id]', params: { id: n.actor.id } });
   }
