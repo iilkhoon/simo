@@ -95,7 +95,7 @@ Hər əsas rəngin yumşaq (`…Soft`) variantı var. O, ikon fonları və kiçi
 - **Loqo:** düz nar gövdəsi, içində ağ ürək. Tətbiq ikonu nar fonunda ağ işarədir.
 - **Nari (maskot):** gülümsəyən nar personajıdır. Əhval variantları: `happy`, `wink`, `love`, `wow`. Xoş gəlmisiniz, match, boş vəziyyətlər və tanışlıq bloklarında işlədilir.
 - **Nazar boncuğu:** uğur simvolu kimi stiker şəklində işlədilir.
-- **Hədiyyələr:** `design/gifts.mjs` ilə yaradılan düz rəngli SVG stikerlərdir.
+- **Hədiyyələr:** yeganə mənbə `mobile/src/components/gifts/art.ts`-dir (çoxqatlı qradiyentli SVG). Veb üçün fayllar: `cd backend && npx tsx ../design/export-gifts.ts` (köhnə `design/gifts.mjs` silindi).
 
 ## Ekran qaydaları
 

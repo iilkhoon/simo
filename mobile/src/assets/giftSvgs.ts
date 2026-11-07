@@ -1,5 +1,5 @@
 // Hədiyyə rəsmləri artıq mobile/src/components/gifts/art.ts-dədir (qradiyentli, çoxqatlı).
-// DİQQƏT: design/gifts.mjs köhnə generatordur — onu işlətsəniz bu faylı köhnə ikonlarla əvəz edəcək.
+// Veb SVG faylları: cd backend && npx tsx ../design/export-gifts.ts (köhnə design/gifts.mjs silindi).
 export { GIFT_ART as GIFT_SVGS } from '../components/gifts/art';
 
 export const COIN_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><circle cx=\"32\" cy=\"33.5\" r=\"28\" fill=\"#C27A00\"/><circle cx=\"32\" cy=\"31\" r=\"28\" fill=\"#FFC23D\"/><circle cx=\"32\" cy=\"31\" r=\"23.5\" fill=\"#FFD66B\"/><circle cx=\"32\" cy=\"31\" r=\"23.5\" fill=\"none\" stroke=\"#E9A21A\" stroke-width=\"1.6\"/><path d=\"M32 44.5S18 36.2 18 27.3C18 22.9 21.4 19.7 25.5 19.7C28.3 19.7 30.6 21.2 32 23.5C33.4 21.2 35.7 19.7 38.5 19.7C42.6 19.7 46 22.9 46 27.3C46 36.2 32 44.5 32 44.5Z\" fill=\"#F2344F\"/><ellipse cx=\"25\" cy=\"25.5\" rx=\"3.4\" ry=\"2.2\" transform=\"rotate(-30 25 25.5)\" fill=\"#FFFFFF\" opacity=\".55\"/><path d=\"M14 22a20 20 0 0 1 10-10\" stroke=\"#FFFFFF\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\" opacity=\".6\"/></svg>";
