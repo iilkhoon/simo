@@ -156,7 +156,7 @@ export default function CallSummary() {
             icon={video ? 'videocam' : 'call'}
             title={t('cl.callAgain')}
             style={{ marginTop: 16 }}
-            onPress={() => { router.back(); void startCall(s.peer.id, s.call.type); }}
+            onPress={() => { router.back(); void startCall(s.peer.id, s.call.type, { confirm: false }); }}
           />
         ) : null}
         <Btn kind="light" title={t('cl.done')} style={{ marginTop: 10 }} onPress={done} />

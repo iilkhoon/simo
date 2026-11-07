@@ -65,7 +65,8 @@ export default function Match() {
   async function call() {
     if (st.s !== 'found') return;
     setCalling(true);
-    await startCall(st.user.id, kind);
+    // Qiymət kartda artıq göstərilib — balans çatırsa birbaşa zəng
+    await startCall(st.user.id, kind, { confirm: false });
     setCalling(false);
   }
 
