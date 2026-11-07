@@ -2,6 +2,8 @@
 import type { ComponentType } from 'react';
 import type { RtcCreds } from './types';
 
+export type RtcConnState = 'connecting' | 'connected' | 'reconnecting' | 'failed' | 'disconnected';
+export type RtcQuality = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export const rtcAvailable = () => false;
 export const RtcSurfaceView = null as ComponentType<{ style?: unknown; canvas: { uid: number }; zOrderMediaOverlay?: boolean }> | null;
 export async function requestAvPermissions(_video: boolean) {

@@ -15,10 +15,19 @@ try {
   agora = null;
 }
 
+/** Bağlantı vəziyyəti (Agora ConnectionStateType ilə eyni ədədlər) */
+export type RtcConnState = 'connecting' | 'connected' | 'reconnecting' | 'failed' | 'disconnected';
+/** Şəbəkə keyfiyyəti: 0 məlum deyil, 1 əla … 6 kəsik (Agora QualityType) */
+export type RtcQuality = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
 type Listener = {
   onJoined?: () => void;
   onRemoteJoined?: (uid: number) => void;
-  onRemoteLeft?: (uid: number) => void;
+  /** reason: 0 — özü çıxdı, 1 — bağlantı itdi (timeout), 2 — rol dəyişdi */
+  onRemoteLeft?: (uid: number, reason?: number) => void;
+  onConnState?: (state: RtcConnState, reason: number) => void;
+  /** uid 0 — özüm; tx/rx — göndərmə/qəbul keyfiyyəti */
+  onQuality?: (uid: number, tx: RtcQuality, rx: RtcQuality) => void;
   onVolume?: (speakers: { uid: number; volume: number }[]) => void;
   onError?: (code: number) => void;
 };
@@ -47,7 +56,13 @@ function ensureEngine(appId: string) {
   engine.registerEventHandler({
     onJoinChannelSuccess: () => listeners.forEach((l) => l.onJoined?.()),
     onUserJoined: (_c, uid) => listeners.forEach((l) => l.onRemoteJoined?.(uid)),
-    onUserOffline: (_c, uid) => listeners.forEach((l) => l.onRemoteLeft?.(uid)),
+    onUserOffline: (_c, uid, reason) => listeners.forEach((l) => l.onRemoteLeft?.(uid, reason as number)),
+    onConnectionStateChanged: (_c, state, reason) => {
+      const map: Record<number, RtcConnState> = { 1: 'disconnected', 2: 'connecting', 3: 'connected', 4: 'reconnecting', 5: 'failed' };
+      const st = map[state as number] ?? 'connecting';
+      listeners.forEach((l) => l.onConnState?.(st, reason as number));
+    },
+    onNetworkQuality: (_c, uid, tx, rx) => listeners.forEach((l) => l.onQuality?.(uid ?? 0, (tx ?? 0) as RtcQuality, (rx ?? 0) as RtcQuality)),
     // Qarşı tərəfin kamerası işə düşəndə (bəzən onUserJoined-dan sonra/gec gəlir)
     onRemoteVideoStateChanged: (_c, uid, state) => {
       if (state === 1 || state === 2) listeners.forEach((l) => l.onRemoteJoined?.(uid));

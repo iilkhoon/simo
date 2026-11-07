@@ -7,3 +7,6 @@ export function startNativeOutgoing(_id: string, _n: string, _v: boolean) {}
 export function markConnected(_id: string) {}
 export const CALL_PUSH_TASK = 'simo-incoming-call';
 export async function registerCallPushTask() {}
+export function answeredInApp(_id: string) {}
+export function declinedInApp(_id: string) {}
+export function onNativeMute(_cb: (callId: string, muted: boolean) => void) { return () => {}; }

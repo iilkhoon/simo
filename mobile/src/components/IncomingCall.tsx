@@ -28,12 +28,16 @@ export function IncomingCall() {
       Animated.timing(pulse, { toValue: 0, duration: 500, useNativeDriver: true }),
     ]));
     loop.start();
+    // "call:ended" qaçırılsa (şəbəkə) belə ekran əbədi qalmasın: server 40 saniyədə MISSED edir
+    const id = incoming.call.id;
+    const timer = setTimeout(() => { if (useStore.getState().incomingCall?.call.id === id) setIncoming(null); }, 45_000);
     return () => {
+      clearTimeout(timer);
       Vibration.cancel();
       loop.stop();
       pulse.setValue(0);
     };
-  }, [incoming, pulse]);
+  }, [incoming, pulse, setIncoming]);
 
   if (!incoming) return null;
   const { call, caller } = incoming;
@@ -80,9 +84,11 @@ export function IncomingCall() {
               <Text style={styles.name} numberOfLines={1}>{caller.name}{caller.age ? `, ${caller.age}` : ''}</Text>
               {caller.verified ? <VerifiedBadge size={22} color={colors.sky} /> : null}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
               <LevelBadge level={caller.wealthLevel} kind="wealth" />
               {caller.city ? <GlassPill label={caller.city} icon="location" bg={colors.glassLight} /> : null}
+              {/* Host üçün: ödənişli zəngdir — hər dəqiqə qazanc gətirir */}
+              {call.pricePerMin > 0 ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} /> : null}
             </View>
           </View>
           <View style={{ flex: 1 }} />

@@ -22,6 +22,7 @@ import { KeyboardProvider } from '../src/lib/keyboard';
 import { Geologica_600SemiBold, Geologica_700Bold, Geologica_800ExtraBold, Geologica_900Black } from '@expo-google-fonts/geologica';
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { IncomingCall } from '@/components/IncomingCall';
+import { CallConfirm } from '@/components/CallConfirm';
 import type { Call, Message, PublicUser } from '@/lib/types';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -77,6 +78,10 @@ function useRealtime(authed: boolean) {
     s.on('call:ended', (p: { callId: string }) => {
       endNative(p.callId);
       if (st().incomingCall?.call.id === p.callId) st().setIncomingCall(null);
+    });
+    // Zəng başqa cihazda qəbul olundu — bu cihazdakı gələn zəng ekranı bağlansın
+    s.on('call:accepted', (p: { callId: string }) => {
+      if (st().incomingCall?.call.id === p.callId) { st().setIncomingCall(null); endNative(p.callId); }
     });
     s.on('message:new', (m: Message) => {
       if (m.senderId !== st().me?.id) void refreshUnread();
@@ -136,12 +141,14 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           <Stack.Screen name="call/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="call/summary" options={{ animation: 'fade' }} />
           <Stack.Screen name="live/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="match" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="vip" options={{ presentation: 'modal' }} />
           <Stack.Screen name="story/[userId]" options={{ animation: 'fade', gestureEnabled: true }} />
         </Stack>
         <IncomingCall />
+        <CallConfirm />
         <ReportHost />
         <Toasts />
       </SafeAreaProvider>

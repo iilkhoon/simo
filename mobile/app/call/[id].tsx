@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, AppState, BackHandler, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,19 +7,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, glow, tintFor } from '@/theme';
-import { Box, GlassPill, Loader, PressBox, T, Tag, tap } from '@/components/ui';
+import { Box, GlassPill, Loader, PressBox, T, tap } from '@/components/ui';
 import { Icon, type IconName } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/Badges';
+import { CoinIcon, DiamondIcon } from '@/components/GiftIcon';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
+import { RechargeSheet } from '@/components/RechargeSheet';
 import { api } from '@/lib/api';
+import { fmtAlmaz } from '@/lib/economy';
 import { duration, errorText } from '@/lib/format';
 import { getSocket } from '@/lib/socket';
 import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
-import { endNative, markConnected, startNativeOutgoing } from '@/lib/nativeCall';
+import { endNative, markConnected, onNativeMute, startNativeOutgoing } from '@/lib/nativeCall';
 
 function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; onPress: () => void; active?: boolean; label?: string; tint?: string }) {
   return (
@@ -32,6 +35,15 @@ function Ctrl({ icon, onPress, active = true, label, tint }: { icon: IconName; o
   );
 }
 
+interface CallDetail { call: Call; peer: PublicUser; rtc: RtcCreds; role: 'caller' | 'callee'; serverNow?: string; nextChargeAt?: string | null; earned?: number }
+/** Server dəqiqə ödənişi ilə göndərir (call:tick) — zəng edənə Nar xərci, hosta Almaz qazancı */
+interface Billing { coinsSpent: number; coins?: number; minutesLeft?: number; earned?: number; nextChargeAt?: number }
+
+/**
+ * 1-ə-1 zəng ekranı. Müştəri vəziyyəti: loading → ringing → active → (reconnecting) → ended → xülasə.
+ * Server həqiqət mənbəyidir: socket hadisələri qaçırılsa belə (şəbəkə kəsilməsi, fon rejimi)
+ * qoşulanda / tətbiq önə gələndə / hər 8 saniyədə GET /calls/:id ilə vəziyyət yenidən oxunur.
+ */
 export default function CallScreen() {
   useKeepAwake();
   const { t } = useTranslation();
@@ -48,7 +60,14 @@ export default function CallScreen() {
   const [beauty, setBeauty] = useState(true);
   const [lowBalance, setLowBalance] = useState<number | null>(null);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [rechargeOpen, setRechargeOpen] = useState(false);
   const [rtcError, setRtcError] = useState(false);
+  const [billing, setBilling] = useState<Billing>({ coinsSpent: 0 });
+  // Bağlantı: RTC (Agora) yenidən qoşulur / socket kəsilib / qarşı tərəf düşüb
+  const [rtcConn, setRtcConn] = useState<rtc.RtcConnState>('connecting');
+  const [socketUp, setSocketUp] = useState(true);
+  const [peerDropped, setPeerDropped] = useState(false);
+  const [quality, setQuality] = useState<rtc.RtcQuality>(0);
   // WhatsApp kimi: ekrana toxunanda düymələr gizlənir/açılır, kiçik pəncərəyə toxunanda kameralar yer dəyişir
   const [swap, setSwap] = useState(false);
   const [uiOn, setUiOn] = useState(true);
@@ -56,31 +75,72 @@ export default function CallScreen() {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlay = useRef<GiftOverlayHandle>(null);
   const ended = useRef(false);
+  const started = useRef(false);
   const channel = useRef<string | undefined>(undefined);
+  /** Server saatı ilə fərq (ms): taymer cihaz saatı səhv olsa da düz göstərsin */
+  const skew = useRef(0);
 
   const isVideo = call?.type === 'VIDEO';
   const isCaller = call?.callerId === me?.id;
 
-  function close(reason?: string) {
+  const markStarted = useCallback((iso: string | Date | null | undefined) => {
+    const ts = iso ? new Date(iso).getTime() + skew.current : Date.now();
+    started.current = true;
+    setStartedAt((cur) => cur ?? ts);
+  }, []);
+
+  /** Zəng bitdi: kanaldan çıx; danışıq olubsa — xülasə ekranı, olmayıbsa — səbəb + geri */
+  const close = useCallback((reason?: string) => {
     if (ended.current) return;
     ended.current = true;
     rtc.leave(channel.current);
+    endNative(id);
+    if (started.current) {
+      router.replace({ pathname: '/call/summary', params: { id, reason: reason ?? '' } });
+      return;
+    }
     if (reason) toast(t(`call.reasons.${reason}`, { defaultValue: t('call.ended') }));
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
-  }
+  }, [id, t, toast]);
+
+  /** Serverdən cari vəziyyəti oxu (qaçırılmış call:accepted / call:ended üçün) */
+  const resync = useCallback(async () => {
+    if (ended.current) return;
+    try {
+      const r = await api<CallDetail>(`/calls/${id}`);
+      if (r.serverNow) skew.current = Date.now() - new Date(r.serverNow).getTime();
+      if (r.call.status === 'ACTIVE') {
+        markStarted(r.call.startedAt);
+        setBilling((b) => ({
+          ...b,
+          coinsSpent: Math.max(b.coinsSpent, r.call.coinsSpent ?? 0),
+          earned: r.earned ?? b.earned,
+          nextChargeAt: r.nextChargeAt ? new Date(r.nextChargeAt).getTime() + skew.current : b.nextChargeAt,
+        }));
+      } else if (r.call.status !== 'RINGING') {
+        close(r.call.endReason ?? undefined);
+      }
+    } catch {
+      /* şəbəkə yoxdur — növbəti cəhd */
+    }
+  }, [id, close, markStarted]);
 
   useEffect(() => {
     let alive = true;
     const unsub = rtc.subscribe({
-      onRemoteJoined: (uid) => setRemoteUid(uid),
-      onRemoteLeft: () => setRemoteUid(null),
+      onRemoteJoined: (uid) => { setRemoteUid(uid); setPeerDropped(false); },
+      // reason 1 = bağlantı itdi: zəngi bitirmirik — server güzəşt müddətindən sonra özü bitirir
+      onRemoteLeft: (_uid, reason) => { setRemoteUid(null); if (reason === 1) setPeerDropped(true); },
       onError: () => setRtcError(true),
+      onConnState: (st) => setRtcConn(st),
+      onQuality: (uid, tx, rx) => { if (uid === 0) setQuality(Math.max(tx, rx) as rtc.RtcQuality); },
     });
     (async () => {
       try {
-        const r = await api<{ call: Call; peer: PublicUser; rtc: RtcCreds; role: string }>(`/calls/${id}`);
+        const r = await api<CallDetail>(`/calls/${id}`);
         if (!alive) return;
+        if (r.serverNow) skew.current = Date.now() - new Date(r.serverNow).getTime();
         setCall(r.call);
         setPeer(r.peer);
         channel.current = r.call.channel;
@@ -92,12 +152,14 @@ export default function CallScreen() {
           const a = await api<{ call: Call; rtc: RtcCreds }>(`/calls/${id}/accept`, { body: {} });
           setCall(a.call);
           creds = a.rtc;
-          setStartedAt(Date.now());
+          markStarted(a.call.startedAt);
           markConnected(a.call.id);
         } else if (r.call.status === 'ACTIVE' && r.call.startedAt) {
-          setStartedAt(new Date(r.call.startedAt).getTime());
+          // Yenidən açılış (məs. tətbiq yenidən başladı) — danışıq davam edir
+          markStarted(r.call.startedAt);
+          if (r.nextChargeAt) setBilling((b) => ({ ...b, nextChargeAt: new Date(r.nextChargeAt!).getTime() + skew.current, earned: r.earned }));
         } else if (r.call.status !== 'RINGING') {
-          close();
+          close(r.call.endReason ?? undefined);
           return;
         }
         try {
@@ -115,6 +177,12 @@ export default function CallScreen() {
       alive = false;
       unsub();
       rtc.leave(channel.current);
+      // Ekran gözlənilmədən bağlandı (məs. başqa ekrana keçid) — zəng arxada ödənişlə davam etməsin
+      if (!ended.current) {
+        ended.current = true;
+        void api(`/calls/${id}/${started.current ? 'end' : 'reject'}`, { body: {} }).catch(() => {});
+        endNative(id);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -122,28 +190,72 @@ export default function CallScreen() {
   useEffect(() => {
     const s = getSocket();
     if (!s) return;
-    const onAccepted = (p: { callId: string }) => {
-      if (p.callId === id) { setStartedAt(Date.now()); markConnected(id); }
+    const onAccepted = (p: { callId: string; startedAt?: string }) => {
+      if (p.callId === id) { markStarted(p.startedAt); markConnected(id); }
     };
     const onEnded = (p: { callId: string; reason: string }) => {
-      if (p.callId === id) { endNative(id); close(p.reason); }
+      if (p.callId === id) close(p.reason);
     };
     const onLow = (p: { callId: string; minutesLeft: number }) => {
       if (p.callId === id) setLowBalance(p.minutesLeft);
     };
+    const onTick = (p: { callId: string; coinsSpent?: number; coins?: number; minutesLeft?: number; earned?: number; nextChargeAt?: string }) => {
+      if (p.callId !== id) return;
+      setBilling((b) => ({
+        coinsSpent: p.coinsSpent ?? b.coinsSpent,
+        coins: p.coins ?? b.coins,
+        minutesLeft: p.minutesLeft ?? b.minutesLeft,
+        earned: p.earned ?? b.earned,
+        nextChargeAt: p.nextChargeAt ? new Date(p.nextChargeAt).getTime() + skew.current : b.nextChargeAt,
+      }));
+      // Yükləmədən sonra balans yenidən çatırsa — xəbərdarlığı gizlət
+      if (p.minutesLeft != null && p.minutesLeft >= 2) setLowBalance(null);
+    };
     const onGift = (e: GiftEvent) => overlay.current?.push(e);
+    const onConnect = () => { setSocketUp(true); void resync(); };
+    const onDisconnect = () => setSocketUp(false);
     s.on('call:accepted', onAccepted);
     s.on('call:ended', onEnded);
     s.on('call:low-balance', onLow);
+    s.on('call:tick', onTick);
     s.on('call:gift', onGift);
+    s.on('connect', onConnect);
+    s.on('disconnect', onDisconnect);
+    setSocketUp(s.connected);
     return () => {
       s.off('call:accepted', onAccepted);
       s.off('call:ended', onEnded);
       s.off('call:low-balance', onLow);
+      s.off('call:tick', onTick);
       s.off('call:gift', onGift);
+      s.off('connect', onConnect);
+      s.off('disconnect', onDisconnect);
     };
+  }, [id, close, resync, markStarted]);
+
+  // Tətbiq önə qayıdanda və dövri olaraq — server vəziyyəti ilə tutuşdur
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') void resync(); });
+    const i = setInterval(() => void resync(), 8000);
+    return () => { sub.remove(); clearInterval(i); };
+  }, [resync]);
+
+  // Sistem zəng ekranından (CallKit) səsi bağlama
+  useEffect(() => onNativeMute((callId, m) => { if (callId === id) { rtc.controls.mute(m); setMuted(m); } }), [id]);
+
+  // Android "geri" düyməsi zəngi səhvən bağlamasın — təsdiq soruşulur
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      Alert.alert(t('cl.endConfirm'), '', [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('cl.endCta'), style: 'destructive', onPress: () => void hangup() },
+      ]);
+      return true;
+    });
+    return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [t, startedAt]);
 
   useEffect(() => {
     const i = setInterval(() => setNow(Date.now()), 1000);
@@ -151,12 +263,12 @@ export default function CallScreen() {
   }, []);
 
   async function hangup() {
+    if (ended.current) return;
     try {
       await api(`/calls/${id}/${startedAt ? 'end' : 'reject'}`, { body: {} });
     } catch {
       /* ignore */
     }
-    endNative(id);
     close();
   }
 
@@ -184,8 +296,39 @@ export default function CallScreen() {
   const pipUid = swap ? peerUid : 0;
   const dockStyle = { opacity: ui, transform: [{ translateY: ui.interpolate({ inputRange: [0, 1], outputRange: [220, 0] }) }] };
   const topStyle = { opacity: ui, transform: [{ translateY: ui.interpolate({ inputRange: [0, 1], outputRange: [-80, 0] }) }] };
-  const elapsed = connected ? duration(Math.floor((now - startedAt!) / 1000)) : '';
-  const soft = isVideo ? colors.brandSoft : colors.diamondSoft;
+  const elapsed = connected ? duration(Math.max(0, Math.floor((now - startedAt!) / 1000))) : '';
+  const paid = call.pricePerMin > 0;
+  const myCoins = billing.coins ?? me?.coins ?? 0;
+  const minutesLeft = billing.minutesLeft ?? (paid ? Math.floor(myCoins / call.pricePerMin) : null);
+  const secsToCharge = billing.nextChargeAt ? Math.max(0, Math.round((billing.nextChargeAt - now) / 1000)) : null;
+  const reconnecting = connected && (rtcConn === 'reconnecting' || !socketUp);
+  const netBars = quality === 0 ? 0 : quality <= 2 ? 3 : quality === 3 ? 2 : 1;
+  const netLabel = quality === 0 ? '' : quality <= 2 ? t('cl.netGood') : quality === 3 ? t('cl.netFair') : quality === 4 ? t('cl.netPoor') : t('cl.netBad');
+
+  /** Xərc / qazanc sayğacı (Chamet/LivU: zəng edən Nar, host Almaz görür) */
+  const meter = connected && paid ? (
+    <View style={styles.meter}>
+      {isCaller ? (
+        <>
+          <CoinIcon size={14} />
+          <Text style={styles.meterNum}>{billing.coinsSpent || call.pricePerMin}</Text>
+          {minutesLeft != null ? <Text style={styles.meterSub}>· {t('cl.minutesLeft', { n: minutesLeft })}</Text> : null}
+        </>
+      ) : (
+        <>
+          <DiamondIcon size={14} />
+          <Text style={styles.meterNum}>+{fmtAlmaz(billing.earned ?? 0)}</Text>
+          <Text style={styles.meterSub}>{t('cl.earned')}</Text>
+        </>
+      )}
+    </View>
+  ) : null;
+
+  const net = connected && netBars ? (
+    <View style={styles.net} accessibilityLabel={netLabel}>
+      {[1, 2, 3].map((b) => <View key={b} style={[styles.netBar, { height: 4 + b * 3, backgroundColor: b <= netBars ? (netBars === 1 ? colors.brand : netBars === 2 ? colors.coin : colors.online) : 'rgba(255,255,255,0.3)' }]} />)}
+    </View>
+  ) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.night }}>
@@ -202,7 +345,8 @@ export default function CallScreen() {
         <SafeAreaView edges={['top']} style={styles.center}>
           <View style={styles.pills}>
             <GlassPill label={isVideo ? t('chat.callVideo') : t('chat.callVoice')} icon={isVideo ? 'videocam' : 'call'} bg={colors.glassLight} style={{ height: 30, paddingHorizontal: 12 }} />
-            {call.pricePerMin > 0 && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
+            {paid && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
+            {net}
           </View>
           {/* Halqa fotoya nəzərən mərkəzlənir (yuxarıdakı həblərin hündürlüyündən asılı deyil) */}
           <View style={styles.photoWrap}>
@@ -221,6 +365,10 @@ export default function CallScreen() {
             {connected ? <Wave /> : <Dots />}
             <Text style={styles.status}>{connected ? elapsed : t('call.calling')}</Text>
           </View>
+          {meter ? <View style={{ marginTop: 10 }}>{meter}</View> : null}
+          {!connected && paid && isCaller && minutesLeft != null ? (
+            <Text style={styles.ringHint}>{t('cl.enoughFor', { n: minutesLeft })} · {t('match.billing')}</Text>
+          ) : null}
           {rtcError ? <Text style={styles.warn}>{t('call.rtcMissing')}</Text> : null}
         </SafeAreaView>
       )}
@@ -250,19 +398,36 @@ export default function CallScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <View style={styles.rec} />
                 <Text style={styles.peerTime}>{elapsed}</Text>
+                {net}
               </View>
             </View>
           </View>
         ) : <View />}
-        {remoteVideo && call.pricePerMin > 0 && isCaller ? <GlassPill label={t('call.price', { price: call.pricePerMin })} icon="coin" bg={colors.coin} color={colors.ink} style={{ height: 30, paddingHorizontal: 12 }} /> : null}
+        {remoteVideo ? meter : null}
       </SafeAreaView>
       </Animated.View>
 
-      {lowBalance != null && isCaller ? (
-        <PressBox onPress={() => router.push('/wallet')} bg={colors.coin} r={18} sh={4} style={styles.low} inner={styles.lowInner}>
+      {/* Yenidən qoşulma: RTC və ya socket kəsiləndə; qarşı tərəf düşəndə — onun adı ilə */}
+      {reconnecting || (connected && peerDropped) ? (
+        <View style={styles.reconnect} pointerEvents="none">
+          <Dots />
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.reconnectText}>{reconnecting ? t('cl.reconnecting') : t('cl.peerReconnecting', { name: peer.name })}</Text>
+            {reconnecting ? <Text style={styles.reconnectSub}>{t('cl.reconnectingSub')}</Text> : null}
+          </View>
+        </View>
+      ) : null}
+
+      {lowBalance != null && isCaller && connected ? (
+        <PressBox onPress={() => setRechargeOpen(true)} bg={colors.coin} r={18} sh={4} style={styles.low} inner={styles.lowInner}>
           <Icon name="time" size={20} color={colors.ink} />
-          <Text style={styles.lowText}>{t('call.lowBalance', { n: lowBalance })}</Text>
-          <Text style={styles.lowCta}>{t('wallet.recharge')}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.lowTitle}>{t('cl.lowTitle')}</Text>
+            <Text style={styles.lowText}>
+              {lowBalance <= 0 && secsToCharge != null ? t('cl.lowLast', { s: secsToCharge }) : t('cl.lowSub', { n: lowBalance })}
+            </Text>
+          </View>
+          <Text style={styles.lowCta}>{t('cl.recharge')}</Text>
         </PressBox>
       ) : null}
 
@@ -290,6 +455,15 @@ export default function CallScreen() {
       </Animated.View>
       <GiftOverlay ref={overlay} />
       <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={peer.id} receiverName={peer.name} context="CALL" contextId={call.id} onSent={(e) => overlay.current?.push(e)} />
+      {isCaller ? (
+        <RechargeSheet
+          visible={rechargeOpen}
+          night
+          need={call.pricePerMin * 5}
+          onClose={() => setRechargeOpen(false)}
+          onDone={() => { setLowBalance(null); setBilling((b) => ({ ...b, coins: undefined, minutesLeft: undefined })); }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -337,6 +511,7 @@ const styles = StyleSheet.create({
   name: { color: colors.white, fontSize: 30, fontFamily: fonts.display, letterSpacing: -0.8 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: colors.glassLight, borderRadius: 16, paddingHorizontal: 12, height: 32 },
   status: { color: colors.white, fontSize: 14, fontFamily: fonts.bold },
+  ringHint: { color: colors.nightMuted, fontSize: 12, fontFamily: fonts.semibold, marginTop: 12, textAlign: 'center', paddingHorizontal: 30 },
   warn: { color: colors.nightMuted, textAlign: 'center', paddingHorizontal: 30, marginTop: 12, fontFamily: fonts.medium },
   pipWrap: { position: 'absolute', top: 110, right: 18, width: 108, height: 152 },
   pipShadow: { position: 'absolute', left: 4, top: 4, right: -4, bottom: -4, borderRadius: 18, backgroundColor: colors.ink },
@@ -346,9 +521,18 @@ const styles = StyleSheet.create({
   peerName: { color: colors.white, fontFamily: fonts.bold, fontSize: 13, maxWidth: 140 },
   peerTime: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 11 },
   rec: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.brand },
+  meter: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.glass, borderRadius: 16, paddingHorizontal: 10, height: 32, alignSelf: 'center' },
+  meterNum: { color: colors.white, fontFamily: fonts.black, fontSize: 13 },
+  meterSub: { color: colors.nightMuted, fontFamily: fonts.semibold, fontSize: 11.5 },
+  net: { flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: 14, marginLeft: 4 },
+  netBar: { width: 3, borderRadius: 1.5 },
+  reconnect: { position: 'absolute', top: '42%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(16,14,13,0.78)', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12, maxWidth: '86%' },
+  reconnectText: { color: colors.white, fontFamily: fonts.bold, fontSize: 14 },
+  reconnectSub: { color: colors.nightMuted, fontFamily: fonts.medium, fontSize: 12, marginTop: 2 },
   low: { position: 'absolute', left: 16, right: 16, top: 112 },
   lowInner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
-  lowText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13, flex: 1 },
+  lowTitle: { color: colors.ink, fontFamily: fonts.black, fontSize: 13.5 },
+  lowText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 12, marginTop: 1 },
   lowCta: { color: colors.bg, backgroundColor: colors.ink, fontFamily: fonts.bold, fontSize: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, overflow: 'hidden' },
   controlsWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   controls: { alignItems: 'center', paddingBottom: 18 },

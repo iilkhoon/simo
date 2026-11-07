@@ -150,6 +150,9 @@ export interface Call {
   pricePerMin: number;
   channel: string;
   startedAt: string | null;
+  billedMinutes?: number;
+  coinsSpent?: number;
+  endReason?: string | null;
 }
 
 export interface RtcCreds {

@@ -12,19 +12,24 @@ import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { Btn, T, tap } from './ui';
 import { CoinIcon, DiamondIcon } from './GiftIcon';
+import { LevelBadge, VipBadge } from './Badges';
 
 export interface PkState {
-  id: string; status: 'PENDING' | 'ACTIVE' | 'ENDED' | 'DECLINED'; endsAt: string | null; winnerId: string | null;
+  id: string; status: 'PENDING' | 'ACTIVE' | 'ENDED' | 'DECLINED' | 'EXPIRED'; endsAt: string | null; winnerId: string | null;
   a: { roomId: string; host: PublicUser | null; score: number };
   b: { roomId: string; host: PublicUser | null; score: number };
 }
 export interface Guest { user: PublicUser; kind: 'AUDIO' | 'VIDEO'; uid: number }
 
-/** PK döyüşü paneli: iki host, xal zolağı, geri sayım; bitəndə qalib */
-export function PkBar({ pk }: { pk: PkState }) {
+/**
+ * PK döyüşü paneli: iki host, xal zolağı, geri sayım; bitəndə qalib və ya bərabərlik.
+ * `selfRoomId` verilsə, izlənilən otağın hostu həmişə solda (Bigo kimi: "bizimki" sol, qırmızı).
+ */
+export function PkBar({ pk: raw, selfRoomId }: { pk: PkState; selfRoomId?: string }) {
   const { t } = useTranslation();
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  const pk = selfRoomId && raw.b.roomId === selfRoomId ? { ...raw, a: raw.b, b: raw.a } : raw;
   const total = pk.a.score + pk.b.score;
   const ratio = total ? pk.a.score / total : 0.5;
   const w = useRef(new Animated.Value(ratio)).current;
@@ -43,7 +48,9 @@ export function PkBar({ pk }: { pk: PkState }) {
         <Text style={[styles.pkScore, { left: 8 }]}>{compact(pk.a.score)}</Text>
         <Text style={[styles.pkScore, { right: 8 }]}>{compact(pk.b.score)}</Text>
       </View>
-      {ended && pk.winnerId ? <Text style={styles.pkWin}>🏆 {pk.winnerId === pk.a.host?.id ? pk.a.host?.name : pk.b.host?.name}</Text> : null}
+      {ended ? (
+        <Text style={styles.pkWin}>{pk.winnerId ? `🏆 ${t('cl.pkWin')}: ${pk.winnerId === pk.a.host?.id ? pk.a.host?.name : pk.b.host?.name}` : `🤝 ${t('cl.pkDraw')}`}</Text>
+      ) : left <= 10 && left > 0 ? <Text style={[styles.pkWin, { color: colors.white }]}>{left}</Text> : null}
     </View>
   );
 }
@@ -61,6 +68,96 @@ export function GuestStrip({ guests, canKick, onKick }: { guests: Guest[]; canKi
         </Pressable>
       ))}
     </View>
+  );
+}
+
+interface ViewerRow { user: PublicUser; coins: number; vipTier: string; wealthLevel: number }
+
+/**
+ * Otaqdakılar vərəqəsi: "İzləyicilər" (bu yayında hədiyyə edənlər öndə, sonra VIP/sərvət) və
+ * "Top dəstəkçilər" (yayın üzrə Nar cəmi). İstifadəçiyə toxunanda profil açılır.
+ */
+export function LiveUsersSheet({ visible, onClose, roomId, initialTab = 'viewers', top, onOpenUser }: {
+  visible: boolean; onClose: () => void; roomId: string; initialTab?: 'viewers' | 'top';
+  top: { user: PublicUser; coins: number }[]; onOpenUser: (u: PublicUser) => void;
+}) {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<'viewers' | 'top'>(initialTab);
+  const [rows, setRows] = useState<ViewerRow[] | null>(null);
+  const [total, setTotal] = useState(0);
+  useEffect(() => { if (visible) setTab(initialTab); }, [visible, initialTab]);
+  useEffect(() => {
+    if (!visible) return;
+    const load = () => void api<{ items: ViewerRow[]; total: number }>(`/live/${roomId}/viewers`).then((r) => { setRows(r.items); setTotal(r.total); }).catch(() => setRows([]));
+    load();
+    const i = setInterval(load, 8000);
+    return () => clearInterval(i);
+  }, [visible, roomId]);
+  const list = tab === 'viewers' ? rows ?? [] : top.map((x) => ({ user: x.user, coins: x.coins, vipTier: x.user.vipTier ?? 'NONE', wealthLevel: x.user.wealthLevel ?? 0 }));
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.scrim} onPress={onClose} />
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + 16, height: '62%' }]}>
+        <View style={styles.grip} />
+        <View style={styles.tabs}>
+          {(['viewers', 'top'] as const).map((k) => (
+            <Pressable key={k} onPress={() => { tap(); setTab(k); }} style={[styles.tab, tab === k && styles.tabOn]}>
+              <Text style={[styles.tabText, tab === k && { color: colors.ink }]}>
+                {k === 'viewers' ? `${t('cl.viewersTitle')}${total ? ` · ${compact(total)}` : ''}` : t('cl.topTitle')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {tab === 'viewers' && rows === null ? <T v="small" color={colors.textDim} center style={{ marginTop: 24 }}>…</T> : null}
+        <ScrollView contentContainerStyle={{ gap: 10, paddingTop: 8 }}>
+          {list.length === 0 && (tab === 'top' || rows !== null) ? (
+            <T v="small" color={colors.textDim} center style={{ marginTop: 24 }}>{tab === 'viewers' ? t('cl.viewersEmpty') : t('cl.topEmpty')}</T>
+          ) : null}
+          {list.map((r, i) => (
+            <Pressable key={r.user.id} onPress={() => onOpenUser(r.user)} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
+              {tab === 'top' ? (
+                <View style={[styles.medal, { backgroundColor: i === 0 ? colors.coin : i === 1 ? '#DCE1E8' : i === 2 ? colors.orangeSoft : 'transparent' }]}>
+                  <Text style={styles.medalText}>{i + 1}</Text>
+                </View>
+              ) : null}
+              <Avatar uri={r.user.avatarUrl} name={r.user.name} size={40} ring={false} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <T v="bodyStrong" numberOfLines={1}>{r.user.name}</T>
+                <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                  <LevelBadge kind="wealth" level={r.wealthLevel} />
+                  {r.vipTier && r.vipTier !== 'NONE' ? <VipBadge tier={r.vipTier} /> : null}
+                </View>
+              </View>
+              {r.coins > 0 ? (<><CoinIcon size={16} /><Text style={styles.rowNum}>{compact(r.coins)}</Text></>) : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+/** Adi istifadəçinin girişi — şərhlərin üstündə qısa sürüşən zolaq (VIP-lər üçün iri banner ayrıca) */
+export function JoinTicker({ name, level, k }: { name: string; level: number; k: string }) {
+  const { t } = useTranslation();
+  const x = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    x.setValue(0);
+    Animated.sequence([
+      Animated.spring(x, { toValue: 1, useNativeDriver: true, friction: 8 }),
+      Animated.delay(1800),
+      Animated.timing(x, { toValue: 2, duration: 260, useNativeDriver: true }),
+    ]).start();
+  }, [k, x]);
+  return (
+    <Animated.View style={[styles.ticker, {
+      opacity: x.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }),
+      transform: [{ translateX: x.interpolate({ inputRange: [0, 1, 2], outputRange: [-180, 0, 0] }) }],
+    }]}>
+      <LevelBadge kind="wealth" level={level} />
+      <Text style={styles.tickerText} numberOfLines={1}>{t('cl.joinedBanner', { name })}</Text>
+    </Animated.View>
   );
 }
 
@@ -179,5 +276,13 @@ const styles = StyleSheet.create({
   earnedNum: { ...noPad, fontFamily: fonts.displayBlack, fontSize: 22, lineHeight: 27, color: colors.white },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rank: { ...noPad, width: 18, textAlign: 'center', fontFamily: fonts.black, fontSize: 13, lineHeight: 17, color: colors.textMuted },
+  tabs: { flexDirection: 'row', gap: 6, backgroundColor: colors.bgSunken, borderRadius: radius.pill, padding: 4, marginBottom: 6 },
+  tab: { flex: 1, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  tabOn: { backgroundColor: colors.card },
+  tabText: { ...noPad, fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17, color: colors.textMuted },
+  medal: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  medalText: { ...noPad, fontFamily: fonts.black, fontSize: 12, lineHeight: 15, color: colors.ink },
+  ticker: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(205,184,255,0.32)', borderRadius: 12, paddingHorizontal: 9, height: 26, marginBottom: 6, maxWidth: '100%' },
+  tickerText: { ...noPad, color: colors.white, fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, flexShrink: 1 },
   rowNum: { ...noPad, fontFamily: fonts.black, fontSize: 13, lineHeight: 17, color: colors.ink },
 });

@@ -63,14 +63,15 @@ export default async function callRoutes(app: FastifyInstance) {
       else if (!callWindowOpen(callee.callHours)) reason = 'OUTSIDE_CALL_HOURS';
       else if (callee.presence === 'BUSY') reason = 'USER_BUSY';
       const base = price > 0 ? minPrice(type, type === 'VIDEO' ? callee.videoCallPrice : callee.voiceCallPrice) : 0;
+      const peer = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { ...publicUserSelect, photos: true } });
       return {
-        type, price, basePrice: base, coins: caller.coins,
+        type, price, basePrice: base, coins: caller.coins, peer: presentUser(peer),
         minutes: price > 0 ? Math.floor(caller.coins / price) : null,
         enough: caller.coins >= price, available: !reason, reason,
       };
     } catch (e) {
       const code = (e as { code?: string }).code ?? 'FORBIDDEN';
-      return { type, price: null, basePrice: null, coins: null, minutes: null, enough: false, available: false, reason: code };
+      return { type, price: null, basePrice: null, coins: null, peer: null, minutes: null, enough: false, available: false, reason: code };
     }
   });
 

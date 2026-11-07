@@ -28,6 +28,12 @@ const answered = new Set<string>();
 /** Tətbiq ekranında qəbul/rədd edilib, amma sistem zəngi (VoIP push) hələ JS-ə çatmayıb */
 const pendingInApp = new Map<string, 'answer' | 'decline'>();
 let ready = false;
+/** Sistem zəng ekranından (CallKit / Bluetooth) səsi bağlama — zəng ekranı Agora-nı da susdursun */
+const muteListeners = new Set<(callId: string, muted: boolean) => void>();
+export function onNativeMute(cb: (callId: string, muted: boolean) => void) {
+  muteListeners.add(cb);
+  return () => { muteListeners.delete(cb); };
+}
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -70,6 +76,10 @@ export async function setupNativeCalls(labels: { title: string; desc: string; ca
     // Danışıq gedərkən: yalnız istifadəçi sistem ekranında (tətbiq fonda/kilidli) "bitir" basanda.
     // Tətbiq açıqdırsa zəngi tətbiqin öz düyməsi idarə edir — iOS-un öz-özünə göndərdiyi endCall zəngi kəsmir.
     else if (AppState.currentState !== 'active') void api(`/calls/${c.callId}/end`, { method: 'POST', body: {} }).catch(() => {});
+  });
+  RNCallKeep.addEventListener('didPerformSetMutedCallAction', ({ muted, callUUID }) => {
+    const c = byUuid.get(callUUID);
+    if (c) muteListeners.forEach((l) => l(c.callId, muted));
   });
   // iOS: PushKit VoIP tokeni (yalnız native build-də)
   if (Platform.OS === 'ios') {
