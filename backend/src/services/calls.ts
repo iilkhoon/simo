@@ -78,7 +78,10 @@ export async function chargeMinute(callId: string): Promise<boolean> {
         callId, billedMinutes: out.billedMinutes, coinsSpent: out.coinsSpent, coins: out.balance, minutesLeft, nextChargeAt,
       });
       if (out.balance < call.pricePerMin * 2) {
-        emitToUser(call.callerId, 'call:low-balance', { callId, coins: out.balance, minutesLeft, nextChargeAt });
+        const endsAt = new Date(startedAt + (out.billedMinutes + minutesLeft) * 60_000);
+        const payload = { callId, coins: out.balance, minutesLeft, nextChargeAt, endsAt, secondsLeft: Math.max(0, Math.round((endsAt.getTime() - Date.now()) / 1000)) };
+        emitToUser(call.callerId, 'call:low-balance', payload);
+        if (minutesLeft === 0) emitToUser(call.calleeId, 'call:ending-soon', payload);
       }
       emitToUser(call.calleeId, 'call:tick', {
         callId, billedMinutes: out.billedMinutes, earned: await callEarnings(callId, call.calleeId), nextChargeAt,

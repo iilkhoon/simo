@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Agentliyə qoşul — Simo</title>
+  <meta name="theme-color" content="#F2344F">
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .card { max-width: 440px; margin: 48px auto; padding: 28px; text-align: center; display: grid; gap: 14px; }
+    .code { font: 900 34px var(--display); letter-spacing: 6px; background: var(--paper2); border-radius: 14px; padding: 12px; }
+    .logo-a { width: 76px; height: 76px; border-radius: 24px; margin: 0 auto; background: var(--lilac); display: grid; place-items: center; font: 900 32px var(--display); overflow: hidden; }
+    .logo-a img { width: 100%; height: 100%; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <header class="nav"><div class="wrap"><a class="logo" href="index.html"><img src="assets/logo.svg" alt="">simo</a></div></header>
+  <div class="wrap">
+    <div class="box card" id="card">
+      <div class="logo-a" id="lg">S</div>
+      <h2 id="nm">Simo agentliyi</h2>
+      <p class="muted" id="sub"></p>
+      <div class="code" id="cd"></div>
+      <a class="btn" id="open" href="#">Tətbiqdə aç</a>
+      <a class="btn light" href="index.html#download" id="get">Tətbiqi yüklə</a>
+      <p class="muted" style="font-size:13px" id="hint"></p>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    var L = (navigator.language || 'az').slice(0, 2);
+    var T = {
+      az: { sub: 'Agentliyə qoşul və hədiyyə, zəng və mesajlardan qazan.', open: 'Tətbiqdə aç', get: 'Tətbiqi yüklə', hint: 'Tətbiqdə: Profil → Agentlik → dəvət kodunu daxil et', hosts: 'host' },
+      ru: { sub: 'Вступай в агентство и зарабатывай на подарках, звонках и сообщениях.', open: 'Открыть в приложении', get: 'Скачать приложение', hint: 'В приложении: Профиль → Агентство → введите код', hosts: 'хостов' },
+      en: { sub: 'Join the agency and earn from gifts, calls and messages.', open: 'Open in app', get: 'Get the app', hint: 'In the app: Profile → Agency → enter the invite code', hosts: 'hosts' },
+    }[L] || null;
+    var t = T || { sub: 'Agentliyə qoşul və hədiyyə, zəng və mesajlardan qazan.', open: 'Tətbiqdə aç', get: 'Tətbiqi yüklə', hint: 'Tətbiqdə: Profil → Agentlik → dəvət kodunu daxil et', hosts: 'host' };
+    var code = (new URLSearchParams(location.search).get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+    var $ = function (id) { return document.getElementById(id); };
+    $('sub').textContent = t.sub; $('open').textContent = t.open; $('get').textContent = t.get; $('hint').textContent = t.hint;
+    $('cd').textContent = code || '—';
+    var deep = 'simo://agency?code=' + encodeURIComponent(code);
+    $('open').href = deep;
+    if (code) {
+      fetch(window.SIMO_API + '/agencies/public/' + encodeURIComponent(code)).then(function (r) { return r.ok ? r.json() : null; }).then(function (a) {
+        if (!a) return;
+        $('nm').textContent = a.name;
+        $('sub').textContent = a.members + ' ' + t.hosts + (a.city ? ' · ' + a.city : '') + ' — ' + t.sub;
+        if (a.logoUrl) { var i = document.createElement('img'); i.src = a.logoUrl; i.alt = ''; $('lg').textContent = ''; $('lg').appendChild(i); }
+        else $('lg').textContent = (a.name || 'S').slice(0, 1);
+      }).catch(function () {});
+      setTimeout(function () { location.href = deep; }, 400);
+    }
+  })();
+  </script>
+</body>
+</html>

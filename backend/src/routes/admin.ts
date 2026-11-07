@@ -3,8 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAdmin } from '../lib/auth.js';
-import { agencyMonthly, creditCoins } from '../services/wallet.js';
-import { agencyTier } from '../economy.js';
+import { creditCoins } from '../services/wallet.js';
+import { registerAgencyAdmin } from './adminAgency.js';
 import { endLive } from '../services/live.js';
 import { emitToUser } from '../realtime/hub.js';
 
@@ -85,48 +85,8 @@ export default async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get('/admin/withdrawals', async () => {
-    const items = await prisma.withdrawal.findMany({ where: { status: { in: ['PENDING', 'APPROVED'] } }, include: { user: { select: { shortId: true, name: true, phone: true } } }, orderBy: { createdAt: 'asc' } });
-    return { items };
-  });
-
-  app.post('/admin/withdrawals/:id', async (req) => {
-    const { id } = z.object({ id: z.string() }).parse(req.params);
-    const b = z.object({ status: z.enum(['APPROVED', 'PAID', 'REJECTED']), note: z.string().default('') }).parse(req.body);
-    await prisma.$transaction(async (tx) => {
-      const w = await tx.withdrawal.findUniqueOrThrow({ where: { id } });
-      if (w.status === 'PAID' || w.status === 'REJECTED') throw err.badRequest('WITHDRAW_PROCESSED');
-      await tx.withdrawal.update({ where: { id }, data: { status: b.status, note: b.note, processedAt: new Date() } });
-      if (b.status === 'REJECTED') {
-        // Almazlar geri qaytarılır
-        const u = await tx.user.update({ where: { id: w.userId }, data: { diamonds: { increment: w.diamonds } }, select: { diamonds: true } });
-        await tx.walletTransaction.create({ data: { userId: w.userId, currency: 'DIAMOND', amount: w.diamonds, balanceAfter: u.diamonds, type: 'WITHDRAW_REFUND', refId: w.id } });
-      }
-    });
-    return { ok: true };
-  });
-
-  app.get('/admin/agencies', async () => {
-    const list = await prisma.agency.findMany({ include: { owner: { select: { shortId: true, name: true, kycStatus: true } }, _count: { select: { members: true } } }, orderBy: { createdAt: 'desc' } });
-    const items = await Promise.all(list.map(async (a) => {
-      const monthly = a.status === 'ACTIVE' ? await agencyMonthly(prisma, a.id) : 0;
-      const t = agencyTier(monthly);
-      return { ...a, monthlyDiamonds: monthly, tier: t.tier, tierName: t.name, share: t.share };
-    }));
-    return { items };
-  });
-
-  app.post('/admin/agencies/:id', async (req) => {
-    const { id } = z.object({ id: z.string() }).parse(req.params);
-    const b = z.object({ status: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED']).optional(), rejectReason: z.string().max(300).optional() }).parse(req.body);
-    const a = await prisma.agency.update({ where: { id }, data: { ...b, reviewedAt: new Date() } });
-    if (b.status === 'ACTIVE') {
-      // Agentlik sahibi də qazanc əldə edə bilsin deyə agentliyin üzvü və host olur
-      await prisma.user.update({ where: { id: a.ownerId }, data: { agencyId: a.id, agencyJoinedAt: new Date(), hostStatus: 'APPROVED' } });
-    }
-    emitToUser(a.ownerId, 'agency:status', { status: a.status, reason: a.rejectReason });
-    return { ok: true };
-  });
+  // Pul çıxarışları, agentliklər, həftəlik hesabatlar, CSV ixracı — ayrıca modulda
+  registerAgencyAdmin(app);
 
   /* ───────── Şəxsiyyət təsdiqi (KYC) ───────── */
   app.get('/admin/kyc', async (req) => {

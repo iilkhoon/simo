@@ -7,16 +7,25 @@
  *  Ləl   — host və agentliyin qazancı. 1 Ləl = 1 qəpik (100 Ləl = 1 ₼).
  *
  *  Ödənişli 1 Nar xərcləndikdə (nominal dəyər):
- *    Simo       70%
- *    host       30% − agentlik payı
- *    agentlik   15–20% (agentlik səviyyəsi artdıqca artır)
+ *    host       15% (sabit — agentlik böyüdükcə hostun payı AZALMIR)
+ *    agentlik   15–20% (səviyyəyə görə; admin fərdi faiz təyin edə bilər) — Simo-nun payından, hostun üstünə
+ *    Simo       qalan 65–70%
  *  Qazanmaq üçün host AKTİV agentliyin üzvü olmalıdır; agentliksiz qəbul edəndə 100% Simo-da qalır.
+ *  Ətraflı: /docs/AGENCY_PROGRAM.md
  */
 import type { VipTier, NobleTier } from './generated/prisma/client.js';
 
 export const ECONOMY = {
-  /** Qəbul edənlərin (host + agentlik) ümumi payı */
+  /** Qəbul edənlərin (host + agentlik) baza payı — Bürünc səviyyədə host 15% + agentlik 15% */
   receiversShare: 0.3,
+  /** Hostun sabit payı (ödənişli Nar-ın nominal dəyərindən) */
+  hostShare: 0.15,
+  /** Agentlik komissiyasının yuxarı həddi (admin fərdi faizi bu həddi keçə bilməz) */
+  maxAgencyShare: 0.3,
+  /** Agentlikdən könüllü çıxdıqdan sonra başqa agentliyə qoşulmaq üçün gözləmə (gün) */
+  agencyCooldownDays: 7,
+  /** Zəng: bağlantı kəsilibsə neçə saniyədən sonra zəng avtomatik bitir */
+  callDisconnectGraceSec: 45,
   /** Mesaj qiyməti: standart və host səviyyəsinə görə hədlər (Nar) */
   msgPrice: { min: 10, default: 30 },
   msgPriceMaxByLevel: [[0, 40], [5, 60], [10, 100], [20, 200]] as [number, number][],
@@ -78,11 +87,40 @@ export function agencyTier(monthlyDiamonds: number) {
   return t;
 }
 
-/** Ödənişli Nar → host və agentlik payı (Ləl) */
+/** Agentliyin effektiv komissiyası: admin fərdi faizi (varsa) və ya səviyyə payı */
+export function effectiveAgencyShare(tierShare: number, customShare: number | null | undefined): number {
+  if (customShare == null || !Number.isFinite(customShare)) return tierShare;
+  return Math.min(ECONOMY.maxAgencyShare, Math.max(0, customShare));
+}
+
+/**
+ * Ödənişli Nar → host və agentlik payı (daxili Almaz vahidi = qəpik).
+ * Yuvarlaqlaşdırma həmişə aşağı (floor) — qəpik qalığı platformada qalır, heç vaxt artıq ödənmir.
+ */
 export function splitEarnings(paidCoins: number, agencyShare: number) {
-  const total = Math.floor(paidCoins * ECONOMY.receiversShare);
-  const agency = Math.floor(paidCoins * agencyShare);
-  return { host: Math.max(0, total - agency), agency };
+  const paid = Math.max(0, Math.floor(paidCoins));
+  const host = Math.floor(paid * ECONOMY.hostShare);
+  const agency = Math.floor(paid * Math.min(ECONOMY.maxAgencyShare, Math.max(0, agencyShare)));
+  return { host, agency, platform: paid - host - agency };
+}
+
+/** Host hədəfləri (gündəlik): onlayn dəqiqə və zəng dəqiqəsi; həftədə neçə "aktiv gün" */
+export const HOST_TARGETS = { dailyOnlineMin: 120, dailyCallMin: 30, weeklyActiveDays: 5 } as const;
+
+/** Host səviyyəsi (cazibə): son 30 günün qazancına görə — hədəf və status üçün */
+export const HOST_LEVELS = [
+  { level: 1, name: 'Yeni', minMonthly: 0 },
+  { level: 2, name: 'Aktiv', minMonthly: 5_000 },
+  { level: 3, name: 'Ulduz', minMonthly: 30_000 },
+  { level: 4, name: 'Super', minMonthly: 100_000 },
+  { level: 5, name: 'Top', minMonthly: 300_000 },
+] as const;
+
+export function hostLevel(monthly: number) {
+  let l: (typeof HOST_LEVELS)[number] = HOST_LEVELS[0];
+  for (const x of HOST_LEVELS) if (monthly >= x.minMonthly) l = x;
+  const next = HOST_LEVELS.find((x) => x.minMonthly > monthly) ?? null;
+  return { ...l, next };
 }
 
 export function maxMsgPriceForLevel(level: number): number {

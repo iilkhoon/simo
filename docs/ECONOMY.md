@@ -21,32 +21,31 @@ Promo Nar-ın Almaz yaratmaması bonus fırıldağının qarşısını alır. Sa
 
 | Kim | Pay | Qeyd |
 |---|---|---|
-| **Simo** | **70%** | Həmişə |
-| Host + agentlik | 30% | Yalnız qəbul edən **aktiv agentliyin üzvüdürsə** |
-| — agentlik | 15–20% | Agentliyin səviyyəsinə görə, aşağıya bax |
-| — host | 30% − agentlik payı | 10–15% |
+| **Simo** | **65–70%** | Agentlik səviyyəsindən asılıdır |
+| Host | **15% (sabit)** | Yalnız qəbul edən **aktiv agentliyin üzvüdürsə**; agentlik böyüdükcə azalmır |
+| Agentlik | 15–20% | Səviyyəyə görə və ya admin fərdi faizi (0–30%); Simo-nun payından verilir |
 
 Qəbul edən agentlikdə deyilsə, 100% Simo-da qalır. Almaz hədiyyəsi göndəriləndə də eyni bölgü işləyir (hədiyyənin dəyəri qəpiklə). Agentlik sahibi özü də host olduqda hər iki payı alır.
 
-Düstur (`splitEarnings`): `host = floor(paid × 0.30) − floor(paid × agencyShare)`.
+Düstur (`splitEarnings`): `host = floor(paid × 0.15)`, `agency = floor(paid × agencyShare)`, qalan Simo. Ətraflı: [AGENCY_PROGRAM.md](AGENCY_PROGRAM.md).
 
 ### Agentlik səviyyələri
 
-Səviyyə son 30 gündə agentliyin bütün hostlarının qazandığı Almazın cəmi ilə müəyyən olunur. Məqsəd agentlikləri hostları böyütməyə həvəsləndirməkdir: agentlik böyüdükcə onun payı artır.
+Səviyyə son 30 gündə agentlikdə qazanılan məbləğin (host payı + komissiya, `HostEarning`) cəmi ilə müəyyən olunur. Məqsəd agentlikləri hostları böyütməyə həvəsləndirməkdir: agentlik böyüdükcə onun payı artır.
 
 | Səviyyə | Ad | 30 günlük qazanc (daxili vahid) | ≈ ₼ | Agentlik | Host |
 |---|---|---|---|---|---|
 | 1 | Bürünc | 0+ | 0+ | 15% | 15% |
-| 2 | Gümüş | 100 000+ | 1 000+ | 16% | 14% |
-| 3 | Qızıl | 500 000+ | 5 000+ | 17% | 13% |
-| 4 | Platin | 2 000 000+ | 20 000+ | 18% | 12% |
-| 5 | Brilyant | 10 000 000+ | 100 000+ | 20% | 10% |
+| 2 | Gümüş | 100 000+ | 1 000+ | 16% | 15% |
+| 3 | Qızıl | 500 000+ | 5 000+ | 17% | 15% |
+| 4 | Platin | 2 000 000+ | 20 000+ | 18% | 15% |
+| 5 | Brilyant | 10 000 000+ | 100 000+ | 20% | 15% |
 
 Agentlik yaratmaq pulsuzdur. Müraciət formu doldurulur, sahib KYC-dən keçir, Simo admin paneldən təsdiq edir.
 
 ## Platformanın xalis payı
 
-Mağaza komissiyası çıxıldıqdan sonra qalan pulun neçə faizi Simo-da qalır? Ən pis hal götürülüb: qəbul edən agentlikdədir, 30% ödənilir.
+Mağaza komissiyası çıxıldıqdan sonra qalan pulun neçə faizi Simo-da qalır? Qəbul edən Bürünc agentlikdədir, 30% ödənilir (Brilyant səviyyədə 35%; cədvəldəki Simo payı ~5 bənd azalır).
 
 | Paket | 1 Nar qiyməti | Apple/Google (30%) xalis | Qəbul edənlər | **Simo** | Epoint (~2.5%) xalis | **Simo** |
 |---|---|---|---|---|---|---|

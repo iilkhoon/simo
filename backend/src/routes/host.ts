@@ -10,9 +10,10 @@ import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
 import { presentUser, publicUserSelect } from '../lib/present.js';
-import { AGENCY_TIERS, ECONOMY, ageFrom, agencyTier, levelFromXp, maxMsgPriceForLevel } from '../economy.js';
-import { agencyMonthly } from '../services/wallet.js';
-import { notify } from '../services/notify.js';
+import { AGENCY_TIERS, ECONOMY, ageFrom, hostLevel, levelFromXp, maxMsgPriceForLevel } from '../economy.js';
+import { agencyTerms, heldDiamonds } from '../services/wallet.js';
+import { hostTargets, hostsStats, periodStart } from '../services/hostStats.js';
+import { cooldownUntil, createJoinRequest } from './agency.js';
 
 /** Host olmaq üçün şərtlərin vəziyyəti */
 export async function hostRequirements(userId: string) {
@@ -37,13 +38,12 @@ export async function hostRequirements(userId: string) {
   return { eligible: items.every((i) => i.done), items };
 }
 
-async function agencyCard(a: { id: string; name: string; code: string; logoUrl: string | null; description: string; city: string; defaultMsgPrice: number; createdAt: Date; ownerId: string }) {
-  const [members, monthly] = await Promise.all([prisma.user.count({ where: { agencyId: a.id } }), agencyMonthly(prisma, a.id)]);
-  const tier = agencyTier(monthly);
+async function agencyCard(a: { id: string; name: string; code: string; logoUrl: string | null; description: string; city: string; defaultMsgPrice: number; createdAt: Date; ownerId: string; customShare: number | null }) {
+  const [members, terms] = await Promise.all([prisma.user.count({ where: { agencyId: a.id } }), agencyTerms(prisma, a, true)]);
   return {
     id: a.id, name: a.name, code: a.code, logoUrl: a.logoUrl, description: a.description, city: a.city,
-    defaultMsgPrice: a.defaultMsgPrice, members, monthlyDiamonds: monthly,
-    tier: tier.tier, tierName: tier.name, agencyShare: tier.share, hostShare: Math.round((ECONOMY.receiversShare - tier.share) * 100) / 100,
+    defaultMsgPrice: a.defaultMsgPrice, members, monthlyDiamonds: terms.monthly,
+    tier: terms.tier.tier, tierName: terms.tier.name, agencyShare: terms.share, hostShare: terms.hostShare,
     createdAt: a.createdAt,
   };
 }
@@ -130,22 +130,58 @@ export default async function hostRoutes(app: FastifyInstance) {
   });
 
   /** Agentliyə müraciət — host şərtləri tamamlanmalıdır */
-  app.post('/agencies/:id/apply', { preHandler: requireAuth }, async (req) => {
+  app.post('/agencies/:id/apply', { preHandler: requireAuth, config: { rateLimit: { max: 20, timeWindow: '1 hour' } } }, async (req) => {
     const me = uid(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const b = z.object({ message: z.string().max(300).default('') }).parse(req.body ?? {});
-    const a = await prisma.agency.findUnique({ where: { id } });
-    if (!a || a.status !== 'ACTIVE') throw err.notFound('AGENCY_NOT_FOUND');
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
-    if (user.agencyId) throw err.badRequest('ALREADY_IN_AGENCY');
-    if (a.ownerId === me) throw err.badRequest('OWN_AGENCY');
-    const reqs = await hostRequirements(me);
-    if (!reqs.eligible) throw err.badRequest('HOST_REQUIREMENTS', { items: reqs.items });
-    const pending = await prisma.agencyJoinRequest.findFirst({ where: { userId: me, status: 'PENDING' } });
-    if (pending) throw err.badRequest('REQUEST_PENDING');
-    const request = await prisma.agencyJoinRequest.create({ data: { agencyId: a.id, userId: me } });
-    void notify(a.ownerId, 'agency', { actorId: me, body: b.message || undefined, data: { requestId: request.id } }).catch(() => {});
+    const request = await createJoinRequest(me, id, 'APPLY', b.message);
     return { request };
+  });
+
+  /**
+   * Hostun qazanc paneli: bu gün / həftə / ay üzrə mənbə bölgüsü (hədiyyə, zəng, mesaj, abunə, xidmət),
+   * host səviyyəsi, gündəlik hədəflər (onlayn vaxt, zəng dəqiqəsi), agentlik və gözləmə müddəti.
+   */
+  app.get('/host/earnings', { preHandler: requireAuth }, async (req) => {
+    const me = uid(req);
+    const u = await prisma.user.findUniqueOrThrow({ where: { id: me }, select: { agencyId: true, agencyJoinedAt: true, agencyLeftAt: true, totalEarned: true, hostStatus: true, diamonds: true, diamondsBought: true } });
+    const since30 = new Date(Date.now() - 30 * 86400_000);
+    const [today, week, month, last30, targets, held, commission] = await Promise.all([
+      hostsStats([me], periodStart('today')),
+      hostsStats([me], periodStart('week')),
+      hostsStats([me], periodStart('month')),
+      hostsStats([me], since30),
+      hostTargets(me),
+      heldDiamonds(me),
+      prisma.walletTransaction.aggregate({ where: { userId: me, type: 'AGENCY_COMMISSION', createdAt: { gte: periodStart('month') } }, _sum: { amount: true } }),
+    ]);
+    const pick = (m: Awaited<ReturnType<typeof hostsStats>>) => {
+      const s = m.get(me)!;
+      return { total: s.hostAmount, bySource: s.bySource, paidCoins: s.paidCoins, onlineMin: s.onlineMin, callMin: s.callMin, calls: s.calls, gifts: s.gifts };
+    };
+    const monthly = last30.get(me)!.hostAmount;
+    let agency = null;
+    if (u.agencyId) {
+      const a = await prisma.agency.findUnique({ where: { id: u.agencyId } });
+      if (a) {
+        const terms = await agencyTerms(prisma, a, true);
+        agency = { id: a.id, name: a.name, code: a.code, status: a.status, isOwner: a.ownerId === me, tier: terms.tier.tier, tierName: terms.tier.name, hostShare: terms.hostShare, agencyShare: terms.share };
+      }
+    }
+    return {
+      periods: { today: pick(today), week: pick(week), month: pick(month) },
+      level: hostLevel(monthly),
+      monthly,
+      targets,
+      agency,
+      joinedAt: u.agencyJoinedAt,
+      cooldownUntil: cooldownUntil(u.agencyLeftAt),
+      lifetime: u.totalEarned,
+      held,
+      withdrawable: Math.max(0, u.diamonds - Math.max(0, u.diamondsBought) - held),
+      monthCommission: commission._sum.amount ?? 0,
+      shares: { host: ECONOMY.hostShare },
+    };
   });
 
   /** Agentlik sahibi: hostlar üçün standart qiymət və profil */

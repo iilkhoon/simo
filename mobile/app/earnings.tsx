@@ -11,9 +11,21 @@ import { api } from '@/lib/api';
 import { big, errorText, timeAgo } from '@/lib/format';
 import { useStore } from '@/store';
 import type { Me } from '@/lib/types';
+import { Almaz, PeriodTabs, Progress, SourceBreakdown, minutesLabel, type Period } from '@/components/AgencyKit';
+import { TIER_COLORS } from './agencies';
+
+interface HostEarnings {
+  periods: Record<Period, { total: number; bySource: Record<string, number>; paidCoins: number; onlineMin: number; callMin: number; calls: number; gifts: number }>;
+  level: { level: number; name: string; minMonthly: number; next: { level: number; name: string; minMonthly: number } | null };
+  monthly: number;
+  targets: { targets: { dailyOnlineMin: number; dailyCallMin: number; weeklyActiveDays: number }; today: { onlineMin: number; callMin: number; done: boolean }; activeDays: number };
+  agency: { id: string; name: string; tierName: string; tier: number; hostShare: number; isOwner: boolean } | null;
+  lifetime: number;
+  monthCommission: number;
+}
 
 const METHODS = ['CARD', 'M10', 'EMANAT', 'AGENCY'] as const;
-interface W { id: string; diamonds: number; amountQepik: number; method: string; status: string; createdAt: string }
+interface W { id: string; diamonds: number; amountQepik: number; method: string; status: string; createdAt: string; rejectReason?: string }
 
 export default function Earnings() {
   const { t } = useTranslation();
@@ -28,7 +40,10 @@ export default function Earnings() {
   const [voice, setVoice] = useState(String(me?.voiceCallPrice ?? 30));
 
   const [wallet, setWallet] = useState<{ held: number; withdrawable: number } | null>(null);
+  const [he, setHe] = useState<HostEarnings | null>(null);
+  const [period, setPeriod] = useState<Period>('week');
   const load = useCallback(() => {
+    void api<HostEarnings>('/host/earnings').then(setHe).catch(() => {});
     void api<{ items: W[] }>('/wallet/withdrawals').then((r) => setList(r.items)).catch(() => {});
     void api<{ held: number; withdrawable: number }>('/wallet').then(setWallet).catch(() => {});
   }, []);
@@ -98,6 +113,54 @@ export default function Earnings() {
         </View>
       </View>
 
+      {he && (he.agency || he.lifetime > 0) ? (
+        <>
+          {he.agency ? (
+            <PressBox style={{ marginTop: 12 }} r={radius.lg} sh={1} onPress={() => router.push('/agency')} inner={styles.notice}>
+              <View style={[styles.tierDot, { backgroundColor: TIER_COLORS[he.agency.tier - 1] ?? TIER_COLORS[0] }]}><Icon name="business" size={16} color={colors.ink} /></View>
+              <T v="bodyStrong" style={{ flex: 1 }} numberOfLines={1}>{t('earn.agencyRow', { name: he.agency.name, n: Math.round(he.agency.hostShare * 100) })}</T>
+              <Icon name="chevron" size={16} color={colors.textDim} />
+            </PressBox>
+          ) : null}
+          <Card style={styles.block}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={font.h3}>{t('earn.breakdown')}</Text>
+              <Almaz units={he.periods[period].total} size={16} cash />
+            </View>
+            <PeriodTabs value={period} onChange={setPeriod} />
+            <SourceBreakdown bySource={he.periods[period].bySource} total={he.periods[period].total} />
+            {he.agency?.isOwner && he.monthCommission ? <T v="tiny" color={colors.online}>+ {t('ag.commission')} ({t('ag.period.month')}): {fmtAlmaz(he.monthCommission)}</T> : null}
+          </Card>
+          <Card style={styles.block}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={font.h3}>{t('earn.level')}</Text>
+              <Tag label={`${t(`earn.levelNames.${he.level.level}`)} · Lv.${he.level.level}`} bg={colors.lilac} />
+            </View>
+            <Progress value={he.monthly} max={he.level.next?.minMonthly ?? he.monthly} color={colors.violet} />
+            <T v="tiny" color={colors.textMuted}>{he.level.next ? t('earn.levelNext', { name: t(`earn.levelNames.${he.level.next.level}`), n: fmtAlmaz(he.level.next.minMonthly - he.monthly) }) : t('earn.levelMax')}</T>
+            <View style={styles.sep} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={font.h3}>{t('earn.targets')}</Text>
+              <T v="tiny" color={colors.textMuted}>{t('earn.weekDays', { n: he.targets.activeDays, t: he.targets.targets.weeklyActiveDays })}</T>
+            </View>
+            {[
+              { k: 'targetOnline', icon: 'time' as const, v: he.targets.today.onlineMin, max: he.targets.targets.dailyOnlineMin, c: colors.online },
+              { k: 'targetCalls', icon: 'videocam' as const, v: he.targets.today.callMin, max: he.targets.targets.dailyCallMin, c: colors.diamond },
+            ].map((x) => (
+              <View key={x.k} style={{ gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icon name={x.icon} size={14} color={x.c} />
+                  <T v="bodyStrong" style={{ flex: 1 }}>{t(`earn.${x.k}`)}</T>
+                  <T v="tiny" color={x.v >= x.max ? colors.online : colors.textMuted}>{minutesLabel(Math.min(x.v, x.max), t)} / {minutesLabel(x.max, t)}</T>
+                </View>
+                <Progress value={x.v} max={x.max} color={x.c} />
+              </View>
+            ))}
+            <T v="tiny" color={colors.textDim}>{t('earn.targetsHint')}</T>
+          </Card>
+        </>
+      ) : null}
+
       {!inAgency ? (
         <PressBox style={{ marginTop: 12 }} r={radius.lg} sh={0} bg={colors.highlight} onPress={() => router.push('/agencies')} inner={styles.notice}>
           <Icon name="business" size={20} color={colors.ink} />
@@ -166,6 +229,7 @@ export default function Earnings() {
                 <View style={{ flex: 1 }}>
                   <Text style={font.body}>{(w.amountQepik / 100).toFixed(2)} ₼ · {t(`earnings.methods.${w.method}`)}</Text>
                   <Text style={font.tiny}>{timeAgo(w.createdAt)} · {fmtAlmaz(w.diamonds)} {t('common.diamonds')}</Text>
+                  {w.status === 'REJECTED' && w.rejectReason ? <Text style={[font.tiny, { color: colors.danger }]}>{t('earn.rejectReason', { r: w.rejectReason })} · {t('earn.refunded')}</Text> : null}
                 </View>
                 <Tag label={t(`earnings.status.${w.status}`)} bg={w.status === 'PAID' ? colors.onlineSoft : w.status === 'REJECTED' ? colors.brandSoft : colors.coinSoft} />
               </View>
@@ -192,4 +256,6 @@ const styles = StyleSheet.create({
   rules: { gap: 4 },
   rule: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderColor: colors.hairline },
+  tierDot: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  sep: { height: 1, backgroundColor: colors.hairline, marginVertical: 4 },
 });

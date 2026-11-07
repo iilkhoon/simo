@@ -75,7 +75,7 @@ export default function AgencyDetail() {
         <View style={{ flexDirection: 'row', gap: 6 }}>
           {TIERS.map(([n, sh], i) => (
             <View key={n} style={[styles.tierCol, { backgroundColor: TIER_COLORS[i], opacity: a.tier === i + 1 ? 1 : 0.45 }]}>
-              <Text style={styles.tierColName} numberOfLines={1}>{n}</Text>
+              <Text style={styles.tierColName} numberOfLines={1}>{t(`ag.tiers.${i + 1}`, { defaultValue: n })}</Text>
               <Text style={styles.tierColPct}>{Math.round(sh * 100)}%</Text>
             </View>
           ))}

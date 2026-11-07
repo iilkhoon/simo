@@ -169,6 +169,8 @@ model User {
 
   @@index([gender, onboarded, lastSeenAt])
   @@index([lat, lng])
+  /// Agentlikdən könüllü çıxış anı — yeni agentliyə qoşulma üçün gözləmə müddəti (cooldown)
+  agencyLeftAt       DateTime?
 }
 
 model Photo {
@@ -591,6 +593,10 @@ model Agency {
   owner          User         @relation("AgencyOwner", fields: [ownerId], references: [id])
   members        User[]       @relation("AgencyMembers")
   requests       AgencyJoinRequest[]
+  /// Admin tərəfindən təyin olunmuş fərdi komissiya (dəyərin payı, 0..0.3). null — səviyyəyə görə avtomatik
+  customShare    Float?
+  earnings       HostEarning[]
+  settlements    AgencySettlement[]
 }
 
 enum RequestStatus {
@@ -609,6 +615,11 @@ model AgencyJoinRequest {
 
   @@index([agencyId, status])
   @@index([userId])
+  /// CODE — dəvət kodu/linki ilə, APPLY — kataloqdan müraciət
+  source       String    @default("APPLY")
+  message      String    @default("")
+  rejectReason String    @default("")
+  decidedAt    DateTime?
 }
 
 enum WithdrawalStatus {
@@ -632,6 +643,9 @@ model Withdrawal {
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
+  /// Xidmət haqqı (qəpik) və rədd səbəbi (istifadəçiyə görünür)
+  feeQepik     Int       @default(0)
+  rejectReason String    @default("")
 }
 
 model Notification {
@@ -841,4 +855,49 @@ model ServiceOrder {
 
   @@index([sellerId, status])
   @@index([buyerId, createdAt])
+}
+
+/// Hər qazanc hadisəsi (ödənişli Nar xərclənəndə): host payı, agentlik komissiyası, mənbə.
+/// Agentlik paneli, host qazanc bölgüsü, agentlik səviyyəsi və həftəlik hesabat bundan hesablanır.
+model HostEarning {
+  id           String   @id @default(cuid())
+  hostId       String
+  agencyId     String
+  /// GIFT | CALL | MESSAGE | SUBSCRIPTION | SERVICE
+  source       String
+  paidCoins    Int
+  hostAmount   Int
+  agencyAmount Int
+  refId        String?
+  createdAt    DateTime @default(now())
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId, createdAt])
+  @@index([hostId, createdAt])
+}
+
+/// Hostun gündəlik aktivliyi (Bakı günü): onlayn saniyə — hədəflər və agentlik paneli üçün
+model HostDailyStat {
+  userId    String
+  day       String
+  onlineSec Int    @default(0)
+
+  @@id([userId, day])
+}
+
+/// Agentliyin həftəlik hesabatı (bazar ertəsi açarı) — admin bağlayır, CSV ixrac olunur
+model AgencySettlement {
+  id           String   @id @default(cuid())
+  agencyId     String
+  week         String
+  paidCoins    Int
+  hostAmount   Int
+  agencyAmount Int
+  hosts        Int
+  note         String   @default("")
+  closedById   String?
+  createdAt    DateTime @default(now())
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyId, week])
 }

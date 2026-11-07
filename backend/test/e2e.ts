@@ -9,7 +9,7 @@ import { prisma } from '../src/db.js';
 import { createSocketServer } from '../src/realtime/socket.js';
 import { stopCallBilling } from '../src/services/calls.js';
 
-const PORT = 4555;
+const PORT = Number(process.env.TEST_PORT ?? 4555);
 const BASE = `http://127.0.0.1:${PORT}`;
 let passed = 0;
 
@@ -293,11 +293,19 @@ async function main() {
       assert.equal(kyc.status, 200, JSON.stringify(kyc.data));
       const a = await api('POST', '/agencies', agent, form);
       assert.equal(a.data.agency.status, 'PENDING');
-      await api('POST', `/admin/agencies/${a.data.agency.id}`, admin, { status: 'ACTIVE' });
+      const noOwnerKyc = await api('POST', `/admin/agencies/${a.data.agency.id}`, admin, { status: 'ACTIVE' });
+      assert.equal(noOwnerKyc.data.error, 'OWNER_KYC_REQUIRED', 'sahibin KYC-si təsdiqlənmədən agentlik aktiv olmur');
+      const agentKyc = (await api('GET', '/admin/kyc', admin)).data.items.find((x: any) => x.id === kyc.data.verification.id);
+      await api('POST', `/admin/kyc/${agentKyc.id}`, admin, { status: 'APPROVED' });
+      assert.equal((await api('POST', `/admin/agencies/${a.data.agency.id}`, admin, { status: 'ACTIVE' })).status, 200);
       const list = await api('GET', '/agencies', girl);
       assert.ok(list.data.items.some((x: any) => x.id === a.data.agency.id && x.tier === 1 && x.agencyShare === 0.15));
       // Qız əvvəlki agentlikdən çıxır, yeni agentliyə müraciət edir — əvvəl şərtlər tamamlanmalıdır
-      await api('POST', '/agencies/leave', girl);
+      const left = await api('POST', '/agencies/leave', girl);
+      assert.ok(left.data.cooldownUntil, 'könüllü çıxışda gözləmə müddəti başlayır');
+      const cool = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
+      assert.equal(cool.data.error, 'AGENCY_COOLDOWN', '7 gün ərzində başqa agentliyə qoşulmaq olmaz');
+      await prisma.user.update({ where: { id: girlId }, data: { agencyLeftAt: new Date(Date.now() - 8 * 86400_000) } });
       const early = await api('POST', `/agencies/${a.data.agency.id}/apply`, girl, {});
       assert.equal(early.data.error, 'HOST_REQUIREMENTS');
       await prisma.user.update({ where: { id: girlId }, data: { createdAt: new Date(Date.now() - 5 * 86400_000), bio: 'Musiqi və səyahət sevirəm' } });
@@ -339,7 +347,11 @@ async function main() {
       const w2 = await api('POST', '/wallet/withdraw', girl, { diamonds: 10000, method: 'CARD', account: '4169' });
       assert.equal(w2.data.error, 'WITHDRAW_PENDING');
       const before = (await api('GET', '/me', girl)).data.diamonds;
-      await api('POST', `/admin/withdrawals/${w.data.withdrawal.id}`, admin, { status: 'REJECTED' });
+      const noReason = await api('POST', `/admin/withdrawals/${w.data.withdrawal.id}`, admin, { status: 'REJECTED' });
+      assert.equal(noReason.data.error, 'REASON_REQUIRED', 'rədd səbəbi məcburidir');
+      await api('POST', `/admin/withdrawals/${w.data.withdrawal.id}`, admin, { status: 'REJECTED', reason: 'Kart nömrəsi səhvdir' });
+      const again = await api('POST', `/admin/withdrawals/${w.data.withdrawal.id}`, admin, { status: 'REJECTED', reason: 'təkrar' });
+      assert.equal(again.data.error, 'WITHDRAW_PROCESSED', 'ikinci dəfə qaytarılmır');
       assert.equal((await api('GET', '/me', girl)).data.diamonds, before + 10000, 'rədd edildikdə qaytarılır');
     });
 
