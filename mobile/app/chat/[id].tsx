@@ -11,7 +11,8 @@ import { Box, IconBtn, Loader, T, Tag, tap } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { openReport } from '@/components/ReportSheet';
 import { Avatar } from '@/components/Avatar';
-import { GiftIcon } from '@/components/GiftIcon';
+import { CoinIcon, GiftIcon } from '@/components/GiftIcon';
+import { Pressable3 } from '@/components/motion';
 import { GiftSheet } from '@/components/GiftSheet';
 import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { CoinAmount, HostBadge, LevelBadge, VerifiedBadge } from '@/components/Badges';
@@ -70,9 +71,10 @@ function CallRow({ m, mine, peerId }: { m: Message; mine: boolean; peerId: strin
         <Text style={styles.callLabel}>{label}</Text>
         <Text style={styles.callTime}>{clock(m.createdAt)}</Text>
       </View>
-      <Pressable onPress={() => void startCall(peerId, info.type === 'VIDEO' ? 'VIDEO' : 'VOICE')} style={styles.callBack}>
+      <Pressable3 scaleTo={0.92} onPress={() => void startCall(peerId, info.type === 'VIDEO' ? 'VIDEO' : 'VOICE')} style={styles.callBack}>
+        <Icon name={info.type === 'VIDEO' ? 'videocam' : 'call'} size={13} color={colors.bg} />
         <Text style={styles.callBackText}>{t('chat.callBack')}</Text>
-      </Pressable>
+      </Pressable3>
     </View>
   );
 }
@@ -108,7 +110,7 @@ function Bubble({ m, mine, read, first, last }: { m: Message; mine: boolean; rea
           {m.mediaUrl ? <Image source={{ uri: m.mediaUrl }} style={styles.img} contentFit="cover" /> : null}
           {m.text ? <Text style={[styles.text, mine && { color: colors.white }, m.mediaUrl ? { paddingHorizontal: 8, paddingTop: 4 } : null]}>{m.text}</Text> : null}
           <View style={[styles.metaRow, m.mediaUrl ? { paddingHorizontal: 8, paddingBottom: 4 } : null]}>
-            {m.coinsCost ? <Text style={[styles.meta, mine && { color: 'rgba(255,255,255,0.8)' }]}>−{m.coinsCost}🪙</Text> : null}
+            {m.coinsCost ? <View style={styles.cost}><Text style={[styles.meta, mine && { color: 'rgba(255,255,255,0.85)' }]}>−{m.coinsCost}</Text><CoinIcon size={11} /></View> : null}
             <Text style={[styles.meta, mine && { color: 'rgba(255,255,255,0.8)' }]}>{clock(m.createdAt)}</Text>
             {mine ? <Icon name={read ? 'check2' : 'checkmark'} size={13} color={read ? colors.highlight : 'rgba(255,255,255,0.8)'} /> : null}
           </View>
@@ -141,7 +143,10 @@ function ProfilePeek({ u, myInterests }: { u: PublicUser; myInterests: string[] 
           {shared.slice(0, 4).map((i) => <Tag key={i} label={t(`interests.${i}`)} icon="heart" bg={colors.brandSoft} />)}
         </View>
       ) : null}
-      <Text style={styles.safety}>🔒 {t('chat.safety')}</Text>
+      <View style={styles.safetyRow}>
+        <Icon name="lock" size={12} color={colors.textDim} />
+        <Text style={[styles.safety, { marginVertical: 0 }]}>{t('chat.safety')}</Text>
+      </View>
     </View>
   );
 }
@@ -344,7 +349,7 @@ export default function Chat() {
             {showIce && icebreakers.length ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ice} keyboardShouldPersistTaps="handled">
                 {icebreakers.map((s) => (
-                  <Pressable key={s} onPress={() => { tap(); setText(s); }} style={styles.iceChip}><Text style={styles.iceText}>{s}</Text></Pressable>
+                  <Pressable3 key={s} scaleTo={0.94} onPress={() => { tap(); setText(s); }} style={styles.iceChip}><Text style={styles.iceText}>{s}</Text></Pressable3>
                 ))}
               </ScrollView>
             ) : null}
@@ -352,9 +357,9 @@ export default function Chat() {
               {hint ? <Tag label={hint} bg={paid ? colors.coinSoft : colors.onlineSoft} icon={paid ? 'cash' : 'sparkles'} /> : <View />}
               <View style={{ flex: 1 }} />
               {QUICK_GIFTS.map((g) => (
-                <Pressable key={g} onPress={() => void quickGift(g)} style={styles.qg} accessibilityLabel={g}>
+                <Pressable3 key={g} scaleTo={0.85} onPress={() => void quickGift(g)} style={styles.qg} accessibilityLabel={g}>
                   <GiftIcon id={g} size={24} />
-                </Pressable>
+                </Pressable3>
               ))}
             </View>
             <View style={styles.composer}>
@@ -365,9 +370,9 @@ export default function Chat() {
                 <TextInput value={text} onChangeText={onChange} placeholder={t('chat.placeholder')} placeholderTextColor={colors.textDim} selectionColor={colors.brand} style={styles.input} multiline maxLength={1000} />
                 <Pressable onPress={() => setGiftOpen(true)} hitSlop={6} style={styles.giftBtn}><Icon name="gift" size={18} color={colors.ink} /></Pressable>
               </View>
-              <Pressable disabled={!text.trim() || sending} onPress={() => void send({ type: 'TEXT', text: text.trim() })} style={[styles.send, (!text.trim() || sending) && { backgroundColor: colors.bgSunken, borderColor: colors.textDim }]}>
+              <Pressable3 scaleTo={0.88} disabled={!text.trim() || sending} onPress={() => void send({ type: 'TEXT', text: text.trim() })} style={[styles.send, (!text.trim() || sending) && { backgroundColor: colors.bgSunken }]} accessibilityRole="button" accessibilityLabel={t('chat.placeholder')}>
                 <Icon name="arrowUp" size={20} color={!text.trim() || sending ? colors.textDim : colors.white} />
-              </Pressable>
+              </Pressable3>
             </View>
           </SafeAreaView>
         )}
@@ -396,18 +401,20 @@ const styles = StyleSheet.create({
   img: { width: 210, height: 270, borderRadius: 14 },
   giftCard: { alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, gap: 4 },
   giftTitle: { color: colors.ink, fontFamily: fonts.black, fontSize: 14 },
-  day: { alignSelf: 'center', marginVertical: 12, paddingHorizontal: 12, height: 24, borderRadius: 12, backgroundColor: colors.ink, justifyContent: 'center' },
-  dayText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.5 },
+  day: { alignSelf: 'center', marginVertical: 12, paddingHorizontal: 12, height: 24, borderRadius: 12, backgroundColor: 'rgba(26,21,18,0.07)', justifyContent: 'center' },
+  dayText: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.5 },
   callRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 6, padding: 8, paddingRight: 8, borderRadius: 16, backgroundColor: colors.card },
   callIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   callLabel: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13.5 },
   callTime: { color: colors.textDim, fontFamily: fonts.semibold, fontSize: 11 },
-  callBack: { marginLeft: 6, backgroundColor: colors.ink, borderRadius: 12, paddingHorizontal: 10, height: 28, justifyContent: 'center' },
+  callBack: { marginLeft: 6, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.ink, borderRadius: 14, paddingHorizontal: 11, height: 28 },
   callBackText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 12 },
   safety: { color: colors.textDim, fontSize: 11, textAlign: 'center', marginVertical: 8, fontFamily: fonts.medium, maxWidth: 280, alignSelf: 'center' },
   composerWrap: { borderTopWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card },
   ice: { gap: 8, paddingHorizontal: 12, paddingTop: 10 },
-  iceChip: { borderRadius: radius.pill, paddingHorizontal: 12, height: 34, justifyContent: 'center', backgroundColor: colors.highlight },
+  iceChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, paddingHorizontal: 12, height: 34, backgroundColor: colors.highlight },
+  cost: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 6, maxWidth: 300, alignSelf: 'center' },
   iceText: { color: colors.ink, fontFamily: fonts.bold, fontSize: 13 },
   strip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 10 },
   qg: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.coinSoft, alignItems: 'center', justifyContent: 'center' },

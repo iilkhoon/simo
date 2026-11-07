@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { colors, font, fonts, noPad, radius } from '@/theme';
-import { Btn, Card, Chip, Header, Input, PressBox, Screen, T, Tag } from '@/components/ui';
+import { Btn, Card, Chip, GradientCard, Header, Input, PressBox, Screen, T, Tag } from '@/components/ui';
+import { Appear } from '@/components/motion';
 import { Icon } from '@/components/Icon';
 import { CoinIcon, DiamondIcon } from '@/components/GiftIcon';
 import { api } from '@/lib/api';
@@ -96,22 +97,26 @@ export default function Earnings() {
     <Screen scroll>
       <Header title={t('earnings.title')} />
       {/* Almaz kartı: tünd premium */}
-      <View style={styles.hero}>
-        <View style={styles.heroGlow} />
+      <Appear i={0}>
+      <GradientCard g="night" glow={colors.diamond} shine inner={styles.hero}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <DiamondIcon size={56} />
           <View style={{ flex: 1 }}>
             <T v="label" color={colors.nightMuted}>{t('earnings.diamonds')}</T>
-            <Text style={styles.heroNum} numberOfLines={1}>{fmtAlmaz(me.diamonds)}</Text>
+            <Text style={styles.heroNum} numberOfLines={1} adjustsFontSizeToFit>{fmtAlmaz(me.diamonds)}</Text>
           </View>
-          <View style={styles.cash}><Text style={styles.cashText}>≈ {big(Math.round(diamondsToAzn(available, false)))} ₼</Text></View>
         </View>
         <View style={styles.split}>
-          <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.available')}</T><Text style={styles.splitNum}>{fmtAlmaz(available)}</Text></View>
+          <View style={styles.splitItem}>
+            <T v="tiny" color={colors.nightMuted}>{t('earnings.available')}</T>
+            <Text style={styles.splitNum}>{fmtAlmaz(available)}</Text>
+            <View style={styles.cash}><Text style={styles.cashText}>≈ {big(Math.round(diamondsToAzn(available, false)))} ₼</Text></View>
+          </View>
           <View style={styles.splitDivider} />
           <View style={styles.splitItem}><T v="tiny" color={colors.nightMuted}>{t('earnings.held', { n: ECON.withdrawHoldDays })}</T><Text style={styles.splitNum}>{fmtAlmaz(held)}</Text></View>
         </View>
-      </View>
+      </GradientCard>
+      </Appear>
 
       {he && (he.agency || he.lifetime > 0) ? (
         <>
@@ -242,10 +247,9 @@ export default function Earnings() {
 }
 
 const styles = StyleSheet.create({
-  hero: { backgroundColor: colors.night, borderRadius: radius.xl, padding: 20, overflow: 'hidden' },
-  heroGlow: { position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(242,52,79,0.22)' },
+  hero: { padding: 20 },
   heroNum: { ...noPad, color: colors.white, fontFamily: fonts.displayBlack, fontSize: 38, lineHeight: 44, letterSpacing: -1.4 },
-  cash: { backgroundColor: colors.highlight, borderRadius: 14, paddingHorizontal: 10, height: 28, justifyContent: 'center' },
+  cash: { alignSelf: 'flex-start', backgroundColor: colors.highlight, borderRadius: 12, paddingHorizontal: 8, height: 22, justifyContent: 'center', marginTop: 4 },
   cashText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 12.5, lineHeight: 16 },
   split: { flexDirection: 'row', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 16, padding: 12 },
   splitItem: { flex: 1, gap: 2 },

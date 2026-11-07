@@ -3,19 +3,21 @@ import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'reac
 import { router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, noPad, palette, radius } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, elev, fonts, glow, gradients, noPad, radius, type GradientName } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { tap } from './ui';
+import { Pressable3 } from './motion';
 
-type Item = { key: string; icon: IconName; bg: string; fg: string; href: Href };
+type Item = { key: string; icon: IconName; g: GradientName; fg: string; href: Href };
 
 const ITEMS: Item[] = [
-  { key: 'video', icon: 'videocam', bg: palette.nar, fg: colors.white, href: { pathname: '/video/upload', params: { type: 'VIDEO' } } },
-  { key: 'photo', icon: 'image', bg: palette.saffron, fg: colors.ink, href: { pathname: '/video/upload', params: { type: 'PHOTO' } } },
-  { key: 'story', icon: 'sparkles', bg: palette.lilac, fg: colors.ink, href: '/story/new' },
-  { key: 'live', icon: 'radio', bg: palette.ink, fg: colors.white, href: { pathname: '/live/start', params: { type: 'VIDEO' } } },
-  { key: 'voice', icon: 'mic', bg: palette.sky, fg: colors.ink, href: { pathname: '/live/start', params: { type: 'VOICE' } } },
-  { key: 'private', icon: 'lock', bg: palette.lime, fg: colors.ink, href: { pathname: '/video/upload', params: { private: '1' } } },
+  { key: 'video', icon: 'videocam', g: 'nar', fg: colors.white, href: { pathname: '/video/upload', params: { type: 'VIDEO' } } },
+  { key: 'photo', icon: 'image', g: 'gold', fg: colors.ink, href: { pathname: '/video/upload', params: { type: 'PHOTO' } } },
+  { key: 'story', icon: 'sparkles', g: 'lilac', fg: colors.ink, href: '/story/new' },
+  { key: 'live', icon: 'radio', g: 'night', fg: colors.white, href: { pathname: '/live/start', params: { type: 'VIDEO' } } },
+  { key: 'voice', icon: 'mic', g: 'diamond', fg: colors.white, href: { pathname: '/live/start', params: { type: 'VOICE' } } },
+  { key: 'private', icon: 'lock', g: 'lime', fg: colors.ink, href: { pathname: '/video/upload', params: { private: '1' } } },
 ];
 
 /** Ortadakı "+" — yaratma menyusu: video, foto, story, canlı yayın, səsli otaq, private post, video tanışlıq */
@@ -43,18 +45,24 @@ export function CreateSheet({ visible, onClose }: { visible: boolean; onClose: (
         <View style={styles.grid}>
           {ITEMS.map((it, i) => (
             <Animated.View key={it.key} style={{ width: '31%', opacity: y, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [30 + i * 8, 0] }) }] }}>
-              <Pressable onPress={() => go(it.href)} style={({ pressed }) => [styles.item, pressed && { transform: [{ scale: 0.95 }] }]}>
-                <View style={[styles.disc, { backgroundColor: it.bg }]}><Icon name={it.icon} size={24} color={it.fg} /></View>
+              <Pressable3 scaleTo={0.94} onPress={() => go(it.href)} style={[styles.item, elev(1)]} accessibilityRole="button">
+                <View style={styles.disc}>
+                  <LinearGradient colors={gradients[it.g] as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+                  <Icon name={it.icon} size={24} color={it.fg} />
+                </View>
                 <Text style={styles.label} numberOfLines={1}>{t(`create.${it.key}`)}</Text>
-              </Pressable>
+              </Pressable3>
             </Animated.View>
           ))}
         </View>
-        <Pressable onPress={() => go({ pathname: '/match', params: { type: 'VIDEO' } })} style={({ pressed }) => [styles.match, pressed && { transform: [{ scale: 0.98 }] }]}>
+        <Pressable3 scaleTo={0.97} onPress={() => go({ pathname: '/match', params: { type: 'VIDEO' } })} style={[styles.match, glow(colors.brand)]} accessibilityRole="button">
+          <View style={[StyleSheet.absoluteFill, { borderRadius: 28, overflow: 'hidden' }]}>
+            <LinearGradient colors={gradients.nar as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          </View>
           <Icon name="shuffle" size={20} color={colors.white} />
           <Text style={styles.matchText}>{t('live.quickVideo')}</Text>
           <Icon name="arrowRight" size={18} color={colors.white} />
-        </Pressable>
+        </Pressable3>
       </Animated.View>
     </Modal>
   );
@@ -67,8 +75,8 @@ const styles = StyleSheet.create({
   title: { ...noPad, fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.ink, marginBottom: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   item: { alignItems: 'center', gap: 8, paddingVertical: 14, borderRadius: radius.md, backgroundColor: colors.card },
-  disc: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  disc: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   label: { ...noPad, fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 16, color: colors.ink },
-  match: { marginTop: 16, height: 56, borderRadius: 28, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  match: { marginTop: 16, height: 56, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   matchText: { ...noPad, fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.white },
 });

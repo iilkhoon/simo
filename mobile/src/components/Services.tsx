@@ -8,6 +8,7 @@ import { Btn, T } from './ui';
 import { Icon, type IconName } from './Icon';
 import { CoinIcon } from './GiftIcon';
 import { sheetStyles } from './ActionSheet';
+import { Pressable3 } from './motion';
 import { api } from '../lib/api';
 import { errorText } from '../lib/format';
 import { useStore } from '../store';
@@ -21,7 +22,7 @@ export const SERVICE_TINT: Record<Service['kind'], string> = { VIDEO_CALL: color
 export function ServiceCard({ s, onPress, right }: { s: Service; onPress?: () => void; right?: React.ReactNode }) {
   const { t } = useTranslation();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, !s.active && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
+    <Pressable3 disabled={!onPress} scaleTo={0.97} onPress={onPress} style={[styles.card, !s.active && { opacity: 0.55 }]}>
       <View style={[styles.icon, { backgroundColor: SERVICE_TINT[s.kind] }]}><Icon name={SERVICE_ICON[s.kind]} size={20} color={colors.ink} /></View>
       <View style={{ flex: 1, gap: 2 }}>
         <T v="bodyStrong" numberOfLines={1}>{s.title}</T>
@@ -30,7 +31,7 @@ export function ServiceCard({ s, onPress, right }: { s: Service; onPress?: () =>
       {right ?? (
         <View style={styles.price}><CoinIcon size={15} /><Text style={styles.priceText}>{s.price}</Text></View>
       )}
-    </Pressable>
+    </Pressable3>
   );
 }
 
@@ -59,9 +60,9 @@ export function ProfileServices({ userId }: { userId: string }) {
       <T v="h3">{t('profile2.services')}</T>
       {items.map((s) => <ServiceCard key={s.id} s={s} onPress={() => setSel(s)} />)}
       <Modal visible={!!sel} transparent animationType="slide" onRequestClose={() => setSel(null)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setSel(null)} />
+        <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={() => setSel(null)} />
         {sel ? (
-          <View style={[sheetStyles.sheet, { paddingBottom: insets.bottom + 14, gap: 14 }]}>
+          <View style={[sheetStyles.sheet, { paddingBottom: insets.bottom + 14, paddingHorizontal: 16, paddingTop: 10, gap: 14 }]}>
             <View style={sheetStyles.grip} />
             <ServiceCard s={sel} />
             <View style={styles.escrow}><Icon name="shield" size={16} color={colors.online} /><T v="tiny" style={{ flex: 1 }}>{t('services.escrow')}</T></View>

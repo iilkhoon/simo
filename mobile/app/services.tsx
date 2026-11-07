@@ -70,7 +70,7 @@ export default function MyServices() {
         {items ? <Btn kind={items.length ? 'light' : 'primary'} icon="add" title={t('services.add')} disabled={!kycOk} onPress={() => setEdit({ ...EMPTY })} style={{ marginTop: 6 }} /> : null}
       </ScrollView>
       <Modal visible={!!edit} transparent animationType="slide" onRequestClose={() => setEdit(null)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setEdit(null)} />
+        <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={() => setEdit(null)} />
         {edit ? (
           <View style={[sheetStyles.sheet, { paddingBottom: insets.bottom + 14, paddingHorizontal: 16, paddingTop: 10, gap: 12 }]}>
             <View style={sheetStyles.grip} />
