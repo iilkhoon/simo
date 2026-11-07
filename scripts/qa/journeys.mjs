@@ -524,6 +524,59 @@ async function main() {
     await H.ctx.close(); await M.ctx.close();
   });
 
+  // ───────────── 8. Zənglər (vebdə Agora yoxdur — siqnal/ödəniş/UI vəziyyətləri yoxlanılır) ─────────────
+  if (want(8)) await R.run('8. Zəng: qiymət təsdiqi → zəng gedir → host qəbul edir → bitir → xülasə; ikinci zəng rədd edilir', async () => {
+    const h = await makeHost(`Fidan${stamp}`);
+    const m = await makeUser({ gender: 'MALE', name: `Samir${stamp}` });
+    await fundUser(m, 'coins_600');
+    const H = await newCtx(browser, h);
+    const M = await newCtx(browser, m);
+    await H.page.goto(`${WEB}/chats`); // host onlayn (socket)
+    await sleep(1500);
+    await M.page.goto(`${WEB}/user/${h.me.id}`);
+    await seeText(M.page, new RegExp(`Fidan${stamp}`));
+    const c0 = (await meOf(m)).coins;
+    await clickIcon(M.page, 'call', 0, { pick: 'largest' });
+    await seeText(M.page, /Zəng et/);
+    await seeText(M.page, /\/\s*dəq|dəq/);
+    await shot(M.page, '8-confirm');
+    await M.page.getByText(/^Zəng et$/).filter({ visible: true }).first().click();
+    await M.page.waitForURL(/\/call\//);
+    const callId = new URL(M.page.url()).pathname.split('/call/')[1];
+    await seeText(M.page, /Zəng edilir/);
+    await shot(M.page, '8-ringing');
+    await seeText(H.page, /Qəbul et/);
+    await shot(H.page, '8-incoming');
+    await clickIcon(H.page, 'call', 0, { pick: 'largest' });
+    await sleep(2500);
+    const st = await api('GET', `/calls/${callId}`, m.accessToken);
+    assert.equal(st.data.call?.status ?? st.data.status, 'ACTIVE', JSON.stringify(st.data).slice(0, 300));
+    await shot(M.page, '8-active-caller');
+    await shot(H.page, '8-active-host');
+    await sleep(2000);
+    await clickIcon(M.page, 'call', 0, { pick: 'largest' });
+    await M.page.waitForURL(/\/call\/summary/, { timeout: 10000 });
+    await sleep(1500);
+    await shot(M.page, '8-summary');
+    const c1 = (await meOf(m)).coins;
+    assert.ok(c1 < c0, `ilk dəqiqə ödənilməlidir (${c0} → ${c1})`);
+    await seeText(H.page, /dəq|Zəng bitdi|Xülasə|Qazanc/i, 10000).catch(() => {});
+    await shot(H.page, '8-host-after');
+    // ikinci zəng — host rədd edir
+    await M.page.goto(`${WEB}/user/${h.me.id}`);
+    await H.page.goto(`${WEB}/chats`);
+    await sleep(1500);
+    await clickIcon(M.page, 'call', 0, { pick: 'largest' });
+    await M.page.getByText(/^Zəng et$/).filter({ visible: true }).first().click();
+    await M.page.waitForURL(/\/call\//);
+    await seeText(H.page, /Rədd et/);
+    await clickIcon(H.page, 'close', 0, { pick: 'largest' });
+    await M.page.waitForURL((u) => !u.pathname.startsWith('/call/'), { timeout: 10000 });
+    await shot(M.page, '8-rejected');
+    assert.equal((await meOf(m)).coins, c1, 'rədd edilən zəng pulsuzdur');
+    await H.ctx.close(); await M.ctx.close();
+  });
+
   await browser.close();
   await closeSql();
   srv.close();
