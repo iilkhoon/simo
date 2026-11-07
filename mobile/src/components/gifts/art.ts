@@ -142,7 +142,7 @@ ${sparkle(104, 24, 5, '#FFE08A')}${sparkle(110, 100, 3)}`;
 const shekerbura = (() => {
   // Yuxarıdan baxış: yarımay, düz kənar yuxarıda, əyri kənar "çimdikli", üstü "küləkli" naxış
   const cx = 64, cy = 44, R = 50, K = 0.86;
-  const pt = (a: number, r: number) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r * K] as const;
+  const pt = (a: number, r: number) => [cx + Math.cos(a) * r, cy - Math.sin(a) * r * K] as const;
   const r = rng(7);
   const bumps: string[] = [];
   for (let i = 0; i <= 22; i++) {
@@ -155,16 +155,16 @@ const shekerbura = (() => {
       const a = (i / n) * Math.PI;
       const [x, y] = pt(a, rad);
       const t = a + Math.PI / 2;
-      const dx = Math.cos(t) * 3.4, dy = Math.sin(t) * 3.4 * K;
-      const nx = Math.cos(a) * 3.2, ny = Math.sin(a) * 3.2 * K;
+      const dx = Math.cos(t) * 3.4, dy = -Math.sin(t) * 3.4 * K;
+      const nx = Math.cos(a) * 3.2, ny = -Math.sin(a) * 3.2 * K;
       hb.push(`M${(x - dx - nx).toFixed(1)} ${(y - dy - ny).toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}L${(x + dx - nx).toFixed(1)} ${(y + dy - ny).toFixed(1)}`);
     }
   }
   const sugar = Array.from({ length: 26 }, () => {
     const [x, y] = pt(r() * Math.PI, r() * 44);
-    return `<circle cx="${x.toFixed(1)}" cy="${(y + 2).toFixed(1)}" r="${(0.6 + r() * 1).toFixed(1)}" fill="#fff" opacity="${(0.6 + r() * 0.4).toFixed(2)}"/>`;
+    return `<circle cx="${x.toFixed(1)}" cy="${(y - 2).toFixed(1)}" r="${(0.6 + r() * 1).toFixed(1)}" fill="#fff" opacity="${(0.6 + r() * 0.4).toFixed(2)}"/>`;
   }).join('');
-  const D = `M${cx - R} ${cy}H${cx + R}A${R} ${R * K} 0 0 1 ${cx - R} ${cy}Z`;
+  const D = `M${cx - R} ${cy}H${cx + R}A${R} ${R * K} 0 0 0 ${cx - R} ${cy}Z`;
   return `<defs>
 ${rg('sb_b', [[0, '#FFF1CC'], [0.55, '#F2C477'], [1, '#C07A33']], 0.5, 0.15, 0.95)}
 ${rg('sb_e', [[0, '#F7D38E'], [1, '#B06A27']], 0.4, 0.35, 0.7)}
@@ -174,13 +174,13 @@ ${halo('sb', '#FFC966', 64, 64, 60, 0.35)}
 <ellipse cx="64" cy="96" rx="58" ry="22" fill="url(#sb_pl)"/>
 <ellipse cx="64" cy="96" rx="49" ry="17" fill="none" stroke="#2F6BFF" stroke-width="1.8" stroke-dasharray=".1 5" stroke-linecap="round"/>
 <ellipse cx="64" cy="96" rx="58" ry="22" fill="none" stroke="#9FB2CC" stroke-width="1.4"/>
-<g transform="translate(0 30)">
-<path d="${D}" transform="translate(0 5)" fill="#8A4E1C" opacity=".35"/>
+<g transform="translate(0 46)">
+<path d="${D}" transform="translate(0 4)" fill="#8A4E1C" opacity=".35"/>
 ${bumps.join('')}
 <path d="${D}" fill="url(#sb_b)"/>
 <path d="M${cx - R + 2} ${cy}H${cx + R - 2}" stroke="#B06A27" stroke-width="2.2" stroke-linecap="round"/>
 <path d="${hb.join('')}" stroke="#A35F22" stroke-opacity=".85" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M22 48C30 62 44 70 60 72" stroke="#FFF8E0" stroke-opacity=".7" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<path d="M24 22C32 12 44 7 58 6" stroke="#FFF8E0" stroke-opacity=".75" stroke-width="3.5" fill="none" stroke-linecap="round"/>
 ${sugar}</g>
 ${sparkle(108, 30, 5, '#FFE08A')}${sparkle(20, 40, 3.5)}`;
 })();

@@ -51,7 +51,7 @@ export const ComboBanner = memo(function ComboBanner({ ev, combo, bump, self, le
         <Avatar uri={ev.sender.avatarUrl} name={ev.sender.name} size={38} vipTier={ev.sender.vipTier} />
         <View style={styles.texts}>
           <Text style={styles.name} numberOfLines={1}>{self ? gs('you') : ev.sender.name}</Text>
-          <Text style={[styles.sub, { color: tier === 'SMALL' ? '#FFD98A' : '#FFF2CC' }]} numberOfLines={1}>{self ? gs('youSent') : gs('sent')} {giftName(ev.gift)}</Text>
+          <Text style={[styles.sub, { color: tier === 'SMALL' ? '#FFD98A' : '#FFF2CC' }]} numberOfLines={1}>{gs(self ? 'youSent' : 'sent', { g: giftName(ev.gift) })}</Text>
         </View>
       </LinearGradient>
       <Animated.View style={[styles.icon, iconSt]}>

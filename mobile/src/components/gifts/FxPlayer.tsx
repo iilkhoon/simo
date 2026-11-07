@@ -42,7 +42,7 @@ export function FxPlayer({ fx, W, H, ax = 0, ay = 0, giftId, ev, self, topInset 
                 <Avatar uri={ev.sender.avatarUrl} name={ev.sender.name} size={40} vipTier={ev.sender.vipTier} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.tName} numberOfLines={1}>{self ? gs('you') : ev.sender.name}</Text>
-                  <Text style={styles.tSub} numberOfLines={1}>{self ? gs('youSent') : gs('sent')} {giftName(ev.gift)}{ev.count > 1 ? ` ×${ev.count}` : ''}</Text>
+                  <Text style={styles.tSub} numberOfLines={1}>{gs(self ? 'youSent' : 'sent', { g: giftName(ev.gift) })}{ev.count > 1 ? ` ×${ev.count}` : ''}</Text>
                 </View>
               </LinearGradient>
             </LinearGradient>

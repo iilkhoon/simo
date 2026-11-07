@@ -6,17 +6,17 @@ import i18n from '../../i18n';
 
 const D = {
   az: {
-    you: 'Sən', sent: 'göndərdi', youSent: 'göndərdin', to: 'Kimə', send: 'Göndər', combo: 'KOMBO', tapAgain: 'yenə toxun',
+    you: 'Sən', sent: '{{g}} göndərdi', youSent: '{{g}} göndərdin', to: 'Kimə', send: 'Göndər', combo: 'KOMBO', tapAgain: 'yenə toxun',
     recharge: 'Artır', needMore: '{{n}} çatmır', popular: 'Populyar', azerbaijan: 'Azərbaycan', romantic: 'Romantik', luxury: 'Lüks', almaz: 'Almaz',
     pick: 'Hədiyyə seç', balance: 'Balans', fx: 'Effekt', full: 'Tam ekran', qty: 'Say',
   },
   ru: {
-    you: 'Вы', sent: 'отправил(а)', youSent: 'отправили', to: 'Кому', send: 'Отправить', combo: 'КОМБО', tapAgain: 'жми ещё',
+    you: 'Вы', sent: 'отправил(а) {{g}}', youSent: 'отправили {{g}}', to: 'Кому', send: 'Отправить', combo: 'КОМБО', tapAgain: 'жми ещё',
     recharge: 'Пополнить', needMore: 'Не хватает {{n}}', popular: 'Популярные', azerbaijan: 'Азербайджан', romantic: 'Романтика', luxury: 'Люкс', almaz: 'Алмаз',
     pick: 'Выберите подарок', balance: 'Баланс', fx: 'Эффект', full: 'Весь экран', qty: 'Кол-во',
   },
   en: {
-    you: 'You', sent: 'sent', youSent: 'sent', to: 'To', send: 'Send', combo: 'COMBO', tapAgain: 'tap again',
+    you: 'You', sent: 'sent {{g}}', youSent: 'sent {{g}}', to: 'To', send: 'Send', combo: 'COMBO', tapAgain: 'tap again',
     recharge: 'Top up', needMore: '{{n}} short', popular: 'Popular', azerbaijan: 'Azerbaijan', romantic: 'Romantic', luxury: 'Luxury', almaz: 'Almaz',
     pick: 'Pick a gift', balance: 'Balance', fx: 'Effect', full: 'Full screen', qty: 'Qty',
   },

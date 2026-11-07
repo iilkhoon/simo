@@ -53,7 +53,7 @@ function Cell({ g, on, onPress }: { g: Gift; on: boolean; onPress: () => void })
     <View style={[styles.cellInner, on && styles.cellInnerOn]}>
       {g.tier !== 'SMALL' ? (
         <LinearGradient colors={g.tier === 'LUXURY' ? ['#FFE08A', '#F2A516'] : ['#FF6A95', '#F2344F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tag}>
-          <Text style={[styles.tagText, g.tier === 'LUXURY' && { color: '#3A1A00' }]}>{g.tier === 'LUXURY' ? '✦ FX' : 'FX'}</Text>
+          <Text style={[styles.tagText, g.tier === 'LUXURY' && { color: '#3A1A00' }]}>{g.tier === 'LUXURY' ? 'FX+' : 'FX'}</Text>
         </LinearGradient>
       ) : null}
       <Animated.View style={st}><GiftIcon id={g.id} size={50} /></Animated.View>
