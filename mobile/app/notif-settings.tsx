@@ -3,6 +3,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/theme';
 import { Card, Header, Screen, T } from '@/components/ui';
+import { Appear } from '@/components/motion';
 import { Icon, type IconName } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -34,17 +35,24 @@ export default function NotifSettings() {
   return (
     <Screen scroll>
       <Header title={t('notifSettings.title')} />
-      <T v="small" color={colors.textMuted} style={{ marginBottom: 14 }}>{t('notifSettings.sub')}</T>
+      <Appear i={0}>
+        <View style={styles.hint}>
+          <Icon name="bell" size={18} color={colors.coin} />
+          <T v="small" color={colors.textMuted} style={{ flex: 1 }}>{t('notifSettings.sub')}</T>
+        </View>
+      </Appear>
       <Card style={{ gap: 0, paddingVertical: 4 }}>
         {ITEMS.map((it, i) => (
-          <View key={it.key} style={[styles.row, i < ITEMS.length - 1 && styles.divider]}>
+          <Appear key={it.key} i={i + 1} from="fade">
+          <View style={[styles.row, i < ITEMS.length - 1 && styles.divider]}>
             <View style={[styles.icon, { backgroundColor: it.tint }]}><Icon name={it.icon} size={18} color={colors.ink} /></View>
             <View style={{ flex: 1 }}>
               <T v="bodyStrong">{t(`notifSettings.items.${it.key}`)}</T>
               <T v="tiny" color={colors.textMuted}>{t(`notifSettings.subs.${it.key}`)}</T>
             </View>
-            <Switch value={prefs[it.key] !== false} onValueChange={(v) => void toggle(it.key, v)} trackColor={{ true: colors.brand, false: colors.bgSunken }} thumbColor={colors.card} />
+            <Switch value={prefs[it.key] !== false} onValueChange={(v) => void toggle(it.key, v)} trackColor={{ true: colors.brand, false: colors.bgSunken }} thumbColor={colors.card} accessibilityLabel={t(`notifSettings.items.${it.key}`)} />
           </View>
+          </Appear>
         ))}
       </Card>
     </Screen>
@@ -52,7 +60,8 @@ export default function NotifSettings() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  icon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, marginBottom: 14, borderRadius: 20, backgroundColor: colors.coinSoft },
+  icon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
 });

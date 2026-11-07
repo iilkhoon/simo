@@ -6,9 +6,9 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad, radius, webNoOutline } from '@/theme';
-import { Btn, Chip, Header, Screen, T } from '@/components/ui';
+import { Btn, Chip, GradientCard, Header, Screen, T } from '@/components/ui';
+import { Appear, Pressable3 } from '@/components/motion';
 import { Icon, type IconName } from '@/components/Icon';
-import { Mascot } from '@/components/Mascot';
 import { api } from '@/lib/api';
 import { dateTime, errorText } from '@/lib/format';
 import { MAX_VIDEO_SEC, pickImage, pickVideo } from '@/lib/media';
@@ -137,14 +137,16 @@ export default function Upload() {
           <View style={{ gap: 10 }}>
             <T v="h3">{t('post2.pickTitle')}</T>
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <PickTile icon="videocam" title={t('post2.pickVideo')} sub={t('post2.pickVideoSub')} bg={colors.brand} fg={colors.white} onPress={() => pick('VIDEO')} busy={kind === 'VIDEO' ? progress : null} />
-              <PickTile icon="image" title={t('post2.pickPhoto')} sub={t('post2.pickPhotoSub')} bg={colors.ink} fg={colors.white} onPress={() => pick('PHOTO')} busy={kind === 'PHOTO' ? progress : null} />
+              <Appear i={0} style={{ flex: 1 }}><PickTile icon="videocam" title={t('post2.pickVideo')} sub={t('post2.pickVideoSub')} g="nar" accent={colors.brand} onPress={() => pick('VIDEO')} busy={kind === 'VIDEO' ? progress : null} /></Appear>
+              <Appear i={1} style={{ flex: 1 }}><PickTile icon="image" title={t('post2.pickPhoto')} sub={t('post2.pickPhotoSub')} g="night" accent={colors.ink} onPress={() => pick('PHOTO')} busy={kind === 'PHOTO' ? progress : null} /></Appear>
             </View>
-            <Pressable onPress={() => pick('PHOTO', true)} style={styles.cameraRow}>
-              <Icon name="camera" size={18} color={colors.ink} />
-              <T v="bodyStrong" style={{ flex: 1 }}>{t('stories.camera', { defaultValue: 'Kamera' })}</T>
-              <Mascot pose="cute" size={44} float={false} />
-            </Pressable>
+            <Appear i={2}>
+              <Pressable3 scaleTo={0.98} onPress={() => pick('PHOTO', true)} style={styles.cameraRow}>
+                <View style={styles.audIcon}><Icon name="camera" size={18} color={colors.ink} /></View>
+                <T v="bodyStrong" style={{ flex: 1 }}>{t('stories.camera')}</T>
+                <Icon name="chevron" size={16} color={colors.textDim} />
+              </Pressable3>
+            </Appear>
           </View>
         )}
 
@@ -246,14 +248,14 @@ function Section({ title, right, children }: { title: string; right?: React.Reac
   );
 }
 
-function PickTile({ icon, title, sub, bg, fg, onPress, busy }: { icon: IconName; title: string; sub: string; bg: string; fg: string; onPress: () => void; busy: number | null }) {
+function PickTile({ icon, title, sub, g, accent, onPress, busy }: { icon: IconName; title: string; sub: string; g: 'nar' | 'night'; accent: string; onPress: () => void; busy: number | null }) {
   return (
-    <Pressable onPress={onPress} disabled={busy != null} style={({ pressed }) => [styles.tile, { backgroundColor: bg }, pressed && { transform: [{ scale: 0.97 }] }]}>
-      <View style={styles.tileIcon}><Icon name={icon} size={26} color={bg} /></View>
-      <Text style={[styles.tileTitle, { color: fg }]}>{busy != null ? `${Math.round(busy * 100)}%` : title}</Text>
-      <Text style={[styles.tileSub, { color: fg }]}>{sub}</Text>
+    <GradientCard g={g} sh={2} onPress={busy != null ? undefined : onPress} inner={styles.tile}>
+      <View style={styles.tileIcon}><Icon name={icon} size={26} color={accent} /></View>
+      <Text style={[styles.tileTitle, { color: colors.white }]}>{busy != null ? `${Math.round(busy * 100)}%` : title}</Text>
+      <Text style={[styles.tileSub, { color: colors.white }]}>{sub}</Text>
       {busy != null ? <View style={[styles.tileBar, { width: `${Math.max(6, busy * 100)}%` }]} /> : null}
-    </Pressable>
+    </GradientCard>
   );
 }
 
@@ -265,12 +267,12 @@ const styles = StyleSheet.create({
   changeBtn: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: colors.white },
   changeText: { ...noPad, color: colors.ink, fontFamily: fonts.black, fontSize: 12.5, lineHeight: 16 },
   lockPill: { position: 'absolute', left: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: colors.coin },
-  tile: { flex: 1, borderRadius: radius.xl, padding: 16, paddingTop: 18, minHeight: 168, justifyContent: 'flex-end', overflow: 'hidden' },
+  tile: { padding: 16, paddingTop: 18, minHeight: 168, justifyContent: 'flex-end' },
   tileIcon: { position: 'absolute', top: 16, left: 16, width: 52, height: 52, borderRadius: 26, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   tileTitle: { ...noPad, fontFamily: fonts.displayBlack, fontSize: 22, lineHeight: 28 },
   tileSub: { ...noPad, fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, opacity: 0.75 },
   tileBar: { position: 'absolute', left: 0, bottom: 0, height: 4, backgroundColor: colors.coin },
-  cameraRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: radius.lg, paddingLeft: 16, paddingRight: 8, height: 60 },
+  cameraRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: radius.lg, paddingLeft: 12, paddingRight: 16, height: 60 },
   caption: { minWidth: 0, ...webNoOutline, backgroundColor: colors.card, borderRadius: radius.lg, color: colors.ink, padding: 16, minHeight: 88, textAlignVertical: 'top', fontFamily: fonts.medium, fontSize: 15 },
   counter: { ...noPad, fontFamily: fonts.black, fontSize: 12, lineHeight: 15, color: colors.textMuted },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

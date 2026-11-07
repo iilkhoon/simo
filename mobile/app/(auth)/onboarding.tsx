@@ -5,9 +5,13 @@ import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
 import { colors, fonts, noPad, radius, webNoOutline } from '@/theme';
-import { Box, Btn, Chip, IconBtn, Loader, PressBox, Screen, T, Tag } from '@/components/ui';
+import { Box, Btn, Chip, GradientCard, IconBtn, Loader, PressBox, Screen, T, Tag } from '@/components/ui';
 import { Icon } from '@/components/Icon';
-import { Mascot, type MascotPose } from '@/components/Mascot';
+import { Illustration, type IllustrationName } from '@/components/Illustration';
+import { FieldError } from '@/components/AuthKit';
+import ReAnimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { gradients, motion } from '@/theme';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { pickImage, syncLocation } from '@/lib/media';
@@ -31,19 +35,19 @@ const NOTIF = ['messages', 'calls', 'likes', 'follows', 'visits', 'subscriptions
  * və 4 opsional (haqqında, ünsiyyət üslubu, görüş və musiqi zövqü, bildirişlər) — "Keç" ilə ötürülə bilər.
  * Cavablar profildə görünür və şəxsi alqoritmə ilk siqnal olur (soyuq start).
  */
-type Step = { key: string; required: boolean; pose: MascotPose };
+type Step = { key: string; required: boolean; art: IllustrationName };
 const STEPS: Step[] = [
-  { key: 'name', required: true, pose: 'wave' },
-  { key: 'gender', required: true, pose: 'cute' },
-  { key: 'birth', required: true, pose: 'think' },
-  { key: 'photos', required: true, pose: 'shy' },
-  { key: 'showMe', required: true, pose: 'search' },
-  { key: 'interests', required: true, pose: 'music' },
-  { key: 'looking', required: true, pose: 'love' },
-  { key: 'about', required: false, pose: 'coffee' },
-  { key: 'style', required: false, pose: 'call' },
-  { key: 'vibe', required: false, pose: 'rose' },
-  { key: 'notif', required: false, pose: 'thumbs' },
+  { key: 'name', required: true, art: 'spark' },
+  { key: 'gender', required: true, art: 'people' },
+  { key: 'birth', required: true, art: 'gift' },
+  { key: 'photos', required: true, art: 'camera' },
+  { key: 'showMe', required: true, art: 'search' },
+  { key: 'interests', required: true, art: 'heart' },
+  { key: 'looking', required: true, art: 'crown' },
+  { key: 'about', required: false, art: 'chat' },
+  { key: 'style', required: false, art: 'call' },
+  { key: 'vibe', required: false, art: 'ticket' },
+  { key: 'notif', required: false, art: 'bell' },
 ];
 
 export default function Onboarding() {
@@ -129,7 +133,7 @@ export default function Onboarding() {
       });
       void syncLocation(true);
       setMe(me);
-      toast(t('onboarding.bonus'), 'success');
+      toast(t('u2.bonus'), 'success');
     } catch (e) {
       toast(errorText(e), 'error');
     } finally {
@@ -141,30 +145,29 @@ export default function Onboarding() {
 
   return (
     <Screen>
-      <View style={styles.progress}>
-        {STEPS.map((s, i) => (
-          <View key={s.key} style={[styles.progressBar, { backgroundColor: i <= step ? (s.required ? colors.brand : colors.coin) : colors.card }]} />
-        ))}
-      </View>
       <View style={styles.headRow}>
         {step > 0 ? <IconBtn name="back" size={40} onPress={() => setStep(step - 1)} /> : <View style={{ width: 40 }} />}
-        <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-          <T v="label" color={colors.textMuted}>{t('ob.stepOf', { n: step + 1, total: STEPS.length })}</T>
-          <Tag label={cur.required ? t('ob.required') : t('ob.optional')} bg={cur.required ? colors.brandSoft : colors.highlight} style={{ height: 22, paddingHorizontal: 8 }} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <T v="label" color={colors.textMuted}>{t('ob.stepOf', { n: step + 1, total: STEPS.length })}</T>
+            <Tag label={cur.required ? t('ob.required') : t('ob.optional')} bg={cur.required ? colors.brandSoft : colors.highlight} style={{ height: 22, paddingHorizontal: 8 }} />
+          </View>
+          <ProgressLine value={(step + 1) / STEPS.length} />
         </View>
-        <Mascot key={step} pose={cur.pose} size={64} />
+        <View key={step} style={{ width: 64, height: 64 }}><Illustration name={cur.art} size={64} float={false} /></View>
       </View>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <Animated.ScrollView
           key={step}
-          style={{ opacity: enterV, transform: [{ translateX: enterV.interpolate({ inputRange: [0, 1], outputRange: [dir * 40, 0] }) }] }}
-          contentContainerStyle={{ gap: 16, paddingBottom: 20 }}
+          style={{ marginHorizontal: -16, opacity: enterV, transform: [{ translateX: enterV.interpolate({ inputRange: [0, 1], outputRange: [dir * 40, 0] }) }] }}
+          contentContainerStyle={{ gap: 16, paddingBottom: 20, paddingHorizontal: 16, paddingTop: 2 }}
           keyboardShouldPersistTaps="handled"
         >
           {cur.key === 'name' && (
             <>
               <T v="h1">{t('onboarding.nameTitle')}</T>
-              <TextInput autoFocus value={name} onChangeText={setName} placeholder={t('onboarding.namePlaceholder')} placeholderTextColor={colors.textDim} selectionColor={colors.brand} style={styles.bigInput} maxLength={30} />
+              <TextInput autoFocus value={name} onChangeText={setName} onSubmitEditing={() => canNext.name && next()} returnKeyType="next" autoCapitalize="words" textContentType="givenName" placeholder={t('onboarding.namePlaceholder')} placeholderTextColor={colors.textDim} selectionColor={colors.brand} style={styles.bigInput} maxLength={30} />
+              {name.trim().length === 1 ? <FieldError text={t('u2.nameShort')} /> : <T v="small" color={colors.textDim}>{t('u2.nameHint')}</T>}
             </>
           )}
           {cur.key === 'gender' && (
@@ -188,9 +191,10 @@ export default function Onboarding() {
                 <TextInput value={month} onChangeText={(v) => setMonth(v.replace(/\D/g, '').slice(0, 2))} placeholder={t('onboarding.month')} keyboardType="number-pad" placeholderTextColor={colors.textDim} selectionColor={colors.brand} style={[styles.bigInput, { flex: 1, textAlign: 'center' }]} />
                 <TextInput value={year} onChangeText={(v) => setYear(v.replace(/\D/g, '').slice(0, 4))} placeholder={t('onboarding.year')} keyboardType="number-pad" placeholderTextColor={colors.textDim} selectionColor={colors.brand} style={[styles.bigInput, { flex: 1.4, textAlign: 'center' }]} />
               </View>
-              {validBirth ? (
-                <Tag label={age >= 18 ? t('common.years', { n: age }) : t('errors.UNDERAGE')} bg={age >= 18 ? colors.onlineSoft : colors.brandSoft} style={{ height: 28, paddingHorizontal: 10 }} />
-              ) : null}
+              {validBirth && age >= 18 && age < 100 ? (
+                <Tag label={t('common.years', { n: age })} icon="checkmark" bg={colors.onlineSoft} style={{ height: 28, paddingHorizontal: 10 }} />
+              ) : validBirth && age < 18 ? <FieldError text={t('errors.UNDERAGE')} />
+                : year.length === 4 && month && day && (!validBirth || age >= 100) ? <FieldError text={t('u2.birthInvalid')} /> : null}
             </>
           )}
           {cur.key === 'photos' && (
@@ -204,11 +208,13 @@ export default function Onboarding() {
                       <>
                         <Image source={{ uri: photos[i] }} style={StyleSheet.absoluteFill} contentFit="cover" />
                         <View style={styles.remove}><Icon name="close" size={14} color={colors.ink} /></View>
+                        {i === 0 ? <View style={styles.mainTag}><T v="tiny" color={colors.white}>{t('u2.mainPhoto')}</T></View> : null}
                       </>
                     ) : i === photos.length && uploading ? <Loader /> : <Icon name="add" size={30} color={colors.ink} />}
                   </Pressable>
                 ))}
               </View>
+              <T v="small" color={colors.textDim}>{t('u2.photosHint')}</T>
             </>
           )}
           {cur.key === 'showMe' && (
@@ -239,6 +245,7 @@ export default function Onboarding() {
             <>
               <T v="h1">{t('onboarding.interestsTitle')}</T>
               <T v="body" color={colors.textMuted}>{t('onboarding.interestsSub')}</T>
+              <Tag label={interests.length < 3 ? t('u2.pickMore', { n: 3 - interests.length }) : t('u2.picked', { n: interests.length })} icon={interests.length < 3 ? 'heartOutline' : 'checkmark'} bg={interests.length < 3 ? colors.brandSoft : colors.onlineSoft} style={{ height: 26, paddingHorizontal: 10 }} />
               <View style={styles.wrap}>
                 {INTERESTS.map((i) => (
                   <Chip key={i} label={t(`interests.${i}`)} active={interests.includes(i)} onPress={() => setInterests((c) => (c.includes(i) ? c.filter((x) => x !== i) : c.length < 10 ? [...c, i] : c))} />
@@ -327,10 +334,10 @@ export default function Onboarding() {
                   </View>
                 ))}
               </Box>
-              <Box bg={colors.coin} r={18} sh={3} inner={styles.bonus}>
-                <Icon name="gift" size={22} color={colors.ink} />
-                <T v="bodyStrong" style={{ flex: 1 }}>{t('onboarding.bonus')}</T>
-              </Box>
+              <GradientCard g="gold" r={20} shine sh={2} inner={styles.bonus}>
+                <View style={styles.bonusIcon}><Icon name="gift" size={22} color={colors.ink} /></View>
+                <T v="bodyStrong" style={{ flex: 1 }}>{t('u2.bonus')}</T>
+              </GradientCard>
             </>
           )}
         </Animated.ScrollView>
@@ -342,6 +349,20 @@ export default function Onboarding() {
         </View>
       </KeyboardAvoidingView>
     </Screen>
+  );
+}
+
+/** Yumşaq dolan irəliləmə xətti */
+function ProgressLine({ value }: { value: number }) {
+  const w = useSharedValue(value);
+  React.useEffect(() => { w.value = withSpring(value, motion.enter); }, [value, w]);
+  const a = useAnimatedStyle(() => ({ width: `${Math.min(1, w.value) * 100}%` }));
+  return (
+    <View style={styles.track}>
+      <ReAnimated.View style={[styles.trackFill, a]}>
+        <LinearGradient colors={gradients.nar as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </ReAnimated.View>
+    </View>
   );
 }
 
@@ -376,9 +397,11 @@ function Stepper({ value, min, max, onChange, wide }: { value: number; min: numb
 const PHOTO_W = (Dimensions.get('window').width - 32 - 20) / 3;
 
 const styles = StyleSheet.create({
-  headRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8, minHeight: 64 },
-  progress: { flexDirection: 'row', gap: 4, marginTop: 8 },
-  progressBar: { flex: 1, height: 6, borderRadius: 3 },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8, marginBottom: 12, minHeight: 64 },
+  track: { height: 6, borderRadius: 3, backgroundColor: 'rgba(26,21,18,0.08)', overflow: 'hidden' },
+  trackFill: { height: '100%', borderRadius: 3, overflow: 'hidden' },
+  mainTag: { position: 'absolute', left: 6, bottom: 6, backgroundColor: colors.brand, borderRadius: 9, paddingHorizontal: 7, height: 18, justifyContent: 'center' },
+  bonusIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
   bigInput: { minWidth: 0, ...webNoOutline, backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, fontSize: 22, fontFamily: fonts.displayBold, paddingHorizontal: 16, height: 64 },
   input: { minWidth: 0, ...webNoOutline, backgroundColor: colors.card, borderRadius: radius.md, color: colors.ink, fontSize: 16, fontFamily: fonts.semibold, paddingHorizontal: 16, height: 52 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },

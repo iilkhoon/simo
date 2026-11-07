@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad } from '@/theme';
-import { IconBtn, Loader, tap } from '@/components/ui';
+import { IconBtn, Loader, T, tap } from '@/components/ui';
 import { openReport } from '@/components/ReportSheet';
 import { Icon } from '@/components/Icon';
+import { Pressable3 } from '@/components/motion';
+import { Illustration } from '@/components/Illustration';
 import { Avatar } from '@/components/Avatar';
 import { api } from '@/lib/api';
 import { compact, timeAgo } from '@/lib/format';
@@ -43,12 +47,13 @@ export default function PostView() {
           <IconBtn name="back" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => router.back()} />
         </SafeAreaView>
         <View style={styles.lockedBox}>
-          <View style={styles.lockDisc}><Icon name="lock" size={30} color={colors.ink} /></View>
+          <Illustration name="crown" size={120} bare />
           <Text style={styles.lockedTitle}>{t('posts.locked')}</Text>
           {p.user.privatePrice ? <Text style={styles.lockedSub}>{t('posts.subscribe', { price: p.user.privatePrice })}</Text> : null}
           <Pressable style={styles.lockedBtn} onPress={() => router.replace({ pathname: '/user/[id]', params: { id: p.user.id, tab: 'private' } })}>
             <Avatar uri={p.user.avatarUrl} name={p.user.name} size={28} ring={false} />
-            <Text style={styles.lockedBtnText}>{p.user.name} →</Text>
+            <Text style={styles.lockedBtnText}>{p.user.name}</Text>
+            <Icon name="arrowRight" size={16} color={colors.ink} />
           </Pressable>
         </View>
       </View>
@@ -77,7 +82,9 @@ export default function PostView() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.night }}>
       <StatusBar style="light" />
-      {p.mediaType === 'VIDEO' ? <Video uri={p.url} /> : <Image source={{ uri: p.url }} style={StyleSheet.absoluteFill} contentFit="contain" />}
+      {p.mediaType === 'VIDEO' ? <Video uri={p.url} /> : <Image source={{ uri: p.url }} style={StyleSheet.absoluteFill} contentFit="contain" transition={200} />}
+      <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0)']} style={styles.scrimTop} />
+      <LinearGradient pointerEvents="none" colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']} style={styles.scrimBottom} />
       <SafeAreaView edges={['top']} style={styles.top}>
         <IconBtn name="back" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => router.back()} />
         {!mine ? <IconBtn name="flag" size={40} sh={0} bg={colors.glass} color={colors.white} onPress={() => openReport({ targetUserId: p.user.id, targetType: 'VIDEO', targetId: p.id })} /> : null}
@@ -88,10 +95,10 @@ export default function PostView() {
           { icon: (p.saved ? 'bookmark' : 'bookmarkOutline') as 'bookmark', n: p.savesCount, on: p.saved, onPress: save },
           { icon: 'share' as const, n: p.sharesCount, on: false, onPress: () => void Share.share({ message: `${p.user.name} · Simo ${WEB_URL}` }).then(() => api(`/videos/${p.id}/share`, { body: {} })) },
         ].map((b) => (
-          <Pressable key={b.icon} onPress={b.onPress} onLongPress={b.onLong} style={styles.sideBtn}>
+          <Pressable3 key={b.icon} scaleTo={0.86} onPress={b.onPress} onLongPress={b.onLong} style={styles.sideBtn} accessibilityRole="button">
             <View style={[styles.disc, b.on && { backgroundColor: b.icon === 'heart' ? colors.brand : colors.coin }]}><Icon name={b.icon} size={22} color={b.on && b.icon === 'heart' ? colors.white : colors.ink} /></View>
             <Text style={styles.sideText}>{compact(b.n)}</Text>
-          </Pressable>
+          </Pressable3>
         ))}
       </View>
       <SafeAreaView edges={['bottom']} style={styles.caption}>
@@ -104,17 +111,20 @@ export default function PostView() {
         {mine ? <Pressable onPress={showLikers}><Text style={styles.likers}>{t('posts.seeLikers', { n: p.likesCount })}</Text></Pressable> : null}
       </SafeAreaView>
       {likers ? (
-        <Pressable style={styles.likersWrap} onPress={() => setLikers(null)}>
-          <View style={styles.likersSheet}>
+        <Animated.View entering={FadeIn.duration(160)} style={styles.likersWrap}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setLikers(null)} />
+          <Animated.View entering={SlideInDown.springify().damping(20).stiffness(200)} style={styles.likersSheet}>
+            <View style={styles.grip} />
             <Text style={styles.likersTitle}>{t('posts.likers')}</Text>
+            {!likers.length ? <T v="small" color={colors.textMuted}>{t('posts.empty')}</T> : null}
             {likers.map((u) => (
               <Pressable key={u.id} style={styles.likerRow} onPress={() => { setLikers(null); router.push({ pathname: '/user/[id]', params: { id: u.id } }); }}>
                 <Avatar uri={u.avatarUrl} name={u.name} size={40} online={u.online} />
                 <Text style={styles.likerName}>{u.name}</Text>
               </Pressable>
             ))}
-          </View>
-        </Pressable>
+          </Animated.View>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -138,6 +148,9 @@ const styles = StyleSheet.create({
   captionText: { ...noPad, color: colors.nightText, fontFamily: fonts.regular, fontSize: 14, lineHeight: 19 },
   likers: { ...noPad, color: colors.white, fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, textDecorationLine: 'underline' },
   likersWrap: { ...StyleSheet.absoluteFill, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
+  scrimTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 140 },
+  scrimBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 220 },
+  grip: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(26,21,18,0.18)', marginBottom: 4 },
   likersSheet: { backgroundColor: colors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 18, gap: 10, maxHeight: '70%' },
   likersTitle: { ...noPad, fontFamily: fonts.display, fontSize: 18, lineHeight: 23, color: colors.ink },
   likerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

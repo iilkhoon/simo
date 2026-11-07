@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@/theme';
 import { Btn, Header, Input, PressBox, Screen, T, Tabs } from '@/components/ui';
 import { Icon } from '@/components/Icon';
+import { Appear } from '@/components/motion';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
 import { pickImage } from '@/lib/media';
@@ -37,7 +38,7 @@ export default function StartLive() {
     <Screen edges={['top', 'bottom']} scroll bottom={24}>
       <Header title={t('live.goLive')} />
       <View style={{ gap: 16, paddingTop: 6 }}>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Appear i={0} style={{ flexDirection: 'row', gap: 8 }}>
           {(['VIDEO', 'VOICE'] as const).map((k) => {
             const on = type === k;
             return (
@@ -48,20 +49,25 @@ export default function StartLive() {
               </PressBox>
             );
           })}
-        </View>
+        </Appear>
+        <Appear i={1}>
         <PressBox style={styles.coverWrap} r={22} sh={4} bg={colors.bgSunken} inner={styles.cover} onPress={async () => { try { const u = await pickImage(); if (u) setCover(u); } catch (e) { toast(errorText(e), 'error'); } }}>
           {cover ? <Image source={{ uri: cover }} style={styles.coverImg} contentFit="cover" /> : <Icon name="image" size={34} color={colors.textMuted} />}
           <View style={styles.coverEdit}><Icon name="camera" size={16} color={colors.ink} /></View>
         </PressBox>
+        </Appear>
         {type === 'VOICE' ? (
           <View style={{ gap: 6 }}>
             <T v="label" color={colors.textMuted}>{t('live.seatCount')}</T>
             <Tabs<'4' | '8' | '12'> value={seats} onChange={setSeats} options={[{ key: '4', label: '4' }, { key: '8', label: '8' }, { key: '12', label: '12' }]} />
           </View>
         ) : null}
-        <Input value={title} onChangeText={setTitle} label={t('live.titleLabel')} placeholder={t('live.titlePlaceholder')} maxLength={60} />
+        <Appear i={2} style={{ gap: 6 }}>
+          <Input value={title} onChangeText={setTitle} label={t('live.titleLabel')} placeholder={t('live.titlePlaceholder')} maxLength={60} />
+          <T v="tiny" color={colors.textDim} style={{ alignSelf: 'flex-end' }}>{title.length}/60</T>
+        </Appear>
         <View style={styles.tips}>
-          <Icon name="shield" size={18} color={colors.ink} />
+          <Icon name="shield" size={18} color={colors.online} />
           <T v="small" color={colors.textMuted} style={{ flex: 1 }}>{t('live.rules')}</T>
         </View>
         <Btn title={t('live.start')} icon="radio" kind={type === 'VIDEO' ? 'primary' : 'diamond'} loading={loading} onPress={start} style={{ marginBottom: 8 }} />
@@ -77,5 +83,5 @@ const styles = StyleSheet.create({
   cover: { width: 132, height: 176, alignItems: 'center', justifyContent: 'center' },
   coverImg: { position: 'absolute', top: 0, left: 0, width: 132, height: 176 },
   coverEdit: { position: 'absolute', right: 8, bottom: 8, backgroundColor: colors.card, borderRadius: 16, padding: 6 },
-  tips: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 14, backgroundColor: colors.bgSunken },
+  tips: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 16, backgroundColor: colors.onlineSoft },
 });

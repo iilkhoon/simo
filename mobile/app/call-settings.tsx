@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, fonts, noPad, radius } from '@/theme';
-import { Btn, Card, Header, Screen, T } from '@/components/ui';
+import { Btn, Card, Header, Screen, T, Tabs, tap } from '@/components/ui';
+import { Appear, Pressable3 } from '@/components/motion';
 import { Icon, type IconName } from '@/components/Icon';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
@@ -33,7 +34,7 @@ export default function CallSettings() {
     setBusy(true);
     try {
       setMe(await api<Me>('/me', { method: 'PATCH', body: { presence, acceptVideo: video, acceptVoice: voice, callHours: custom ? hours : null } }));
-      toast('✓', 'success');
+      toast(t('u2.saved'), 'success');
     } catch (e) {
       toast(errorText(e), 'error');
     } finally {
@@ -48,14 +49,19 @@ export default function CallSettings() {
       <Header title={t('callSettings.title')} />
       <T v="label" color={colors.textMuted} style={styles.section}>{t('callSettings.status')}</T>
       <View style={styles.grid}>
-        {PRESENCE.map((p) => {
+        {PRESENCE.map((p, i) => {
           const on = presence === p.key;
           return (
-            <Pressable key={p.key} onPress={() => setPresence(p.key)} style={[styles.pres, on && { borderColor: p.color, backgroundColor: colors.card }]}>
-              <View style={[styles.presDot, { backgroundColor: p.color }]}><Icon name={p.icon} size={15} color={colors.white} /></View>
-              <T v="bodyStrong">{t(`callSettings.presence.${p.key}`)}</T>
-              <T v="tiny" color={colors.textMuted}>{t(`callSettings.presenceSub.${p.key}`)}</T>
-            </Pressable>
+            <Appear key={p.key} i={i} style={styles.presWrap}>
+              <Pressable3 scaleTo={0.96} onPress={() => { tap(); setPresence(p.key); }} style={[styles.pres, on && { borderColor: p.color }]} accessibilityRole="radio" accessibilityState={{ selected: on }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={[styles.presDot, { backgroundColor: p.color }]}><Icon name={p.icon} size={15} color={colors.white} /></View>
+                  <View style={[styles.radio, on && { borderColor: p.color }]}>{on ? <View style={[styles.radioDot, { backgroundColor: p.color }]} /> : null}</View>
+                </View>
+                <T v="bodyStrong">{t(`callSettings.presence.${p.key}`)}</T>
+                <T v="tiny" color={colors.textMuted}>{t(`callSettings.presenceSub.${p.key}`)}</T>
+              </Pressable3>
+            </Appear>
           );
         })}
       </View>
@@ -63,7 +69,7 @@ export default function CallSettings() {
       <Card style={{ marginTop: 18, gap: 0, paddingVertical: 4 }}>
         {([['videocam', t('callSettings.acceptVideo'), video, setVideo], ['call', t('callSettings.acceptVoice'), voice, setVoice]] as const).map(([ic, label, val, set], i) => (
           <View key={label} style={[styles.row, i === 0 && styles.divider]}>
-            <View style={styles.rowIcon}><Icon name={ic} size={18} color={colors.ink} /></View>
+            <View style={[styles.rowIcon, { backgroundColor: ic === 'videocam' ? colors.brandSoft : colors.skySoft }]}><Icon name={ic} size={18} color={colors.ink} /></View>
             <View style={{ flex: 1 }}>
               <T v="bodyStrong">{label}</T>
               <T v="tiny" color={colors.textMuted}>{t('callSettings.acceptSub')}</T>
@@ -74,13 +80,7 @@ export default function CallSettings() {
       </Card>
 
       <T v="label" color={colors.textMuted} style={styles.section}>{t('callSettings.hours')}</T>
-      <View style={styles.seg}>
-        {[false, true].map((c) => (
-          <Pressable key={String(c)} onPress={() => setCustom(c)} style={[styles.segItem, custom === c && styles.segOn]}>
-            <Text style={[styles.segText, custom === c && { color: colors.bg }]}>{c ? t('callSettings.hoursCustom') : t('callSettings.hoursAll')}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Tabs<'all' | 'custom'> value={custom ? 'custom' : 'all'} onChange={(k) => setCustom(k === 'custom')} options={[{ key: 'all', label: t('callSettings.hoursAll'), icon: 'infinite' }, { key: 'custom', label: t('callSettings.hoursCustom'), icon: 'time' }]} />
       {custom ? (
         <Card style={{ marginTop: 12, gap: 14 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -117,9 +117,12 @@ export default function CallSettings() {
 const styles = StyleSheet.create({
   section: { marginTop: 18, marginBottom: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  pres: { width: '48%', flexGrow: 1, gap: 4, padding: 14, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 2, borderColor: 'transparent' },
+  presWrap: { width: '48%', flexGrow: 1 },
+  pres: { flex: 1, gap: 4, padding: 14, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 2, borderColor: 'transparent' },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(26,21,18,0.18)', alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
   presDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   rowIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.bgSunken, alignItems: 'center', justifyContent: 'center' },
   seg: { flexDirection: 'row', backgroundColor: colors.bgSunken, borderRadius: 22, padding: 4 },
