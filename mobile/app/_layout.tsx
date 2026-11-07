@@ -24,6 +24,7 @@ import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, On
 import { IncomingCall } from '@/components/IncomingCall';
 import { CallConfirm } from '@/components/CallConfirm';
 import type { Call, Message, PublicUser } from '@/lib/types';
+import '@/lib/alertWeb';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 

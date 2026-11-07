@@ -514,11 +514,15 @@ async function main() {
     assert.equal((await meOf(m)).coins, c0 - 99, 'yayında hədiyyə');
     await shot(M.page, '7-viewer');
     await shot(H.page, '7-host-after-gift');
-    // host bitirir (vebdə Alert.alert işləmir — API ilə; telefonda əl ilə yoxlanılmalıdır)
-    const end = await api('POST', `/live/${roomId}/end`, h.accessToken, {});
-    assert.equal(end.status, 200);
-    assert.ok(end.data.summary.giftsCoins >= 99, JSON.stringify(end.data.summary));
-    assert.ok(end.data.summary.likes >= 1, `bəyənmələr sayılmalıdır: ${JSON.stringify(end.data.summary)}`);
+    // host bitirir: X → təsdiq dialoqu (vebdə window.confirm — alertWeb.ts)
+    H.page.on('dialog', (d) => void d.accept());
+    await clickIcon(H.page, 'close', 0);
+    await seeText(H.page, /Yayın bitdi|Yekun|Xülasə|Nəticə/i).catch(() => {});
+    await shot(H.page, '7-host-summary');
+    const room = (await sql(`SELECT status, "giftsCoins", likes FROM "LiveRoom" WHERE id=$1`, [roomId]))[0];
+    assert.equal(room.status, 'ENDED', 'yayın bitməlidir');
+    assert.ok(room.giftsCoins >= 99, JSON.stringify(room));
+    assert.ok(room.likes >= 1, `bəyənmələr sayılmalıdır: ${JSON.stringify(room)}`);
     await seeText(M.page, /Yayın bitdi/);
     await shot(M.page, '7-viewer-ended');
     await H.ctx.close(); await M.ctx.close();
@@ -575,6 +579,61 @@ async function main() {
     await shot(M.page, '8-rejected');
     assert.equal((await meOf(m)).coins, c1, 'rədd edilən zəng pulsuzdur');
     await H.ctx.close(); await M.ctx.close();
+  });
+
+  // ───────────── 9. Profil: redaktə, foto, post, hekayə, hesabın silinməsi ─────────────
+  if (want(9)) await R.run('9. Profil: redaktə, foto yükləmə, post, hekayə, hesabın silinməsi', async () => {
+    const u = await makeUser({ gender: 'FEMALE', name: `Nərmin${stamp}` });
+    const U = await newCtx(browser, u);
+    // redaktə + ikinci foto
+    await U.page.goto(`${WEB}/edit-profile`);
+    await sleep(2000);
+    const fc = U.page.waitForEvent('filechooser');
+    await clickEmptyTile(U.page, 60);
+    await (await fc).setFiles(PNG);
+    await sleep(2500);
+    const ins = U.page.locator('input:visible, textarea:visible');
+    await ins.nth(0).fill(`Nərmin QA${stamp}`);
+    await ins.nth(1).fill('Kitab oxumağı və səyahəti sevirəm.');
+    await U.page.getByText(/^Yadda saxla$/).filter({ visible: true }).first().click();
+    await sleep(2000);
+    const me1 = await meOf(u);
+    assert.equal(me1.name, `Nərmin QA${stamp}`);
+    assert.equal(me1.bio, 'Kitab oxumağı və səyahəti sevirəm.');
+    const photos = await sql(`SELECT count(*)::int AS n FROM "Photo" WHERE "userId"=$1`, [u.me.id]);
+    assert.ok(photos[0].n >= 2, `2 foto olmalıdır: ${photos[0].n}`);
+    await shot(U.page, '9-edited');
+    // post (foto)
+    await U.page.goto(`${WEB}/video/upload`);
+    const fc2 = U.page.waitForEvent('filechooser');
+    await U.page.getByText(/^Foto$/).filter({ visible: true }).first().click();
+    await (await fc2).setFiles(PNG);
+    await sleep(2500);
+    await U.page.getByPlaceholder(/.+/).filter({ visible: true }).first().fill('QA ilk post #simo');
+    await U.page.getByText(/^Paylaş$/).filter({ visible: true }).last().click();
+    await sleep(2000);
+    const posts = await sql(`SELECT count(*)::int AS n FROM "Video" WHERE "userId"=$1`, [u.me.id]);
+    assert.equal(posts[0].n, 1, 'post yaranmalıdır');
+    // hekayə
+    await U.page.goto(`${WEB}/story/new`);
+    const fc3 = U.page.waitForEvent('filechooser');
+    await U.page.getByText(/^Qalereya$/).filter({ visible: true }).first().click();
+    await (await fc3).setFiles(PNG);
+    await sleep(2500);
+    await U.page.getByText(/^Paylaş$/).filter({ visible: true }).last().click();
+    await sleep(2000);
+    const stories = await sql(`SELECT count(*)::int AS n FROM "Story" WHERE "userId"=$1`, [u.me.id]);
+    assert.equal(stories[0].n, 1, 'hekayə yaranmalıdır');
+    await shot(U.page, '9-after-story');
+    // hesabın silinməsi: Ayarlar → Hesabı sil → təsdiq (vebdə window.confirm)
+    U.page.on('dialog', (d) => void d.accept());
+    await U.page.goto(`${WEB}/settings`);
+    await U.page.getByText(/Hesabı sil/).filter({ visible: true }).first().click();
+    await sleep(2500);
+    await shot(U.page, '9-deleted');
+    assert.equal((await api('GET', '/me', u.accessToken)).status, 401, 'hesab silinməlidir');
+    await U.page.waitForURL(/welcome/, { timeout: 10000 });
+    await U.ctx.close();
   });
 
   await browser.close();
