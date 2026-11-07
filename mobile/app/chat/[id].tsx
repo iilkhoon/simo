@@ -18,7 +18,7 @@ import { CoinAmount, HostBadge, LevelBadge, VerifiedBadge } from '@/components/B
 import { Burst } from '@/components/Burst';
 import { api, ApiError } from '@/lib/api';
 import { clock, dayLabel, duration, errorText, giftName, timeAgo } from '@/lib/format';
-import { getSocket } from '@/lib/socket';
+import { getSocket, useSocket } from '@/lib/socket';
 import { pickImage } from '@/lib/media';
 import { startCall } from '@/lib/calls';
 import { useStore } from '@/store';
@@ -175,8 +175,9 @@ export default function Chat() {
     void api(`/conversations/${id}/read`, { body: {} }).catch(() => {});
   }, [id, loadInfo]);
 
+  const sock = useSocket();
   useEffect(() => {
-    const s = getSocket();
+    const s = sock;
     if (!s) return;
     const onMsg = (m: Message) => {
       if (m.conversationId !== id) return;
@@ -195,15 +196,27 @@ export default function Chat() {
     const onRead = (p: { conversationId: string; at: string }) => {
       if (p.conversationId === id) setInfo((x) => (x ? { ...x, otherLastReadAt: p.at } : x));
     };
+    // Bağlantı bərpa olunanda arada gələn mesajları əlavə et (socket hadisələri təkrar göndərilmir)
+    const onConnect = () => {
+      void api<{ items: Message[] }>(`/conversations/${id}/messages?limit=50`)
+        .then((r) => setMessages((cur) => {
+          const have = new Set(cur.map((m) => m.id));
+          const fresh = r.items.filter((m) => !have.has(m.id));
+          return fresh.length ? [...cur, ...fresh].sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : cur;
+        }))
+        .catch(() => {});
+    };
     s.on('message:new', onMsg);
     s.on('typing', onTyping);
     s.on('chat:read', onRead);
+    s.on('connect', onConnect);
     return () => {
+      s.off('connect', onConnect);
       s.off('message:new', onMsg);
       s.off('typing', onTyping);
       s.off('chat:read', onRead);
     };
-  }, [id, me?.id]);
+  }, [sock, id, me?.id]);
 
   async function loadOlder() {
     const oldest = messages[messages.length - 1];

@@ -18,7 +18,7 @@ import { RechargeSheet } from '@/components/RechargeSheet';
 import { api } from '@/lib/api';
 import { fmtAlmaz } from '@/lib/economy';
 import { duration, errorText } from '@/lib/format';
-import { getSocket } from '@/lib/socket';
+import { useSocket } from '@/lib/socket';
 import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { Call, GiftEvent, PublicUser, RtcCreds } from '@/lib/types';
@@ -49,6 +49,7 @@ export default function CallScreen() {
   const { t } = useTranslation();
   const { id, accept } = useLocalSearchParams<{ id: string; accept?: string }>();
   const { me, toast } = useStore();
+  const sock = useSocket();
   const [call, setCall] = useState<Call | null>(null);
   const [peer, setPeer] = useState<PublicUser | null>(null);
   const [remoteUid, setRemoteUid] = useState<number | null>(null);
@@ -188,7 +189,7 @@ export default function CallScreen() {
   }, [id]);
 
   useEffect(() => {
-    const s = getSocket();
+    const s = sock;
     if (!s) return;
     const onAccepted = (p: { callId: string; startedAt?: string }) => {
       if (p.callId === id) { markStarted(p.startedAt); markConnected(id); }
@@ -222,6 +223,8 @@ export default function CallScreen() {
     s.on('connect', onConnect);
     s.on('disconnect', onDisconnect);
     setSocketUp(s.connected);
+    // Socket ekrandan sonra yarandısa — arada qaçırılmış hadisələri serverdən oxu
+    if (s.connected) void resync();
     return () => {
       s.off('call:accepted', onAccepted);
       s.off('call:ended', onEnded);
@@ -231,7 +234,7 @@ export default function CallScreen() {
       s.off('connect', onConnect);
       s.off('disconnect', onDisconnect);
     };
-  }, [id, close, resync, markStarted]);
+  }, [sock, id, close, resync, markStarted]);
 
   // Tətbiq önə qayıdanda və dövri olaraq — server vəziyyəti ilə tutuşdur
   useEffect(() => {

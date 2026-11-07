@@ -101,7 +101,7 @@ export function RechargeSheet({ visible, onClose, onDone, need, title, sub, nigh
                     <CoinIcon size={18} />
                     <Text style={[styles.coins, { color: fg }]}>{p.coins}</Text>
                   </View>
-                  {p.bonusCoins ? <Text style={styles.bonus}>+{p.bonusCoins}</Text> : <View style={{ height: 15 }} />}
+                  {p.bonusCoins ? <Text style={styles.bonus}>+{p.bonusCoins}</Text> : <Text style={styles.bonus}> </Text>}
                   {buying === p.id ? <ActivityIndicator size="small" color={colors.brand} /> : (
                     <Text style={[styles.price, { color: muted }]}>{prices[p.id] ?? azn(p.priceQepik)}</Text>
                   )}

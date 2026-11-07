@@ -22,7 +22,7 @@ import { GiftOverlay, type GiftOverlayHandle } from '@/components/GiftOverlay';
 import { Hearts, type HeartsHandle } from '@/components/Hearts';
 import { api } from '@/lib/api';
 import { compact, duration, errorText, giftName } from '@/lib/format';
-import { getSocket } from '@/lib/socket';
+import { getSocket, useSocket } from '@/lib/socket';
 import * as rtc from '@/lib/rtc';
 import { useStore } from '@/store';
 import type { GiftEvent, PublicUser, RtcCreds, VipTier } from '@/lib/types';
@@ -44,6 +44,7 @@ export default function LiveRoom() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { me, toast, patchMe } = useStore();
+  const sock = useSocket();
   const [room, setRoom] = useState<Room | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -104,10 +105,7 @@ export default function LiveRoom() {
         }
         setCreds(r.rtc);
         setHostUid(r.isHost ? null : r.room.host.shortId);
-        const s = getSocket();
-        s?.emit('live:join', { roomId: id }, (ack: { ok: boolean }) => {
-          if (!ack?.ok) setEnded(true);
-        });
+        // live:join socket effektində edilir (socket bu ekrandan sonra yarana bilər)
         const onSeat = r.seats.some((x) => x.user?.id === useStore.getState().me?.id);
         try {
           await rtc.join(r.rtc, { video: r.room.type === 'VIDEO', publish: r.isHost || onSeat });
@@ -130,7 +128,7 @@ export default function LiveRoom() {
   }, [id]);
 
   useEffect(() => {
-    const s = getSocket();
+    const s = sock;
     if (!s) return;
     const onViewers = (p: { count: number }) => setViewers(p.count);
     const onComment = (p: { id: string; text: string; user: MiniUser }) => pushLine({ id: p.id, kind: 'comment', text: p.text, user: p.user });
@@ -174,6 +172,13 @@ export default function LiveRoom() {
     const onDisconnect = () => setConnUp(false);
     s.on('connect', onConnect);
     s.on('disconnect', onDisconnect);
+    // Otaq yükləndi (creds) və socket hazırdır — qoşul (server eyni soketdən təkrar join-i saymır)
+    if (creds && s.connected) {
+      s.emit('live:join', { roomId: id }, (ack: { ok: boolean; viewers?: number }) => {
+        if (!ack?.ok) setEnded(true);
+        else if (typeof ack.viewers === 'number') setViewers(ack.viewers);
+      });
+    }
     const onKicked = async (p: { userId: string }) => {
       if (p.userId === me?.id && creds) {
         const r = await api<{ rtc: RtcCreds }>(`/live/${id}/seat/leave`, { body: {} }).catch(() => null);
@@ -245,7 +250,7 @@ export default function LiveRoom() {
       s.off('disconnect', onDisconnect);
       s.off('pk:declined', onPkDeclined);
     };
-  }, [id, me?.id, creds, pushLine, t]);
+  }, [sock, id, me?.id, creds, pushLine, t, toast]);
 
   // Bəyənmələri toplu göndər (şəbəkəni yükləməmək üçün)
   useEffect(() => {
@@ -438,7 +443,6 @@ export default function LiveRoom() {
                 <View style={[styles.rank, { backgroundColor: [colors.coin, colors.card, colors.brandSoft][i] }]}><Text style={styles.rankText}>{i + 1}</Text></View>
               </View>
             ))}
-            <View style={styles.viewersChip}><Text style={styles.viewersChipText}>{compact(viewers)}</Text></View>
           </Pressable>
           {isHost ? <IconBtn name="stats" size={36} sh={0} bg={colors.glass} color={colors.white} badge={requests} style={{ marginLeft: 8 }} onPress={() => setPanel(true)} /> : null}
           <IconBtn name="share" size={36} sh={0} bg={colors.glass} color={colors.white} style={{ marginLeft: 8 }} onPress={() => void Share.share({ message: `${room.host.name} · ${room.title} — Simo ${WEB_URL}` })} />
@@ -494,7 +498,7 @@ export default function LiveRoom() {
             >
               <LevelBadge kind="wealth" level={item.user.wealthLevel} />
               <Text style={[styles.lineText, { color: night && item.kind !== 'gift' ? colors.nightText : colors.ink }]}>
-                <Text style={{ fontFamily: fonts.black, color: item.kind === 'gift' ? colors.ink : item.user.vipTier !== 'NONE' ? colors.coin : night ? colors.highlight : colors.brand }}>{item.user.name}  </Text>
+                {item.kind === 'enter' ? null : <Text style={{ fontFamily: fonts.black, color: item.kind === 'gift' ? colors.ink : item.user.vipTier !== 'NONE' ? colors.coin : night ? colors.highlight : colors.brand }}>{item.user.name}  </Text>}
                 {item.text}
               </Text>
             </Pressable>
@@ -632,8 +636,6 @@ const styles = StyleSheet.create({
   hiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   hiChip: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, paddingHorizontal: 10, height: 28, justifyContent: 'center' },
   hiText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12.5 },
-  viewersChip: { marginLeft: 6, backgroundColor: colors.glass, borderRadius: 15, paddingHorizontal: 9, height: 30, justifyContent: 'center' },
-  viewersChipText: { color: colors.white, fontFamily: fonts.black, fontSize: 12 },
   connBanner: { position: 'absolute', alignSelf: 'center', backgroundColor: 'rgba(16,14,13,0.75)', borderRadius: 14, paddingHorizontal: 14, height: 30, justifyContent: 'center' },
   connText: { color: colors.white, fontFamily: fonts.bold, fontSize: 12.5 },
   endWrap: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
