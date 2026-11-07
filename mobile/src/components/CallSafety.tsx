@@ -19,7 +19,7 @@ import { Icon } from './Icon';
 import { ActionSheet } from './ActionSheet';
 import { api } from '../lib/api';
 import { errorText } from '../lib/format';
-import { getSocket } from '../lib/socket';
+import { useSocket } from '../lib/socket';
 import { useStore } from '../store';
 import {
   LEGAL_URLS, acceptConsent, hideRemote, loadSafetyStatus, pauseLocalVideo, reportInCall, useFrameModeration, useSafety,
@@ -73,8 +73,10 @@ export function CallSafetyLayer({ contextType, contextId, isVideo, active, peerI
 
   useFrameModeration(contextType, contextId, active && isVideo && !noticePending);
 
+  // useSocket: CallKit/push ilə soyuq başlanğıcda zəng ekranı socket-dən əvvəl açılır
+  const sock = useSocket();
   useEffect(() => {
-    const s = getSocket();
+    const s = sock;
     if (!s) return;
     const onBlur = (p: { contextType: SafetyContext; contextId: string; offenderId: string; seconds: number; ended: boolean }) => {
       if (p.contextId !== contextId || p.offenderId === me?.id) return;
@@ -98,7 +100,7 @@ export function CallSafetyLayer({ contextType, contextId, isVideo, active, peerI
       useSafety.setState({ blur: null, warning: null });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextId, me?.id]);
+  }, [contextId, me?.id, sock]);
 
   const blurOn = !!blur && blur.contextId === contextId && blur.until > now;
   const warnOn = !!warning && warning.contextId === contextId && warning.until > now;

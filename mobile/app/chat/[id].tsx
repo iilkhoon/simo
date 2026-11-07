@@ -247,6 +247,8 @@ export default function Chat() {
     } catch (e) {
       toast(errorText(e), 'error');
       if (e instanceof ApiError && e.code === 'INSUFFICIENT_COINS') router.push('/wallet');
+      // Qarşı tərəf bloklayıbsa — yazma sahəsi əvəzinə "bloklanıb" göstərilsin
+      if (e instanceof ApiError && e.code === 'BLOCKED') void loadInfo();
     } finally {
       setSending(false);
     }
@@ -311,7 +313,7 @@ export default function Chat() {
         </Pressable>
         <IconBtn name="call" size={40} bg={colors.diamondSoft} onPress={() => void startCall(u.id, 'VOICE')} />
         <IconBtn name="videocam" size={40} bg={colors.brand} color={colors.white} onPress={() => void startCall(u.id, 'VIDEO')} />
-        <IconBtn name="dots" size={40} onPress={() => openReport({ targetUserId: u.id, targetType: 'USER' })} />
+        <IconBtn name="dots" size={40} onPress={() => openReport({ targetUserId: u.id, targetType: 'USER', onBlocked: () => void loadInfo() })} />
       </SafeAreaView>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -335,7 +337,7 @@ export default function Chat() {
               <Pressable
                 disabled={item.m.senderId === me?.id}
                 delayLongPress={350}
-                onLongPress={() => openReport({ targetUserId: u.id, targetType: 'MESSAGE', targetId: item.m.id })}
+                onLongPress={() => openReport({ targetUserId: u.id, targetType: 'MESSAGE', targetId: item.m.id, onBlocked: () => void loadInfo() })}
               >
                 <Bubble m={item.m} mine={item.m.senderId === me?.id} read={new Date(item.m.createdAt).getTime() <= readAt} first={item.first} last={item.last} />
               </Pressable>

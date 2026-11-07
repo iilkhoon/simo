@@ -85,6 +85,8 @@ export async function buildApp() {
   const origins = allowedOrigins();
   await app.register(cors, {
     origin: origins ? (origin, cb) => cb(null, !origin || origins.has(origin)) : true,
+    // @fastify/cors v11 standart olaraq yalnız GET,HEAD,POST icazə verir — veb PUT/PATCH/DELETE istifadə edir
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     maxAge: 600,
   });
   await app.register(helmet, {

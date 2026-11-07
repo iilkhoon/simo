@@ -108,7 +108,7 @@ export default function Verify() {
       <View style={{ gap: 12 }}>
         <Input label={t('kyc.firstName')} value={f.firstName} onChangeText={(v) => setF({ ...f, firstName: v })} autoCapitalize="words" />
         <Input label={t('kyc.lastName')} value={f.lastName} onChangeText={(v) => setF({ ...f, lastName: v })} autoCapitalize="words" />
-        <Input label={t('kyc.birth')} value={f.birth} placeholder="GG.AA.İİİİ" keyboardType="number-pad" maxLength={10}
+        <Input label={t('kyc.birth')} value={f.birth} placeholder={t('kyc.birthPh')} keyboardType="number-pad" maxLength={10}
           onChangeText={(v) => { const d = v.replace(/\D/g, '').slice(0, 8); setF({ ...f, birth: [d.slice(0, 2), d.slice(2, 4), d.slice(4)].filter(Boolean).join('.') }); }} />
         {f.birth.length === 10 && !birthOk ? <FieldError text={t('u2.birthInvalid')} /> : null}
         <T v="label" color={colors.textMuted}>{t('kyc.docType')}</T>
