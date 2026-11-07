@@ -30,7 +30,7 @@ const IDLE_MS = 3200;
 const MAX_QUEUE = 8;
 const MAX_MINI = 4;
 
-export const GiftOverlay = forwardRef<GiftOverlayHandle, { compactSelf?: boolean; bannerTop?: number }>(function GiftOverlay({ compactSelf, bannerTop = 0.36 }, ref) {
+export const GiftOverlay = forwardRef<GiftOverlayHandle, { compactSelf?: boolean; bannerTop?: number }>(function GiftOverlay({ compactSelf, bannerTop = 0.45 }, ref) {
   const win = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [size, setSize] = useState({ W: win.width, H: win.height });

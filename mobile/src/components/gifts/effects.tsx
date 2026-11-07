@@ -23,7 +23,7 @@ function glowXml(color: string) {
 }
 
 const art = (id: string) => GIFT_ART[id] ?? GIFT_ART.heart;
-const geo = (W: number, H: number) => ({ cx: W / 2, cy: H * 0.44, U: Math.min(W * 0.92, H * 0.56, 430) });
+const geo = (W: number, H: number) => ({ cx: W / 2, cy: H * 0.4, U: Math.min(W * 0.92, H * 0.56, 430) });
 const pulseIn = (t0 = 0, peak = 1.12): KF => kf([t0, 0], [t0 + 0.12, peak], [t0 + 0.2, 1]);
 const outro = (from = 0.86): KF => kf([0, 1], [from, 1], [1, 0]);
 
@@ -85,7 +85,7 @@ function Steam({ ax, ay }: FxProps) {
 }
 
 function KissFly({ W, ax, ay }: FxProps) {
-  const tx = Math.min(W * 0.42, 190);
+  const tx = Math.min(W * 0.3, 130);
   const ps = useMemo(() => {
     const r = rng(14);
     return burst(r, { n: 8, cx: ax + tx, cy: ay - 110, looks: [sprite('heart'), sprite('heartPink')], dist: [40, 80], size: [12, 20], t0: [0.45, 0.5], dur: [0.35, 0.45], grav: -30, grow: [0.5, 1] });
@@ -184,9 +184,6 @@ function TeddyDrop({ W, H }: FxProps) {
   return (
     <>
       <Glow x={cx} y={cy} size={U * 1.1} color="#FFB37A" k={{ o: kf([0, 0], [0.22, 0.85], [0.85, 0.7], [1, 0]) }} />
-      <Layer x={cx} y={cy + S * 0.5} w={S * 0.8} h={S * 0.12} k={{ o: kf([0, 0], [0.2, 0.5], [0.88, 0.5], [1, 0]), sx: kf([0, 0.3], [0.2, 1], [0.26, 0.8], [0.32, 1]) }}>
-        <View style={{ flex: 1, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)' }} />
-      </Layer>
       <Layer x={cx} y={cy} w={S} h={S} k={{ y: kf([0, -H * 0.7], [0.2, 0], [0.26, -26], [0.32, 0], [0.88, 0], [1, 30]), sy: kf([0.19, 1], [0.21, 0.8], [0.25, 1.06], [0.32, 1]), o: outro(0.88), s: kf([0.88, 1], [1, 0.6]) }} osc={[{ p: 'r', a: 5, f: 4 }]}>
         <Sprite xml={art('teddy')} w={S} />
       </Layer>
@@ -316,11 +313,16 @@ function FireworksShow({ W, H }: FxProps) {
     const pal = [['#FFD166', '#FF8FA3'], ['#7DD3FC', '#C4B5FD'], ['#F472B6', '#FDE68A'], ['#86EFAC', '#FFFFFF'], ['#FCA5A5', '#FFD54A']];
     const pts: [number, number, number][] = [[0.3, 0.3, 0.02], [0.72, 0.24, 0.14], [0.5, 0.4, 0.26], [0.22, 0.48, 0.38], [0.78, 0.46, 0.5], [0.5, 0.22, 0.6]];
     return [
-      ...pts.flatMap(([fx, fy, t], i) => firework(r, { cx: W * fx, cy: H * fy, H, t, colors: pal[i % pal.length], radius: Math.min(W, H) * 0.2 })),
+      ...pts.flatMap(([fx, fy, t], i) => firework(r, { cx: W * fx, cy: H * fy, H, t, colors: pal[i % pal.length], radius: Math.min(W, H) * 0.3 })),
       ...fall(r, { n: 24, W, H, yFrom: H * 0.2, looks: [dot('#FFE08A'), dot('#FFFFFF')], size: [2.5, 4.5], t0: [0.3, 0.8], dur: [0.25, 0.35], sway: 6 }),
     ];
   }, [W, H]);
-  return <Scene ps={ps} />;
+  return (
+    <>
+      <Backdrop W={W} H={H} color="rgba(12,8,36,0.5)" />
+      <Scene ps={ps} />
+    </>
+  );
 }
 
 function CrystalHeart({ W, H }: FxProps) {

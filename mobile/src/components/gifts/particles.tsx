@@ -137,8 +137,8 @@ export function firework(r: Rand, o: { cx: number; cy: number; H: number; t: num
     out.push({ spec: { x: o.cx, y: o.cy, w: 6, h: 6, z: o.z, k: { y: kf([o.t, o.H - o.cy], [tb, 0]), o: kf([0, 0], [o.t, 0], [o.t + 0.01, 1], [tb, 1], [tb + 0.01, 0]) } }, look: dot('#FFF3C4') });
   }
   out.push({ spec: { x: o.cx, y: o.cy, w: o.radius * 0.9, h: o.radius * 0.9, z: o.z, k: { s: kf([tb, 0.2], [tb + 0.05, 1.3]), o: kf([0, 0], [tb, 0], [tb + 0.01, 0.9], [tb + 0.08, 0]) } }, look: dot('rgba(255,255,255,0.9)') });
-  out.push(...burst(r, { n: o.n ?? 20, cx: o.cx, cy: o.cy, looks: o.colors.map((c) => dot(c)), dist: [o.radius * 0.75, o.radius * 1.05], size: [4, 7], t0: [tb, tb + 0.01], dur: [0.26, 0.34], grav: o.radius * 0.45, z: o.z, grow: [1, 1] }));
-  out.push(...burst(r, { n: 10, cx: o.cx, cy: o.cy, looks: [dot('#FFFFFF')], dist: [o.radius * 0.35, o.radius * 0.55], size: [2.5, 4], t0: [tb + 0.02, tb + 0.04], dur: [0.22, 0.3], grav: o.radius * 0.3, z: o.z, grow: [1, 1] }));
+  out.push(...burst(r, { n: o.n ?? 28, cx: o.cx, cy: o.cy, looks: o.colors.map((c) => dot(c)), dist: [o.radius * 0.7, o.radius * 1.05], size: [5, 9], t0: [tb, tb + 0.01], dur: [0.26, 0.34], grav: o.radius * 0.45, z: o.z, grow: [1, 1] }));
+  out.push(...burst(r, { n: 14, cx: o.cx, cy: o.cy, looks: [dot('#FFFFFF')], dist: [o.radius * 0.3, o.radius * 0.55], size: [3, 5], t0: [tb + 0.02, tb + 0.04], dur: [0.22, 0.3], grav: o.radius * 0.3, z: o.z, grow: [1, 1] }));
   return out;
 }
 
