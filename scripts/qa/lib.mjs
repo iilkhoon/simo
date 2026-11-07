@@ -118,6 +118,18 @@ export function testPng(file) {
   return file;
 }
 
+/** Birbaşa SQL (yalnız QA hazırlığı üçün: admin rolu və s.). DATABASE_URL backend-in DB-si olmalıdır. */
+let pgPool = null;
+export async function sql(q, params = []) {
+  if (!pgPool) {
+    const req = createRequire(path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../backend/package.json'));
+    const { Pool } = req('pg');
+    pgPool = new Pool({ connectionString: process.env.DATABASE_URL ?? 'postgresql://simo:simo@localhost:5432/simo_qa' });
+  }
+  return (await pgPool.query(q, params)).rows;
+}
+export async function closeSql() { await pgPool?.end(); }
+
 export class Results {
   constructor(browser) { this.items = []; this.browser = browser; }
   async run(name, fn) {
