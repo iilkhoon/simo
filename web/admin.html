@@ -92,6 +92,18 @@
       return d;
     }
 
+    /** CSV yükləmə: token başlıqda göndərilir, fayl brauzerdə saxlanılır */
+    async function download(path, name) {
+      const r = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) throw new Error('CSV');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    const almaz = (u) => fmt(Math.round((u || 0) / 10));
+    const azn = (u) => ((u || 0) / 100).toFixed(2) + ' ₼';
+    const prevWeek = () => { const d = new Date(Date.now() + 4 * 3600000 - 7 * 86400000); const day = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day)).toISOString().slice(0, 10); };
+
     function logout() {
       token = null;
       try { sessionStorage.removeItem('simo.admin'); } catch (e) { /* ignore */ }
@@ -120,7 +132,7 @@
     const TABS = [
       ['stats', 'Statistika'], ['hosts', 'Host müraciətləri', 'pendingHosts'], ['users', 'İstifadəçilər'],
       ['withdrawals', 'Pul çıxarışları', 'pendingWithdrawals'], ['reports', 'Şikayətlər', 'openReports'],
-      ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['raffles', 'Çəkilişlər'],
+      ['kyc', 'Şəxsiyyət təsdiqi', 'pendingKyc'], ['agencies', 'Agentliklər', 'pendingAgencies'], ['settlements', 'Həftəlik hesabat'], ['raffles', 'Çəkilişlər'],
       ['payments', 'Ödənişlər'], ['lives', 'Canlı yayınlar'],
     ];
     function side() {
@@ -158,12 +170,18 @@
           <td class="acts"><button class="mini ${u.banned ? 'ok' : 'no'}" data-act="ban" data-id="${u.id}" data-v="${!u.banned}">${u.banned ? 'Blokdan çıxar' : 'Blokla'}</button><button class="mini" data-act="verify" data-id="${u.id}" data-v="${!u.verified}">${u.verified ? 'Təsdiqi götür' : 'Təsdiqlə'}</button><button class="mini dk" data-act="grant" data-id="${u.id}">+ Nar</button></td></tr>`));
       },
       async withdrawals() {
-        const { items } = await api('/admin/withdrawals');
-        return `<h2 style="margin-bottom:18px">Pul çıxarışları</h2>` + table(['İstifadəçi', 'Məbləğ', 'Üsul / hesab', 'Status', 'Tarix', ''], items.map((w) => `<tr>
-          <td>${userCell(w.user)}<div class="muted" style="font-size:12px">${esc(w.user.phone || '')}</div></td>
-          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">${fmt(Math.round(w.diamonds / 10))} Almaz</div></td>
-          <td>${esc(w.method)}<div style="font-size:13px">${esc(w.account)}</div></td><td><span class="st">${esc(w.status)}</span></td><td>${date(w.createdAt)}</td>
-          <td class="acts">${w.status === 'PENDING' ? `<button class="mini" data-act="wd" data-id="${w.id}" data-v="APPROVED">Təsdiq</button>` : ''}<button class="mini ok" data-act="wd" data-id="${w.id}" data-v="PAID">Ödənildi</button><button class="mini no" data-act="wd" data-id="${w.id}" data-v="REJECTED">Rədd</button></td></tr>`));
+        const st = $('#wst') ? $('#wst').value : 'OPEN';
+        const { items } = await api(`/admin/withdrawals?status=${st}`);
+        const bg = { PENDING: 'var(--saffron-soft)', APPROVED: 'var(--xazar-soft)', PAID: 'var(--mint-soft)', REJECTED: 'var(--nar-soft)' };
+        return `<h2 style="margin-bottom:18px">Pul çıxarışları</h2>
+          <div class="toolbar"><select class="input" id="wst">${[['OPEN', 'Açıq (gözləyən + təsdiqlənmiş)'], ['PENDING', 'Gözləyən'], ['APPROVED', 'Təsdiqlənmiş'], ['PAID', 'Ödənilmiş'], ['REJECTED', 'Rədd edilmiş'], ['ALL', 'Hamısı']].map(([k, l]) => `<option value="${k}" ${k === st ? 'selected' : ''}>${l}</option>`).join('')}</select><button class="btn sm dark" data-act="search">Göstər</button><button class="btn sm light" data-act="csvwd">CSV (30 gün)</button></div>
+          <p class="muted" style="margin-bottom:12px">Axın: Gözləyən → Təsdiq (yoxlanıldı) → Ödənildi. Rədd edildikdə səbəb məcburidir və Almaz istifadəçiyə avtomatik qaytarılır. Son 7 günün qazancı çıxarışa düşmür (geri qaytarma riskinə qarşı).</p>` +
+          table(['İstifadəçi', 'Məbləğ', 'Üsul / hesab', 'Status', 'Tarix', ''], items.map((w) => `<tr>
+          <td>${userCell(w.user)}<div class="muted" style="font-size:12px">${esc(w.user.phone || '')}${w.user.agency ? ` · ${esc(w.user.agency.name)}` : ''}</div><div style="font-size:12px">KYC: <span class="st">${esc(w.user.kycStatus)}</span></div></td>
+          <td><b>${(w.amountQepik / 100).toFixed(2)} ₼</b><div class="muted" style="font-size:12px">${almaz(w.diamonds)} Almaz · haqq ${(w.feeQepik / 100).toFixed(2)} ₼</div></td>
+          <td>${esc(w.method)}<div style="font-size:13px">${esc(w.account)}</div></td>
+          <td><span class="st" style="background:${bg[w.status] || 'var(--card)'}">${esc(w.status)}</span>${w.rejectReason ? `<div class="muted" style="font-size:12px;max-width:200px">${esc(w.rejectReason)}</div>` : ''}</td><td>${date(w.createdAt)}${w.processedAt ? `<div class="muted" style="font-size:12px">${date(w.processedAt)}</div>` : ''}</td>
+          <td class="acts">${w.status === 'PENDING' ? `<button class="mini" data-act="wd" data-id="${w.id}" data-v="APPROVED">Təsdiq</button>` : ''}${w.status === 'PENDING' || w.status === 'APPROVED' ? `<button class="mini ok" data-act="wd" data-id="${w.id}" data-v="PAID">Ödənildi</button><button class="mini no" data-act="wd" data-id="${w.id}" data-v="REJECTED">Rədd</button>` : ''}</td></tr>`));
       },
       async reports() {
         const { items } = await api('/admin/reports');
@@ -187,16 +205,32 @@
       async agencies() {
         const { items } = await api('/admin/agencies');
         const stBg = { PENDING: 'var(--saffron-soft)', ACTIVE: 'var(--mint-soft)', SUSPENDED: 'var(--nar-soft)' };
-        return `<h2 style="margin-bottom:18px">Agentliklər</h2><p class="muted" style="margin-bottom:12px">Səviyyə və pay son 30 gündə hostların qazancına görə avtomatik hesablanır (Bürünc 15% → Almaz 20%). Sahibin KYC-si təsdiqlənməyibsə aktiv etməyin.</p>` +
-          table(['Agentlik', 'Sahib', 'Əlaqə', 'Təcrübə', 'Üzv', 'Səviyyə', 'Status', ''], items.map((a) => `<tr>
+        return `<h2 style="margin-bottom:18px">Agentliklər</h2><p class="muted" style="margin-bottom:12px">Host həmişə 15% alır. Agentlik komissiyası Simo-nun payından verilir: səviyyəyə görə avtomatik (Bürünc 15% → Brilyant 20%, son 30 günün qazancı) və ya fərdi faiz (0–30%). Sahibin KYC-si təsdiqlənmədən agentlik aktiv edilə bilməz.</p>` +
+          table(['Agentlik', 'Sahib', 'Əlaqə', 'Təcrübə', 'Üzv', 'Səviyyə / komissiya', 'Bu həftə', 'Status', ''], items.map((a) => `<tr>
           <td><b>${esc(a.name)}</b><div class="muted" style="font-size:12px">${esc(a.code)}${a.city ? ` · ${esc(a.city)}` : ''}</div>${a.description ? `<div style="font-size:12px;max-width:220px">${esc(a.description)}</div>` : ''}</td>
           <td>${esc(a.owner?.name)} · ${esc(a.owner?.shortId)}<div style="font-size:12px">KYC: <span class="st">${esc(a.owner?.kycStatus || '—')}</span></div></td>
           <td style="font-size:13px">${esc(a.contactName || '')}<br>${esc(a.contactPhone || '')}</td>
           <td style="font-size:13px;max-width:220px">${esc(a.experience || '')}${a.expectedHosts ? `<div class="muted">Gözlənilən host: ${fmt(a.expectedHosts)}</div>` : ''}</td>
           <td>${fmt(a._count?.members)}</td>
-          <td><b>${esc(a.tierName)}</b> · ${Math.round(a.share * 100)}%<div class="muted" style="font-size:12px">30g: ${fmt(a.monthlyDiamonds)} Almaz</div></td>
+          <td><b>${esc(a.tierName)}</b> · ${Math.round(a.share * 100)}%${a.custom ? ' <span class="st" style="background:var(--xazar-soft)">fərdi</span>' : ''}<div class="muted" style="font-size:12px">30g: ${almaz(a.monthlyDiamonds)} Almaz</div></td>
+          <td style="font-size:13px">${fmt(a.week?.paidCoins)} Nar<div class="muted" style="font-size:12px">host ${azn(a.week?.hostAmount)} · agentlik ${azn(a.week?.agencyAmount)}</div></td>
           <td><span class="st" style="background:${stBg[a.status] || 'var(--card)'}">${esc(a.status)}</span>${a.rejectReason ? `<div class="muted" style="font-size:12px">${esc(a.rejectReason)}</div>` : ''}</td>
-          <td class="acts">${a.status !== 'ACTIVE' ? `<button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Təsdiq et</button>` : ''}<button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">${a.status === 'PENDING' ? 'Rədd' : 'Dayandır'}</button></td></tr>`));
+          <td class="acts">${a.status !== 'ACTIVE' ? `<button class="mini ok" data-act="ag" data-id="${a.id}" data-v="ACTIVE">Təsdiq et</button>` : ''}<button class="mini no" data-act="ag" data-id="${a.id}" data-v="SUSPENDED">${a.status === 'PENDING' ? 'Rədd' : 'Dayandır'}</button><button class="mini" data-act="agshare" data-id="${a.id}" data-v="${a.custom ? Math.round(a.share * 100) : ''}">Komissiya %</button><button class="mini dk" data-act="aghosts" data-id="${a.id}" data-v="${esc(a.name)}">Hostlar</button><button class="mini" data-act="agcsv" data-id="${a.id}">CSV</button></td></tr>`)) + `<div id="agHosts"></div>`;
+      },
+      async settlements() {
+        const week = $('#swk') ? $('#swk').value : prevWeek();
+        const d = await api(`/admin/settlements?week=${week}`);
+        const tot = d.items.reduce((a, r) => ({ p: a.p + r.paidCoins, h: a.h + r.hostAmount, g: a.g + r.agencyAmount }), { p: 0, h: 0, g: 0 });
+        return `<h2 style="margin-bottom:18px">Həftəlik agentlik hesabatı</h2>
+          <div class="toolbar"><input class="input" id="swk" type="date" value="${esc(d.week)}" title="Həftənin bazar ertəsi (Bakı)"><button class="btn sm dark" data-act="search">Göstər</button><button class="btn sm light" data-act="csvst" data-v="${esc(d.week)}">CSV</button></div>
+          <p class="muted" style="margin-bottom:12px">Həftə bazar ertəsi 00:00 (Bakı) başlayır. Agentlik komissiyası sahibin pul kisəsinə dərhal yazılır və 7 gün gözləmədən sonra adi çıxarışla ödənilir. "Bağla" — həftənin cəmlərini qeyd edir (yoxlama və mühasibat üçün); təkrar bağlamaq olmur.</p>
+          <div class="kpis" style="margin-bottom:16px"><div class="box kpi"><b>${fmt(tot.p)}</b><span>Ödənişli Nar</span></div><div class="box kpi" style="background:var(--mint-soft)"><b>${azn(tot.h)}</b><span>Hostlara</span></div><div class="box kpi" style="background:var(--lilac)"><b>${azn(tot.g)}</b><span>Agentliklərə</span></div><div class="box kpi" style="background:var(--saffron-soft)"><b>${azn(tot.p - tot.h - tot.g)}</b><span>Simo (nominal)</span></div></div>` +
+          table(['Agentlik', 'Sahib', 'Host', 'Ödənişli Nar', 'Host payı', 'Komissiya', 'Status', ''], d.items.map((r) => `<tr>
+          <td><b>${esc(r.agency?.name)}</b><div class="muted" style="font-size:12px">${esc(r.agency?.code)}</div></td>
+          <td>${esc(r.agency?.owner?.name)} · ${esc(r.agency?.owner?.shortId)}<div class="muted" style="font-size:12px">${esc(r.agency?.owner?.phone || '')}</div></td>
+          <td>${fmt(r.hosts)}</td><td>${fmt(r.paidCoins)}</td><td>${azn(r.hostAmount)}<div class="muted" style="font-size:12px">${almaz(r.hostAmount)} Almaz</div></td><td><b>${azn(r.agencyAmount)}</b><div class="muted" style="font-size:12px">${almaz(r.agencyAmount)} Almaz</div></td>
+          <td>${r.settlement ? `<span class="st" style="background:var(--mint-soft)">Bağlanıb</span><div class="muted" style="font-size:12px">${date(r.settlement.createdAt)}</div>` : '<span class="st">Açıq</span>'}</td>
+          <td class="acts">${r.settlement ? '' : `<button class="mini ok" data-act="settle" data-id="${r.agencyId}" data-v="${esc(d.week)}">Bağla</button>`}<button class="mini" data-act="agcsv" data-id="${r.agencyId}" data-v="${esc(d.week)}">Hostlar CSV</button></td></tr>`));
       },
       async raffles() {
         const { items } = await api('/admin/raffles');
@@ -246,7 +280,30 @@
         if (act === 'ban') { if (!confirm('Əminsiniz?')) return; await api(`/admin/users/${id}`, { banned: v === 'true' }); }
         if (act === 'verify') await api(`/admin/users/${id}`, { verified: v === 'true' });
         if (act === 'grant') { const n = parseInt(prompt('Neçə Nar?') || '', 10); if (!(n > 0)) return; await api(`/admin/users/${id}`, { grantCoins: n }); }
-        if (act === 'wd') { const note = v === 'REJECTED' ? (prompt('Səbəb (istifadəçiyə görünür)') || '') : ''; await api(`/admin/withdrawals/${id}`, { status: v, note }); }
+        if (act === 'wd') {
+          let reason = '';
+          if (v === 'REJECTED') { reason = (prompt('Rədd səbəbi (istifadəçiyə görünür, Almaz geri qaytarılacaq)') || '').trim(); if (reason.length < 3) return toast('Səbəb məcburidir', false); }
+          if (v === 'PAID' && !confirm('Pul köçürülüb? Bu əməliyyat geri alınmır.')) return;
+          await api(`/admin/withdrawals/${id}`, { status: v, reason });
+        }
+        if (act === 'csvwd') { await download('/admin/withdrawals.csv', `withdrawals_${new Date().toISOString().slice(0, 10)}.csv`); return; }
+        if (act === 'csvst') { await download(`/admin/settlements.csv?week=${v}`, `agency_week_${v}.csv`); return; }
+        if (act === 'agcsv') { const wk = v || prevWeek(); await download(`/admin/agencies/${id}/report.csv?week=${wk}`, `agency_${id}_${wk}.csv`); return; }
+        if (act === 'settle') { if (!confirm(`${v} həftəsi bağlansın?`)) return; await api('/admin/settlements/close', { agencyId: id, week: v }); }
+        if (act === 'agshare') {
+          const raw = prompt('Fərdi komissiya % (0–30). Boş — avtomatik səviyyə', v || '');
+          if (raw === null) return;
+          const customShare = raw.trim() === '' ? null : Number(raw) / 100;
+          if (customShare !== null && !(customShare >= 0 && customShare <= 0.3)) return toast('0–30 arası olmalıdır', false);
+          await api(`/admin/agencies/${id}`, { customShare });
+        }
+        if (act === 'aghosts') {
+          const { items } = await api(`/admin/agencies/${id}/hosts?period=week`);
+          $('#agHosts').innerHTML = `<h3 style="margin:22px 0 12px">${esc(v)} — hostlar (bu həftə)</h3>` + table(['Host', 'Onlayn', 'Zəng', 'Hədiyyə', 'Host payı', 'Komissiya', 'Qoşulub'], items.map((h) => `<tr>
+            <td>${userCell(h)}</td><td>${h.online ? '🟢 ' : ''}${fmt(Math.round(h.onlineMin / 6) / 10)} saat</td><td>${fmt(h.calls)} · ${fmt(h.callMin)} dəq</td><td>${fmt(h.gifts)}</td><td>${azn(h.hostAmount)}</td><td>${azn(h.agencyAmount)}</td><td>${date(h.agencyJoinedAt)}</td></tr>`));
+          $('#agHosts').scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
         if (act === 'rep') await api(`/admin/reports/${id}`, { status: v });
         if (act === 'repban') { if (!confirm('İstifadəçi bloklansın?')) return; await api(`/admin/reports/${id}`, { status: 'RESOLVED', banUser: true }); }
         if (act === 'ag') { const rejectReason = v === 'SUSPENDED' ? (prompt('Səbəb (agentliyə görünür)') || '') : ''; await api(`/admin/agencies/${id}`, { status: v, ...(rejectReason ? { rejectReason } : {}) }); }
