@@ -161,7 +161,8 @@ export default async function callRoutes(app: FastifyInstance) {
     const role = call.callerId === me ? 'caller' : 'callee';
     const nextChargeAt = call.status === 'ACTIVE' && call.startedAt ? new Date(call.startedAt.getTime() + call.billedMinutes * 60_000) : null;
     return {
-      call, peer: presentUser(peer), rtc: rtcToken(call.channel, mine.shortId, true), role,
+      // Bitmiş zəngin kanalına yeni token verilmir (billing dayandıqdan sonra kanala qayıtmaq olmasın)
+      call, peer: presentUser(peer), rtc: call.status === 'RINGING' || call.status === 'ACTIVE' ? rtcToken(call.channel, mine.shortId, true) : null, role,
       serverNow: new Date(), nextChargeAt,
       earned: role === 'callee' && call.pricePerMin > 0 ? await callEarnings(call.id, call.calleeId) : 0,
     };

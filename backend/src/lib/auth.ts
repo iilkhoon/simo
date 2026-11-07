@@ -21,12 +21,13 @@ export function sha256(s: string): string {
 }
 
 export function signAccess(user: AuthUser): string {
-  return jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, { expiresIn: config.accessTtlSec });
+  return jwt.sign({ sub: user.id, role: user.role, typ: 'access' }, config.jwtSecret, { algorithm: 'HS256', expiresIn: config.accessTtlSec, issuer: 'simo-api' });
 }
 
 export function verifyAccess(token: string): AuthUser {
-  const p = jwt.verify(token, config.jwtSecret) as jwt.JwtPayload;
-  if (!p.sub) throw err.unauthorized();
+  // Alqoritm sabitlənir (alg=none / alqoritm dəyişdirmə hücumlarına qarşı)
+  const p = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+  if (!p.sub || (p.iss !== undefined && p.iss !== 'simo-api')) throw err.unauthorized();
   return { id: String(p.sub), role: p.role === 'ADMIN' ? 'ADMIN' : 'USER' };
 }
 

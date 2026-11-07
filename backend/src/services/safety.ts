@@ -18,7 +18,7 @@ import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { ageFrom } from '../economy.js';
 import { frameVerdict, strikeAction, type FrameVerdict, type StrikeAction } from '../lib/moderation.js';
-import { emitToRoom, emitToUser } from '../realtime/hub.js';
+import { emitToRoom, emitToUser, disconnectUser } from '../realtime/hub.js';
 import { getRoom } from '../realtime/liveState.js';
 import { finishCall } from './calls.js';
 import { endLive } from './live.js';
@@ -223,6 +223,8 @@ export async function banUser(userId: string, reason: string, actorId?: string |
   ]);
   await audit('BAN', userId, { reason }, actorId);
   emitToUser(userId, 'force-logout', { reason: 'BANNED' });
+  await prisma.refreshToken.updateMany({ where: { userId, revoked: false }, data: { revoked: true } });
+  disconnectUser(userId);
   await endActiveSessions(userId, 'SAFETY_BANNED');
 }
 

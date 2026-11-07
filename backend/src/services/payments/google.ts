@@ -21,12 +21,14 @@ export interface GoogleProductPurchase {
   orderId: string;
   obfuscatedExternalAccountId?: string;
   acknowledgementState: number;
+  /** 0 = test (lisenziya testçisi), 1 = promo, 2 = mükafat; yoxdursa — real alış */
+  purchaseType?: number;
 }
 
 export async function fetchGooglePurchase(productId: string, purchaseToken: string): Promise<GoogleProductPurchase> {
   const client = await getAuth().getClient();
   const url =
-    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${config.google.packageName}` +
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(config.google.packageName)}` +
     `/purchases/products/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`;
   const res = await client.request<GoogleProductPurchase>({ url });
   return res.data;

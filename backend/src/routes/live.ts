@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mediaUrl } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { filterProfanity } from '../lib/moderation.js';
@@ -48,7 +49,7 @@ export default async function liveRoutes(app: FastifyInstance) {
 
   app.post('/live', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
-    const b = z.object({ type: z.enum(['VIDEO', 'VOICE']), title: z.string().max(60).default(''), coverUrl: z.string().url().optional(), seatCount: z.union([z.literal(4), z.literal(8), z.literal(12)]).default(8) }).parse(req.body);
+    const b = z.object({ type: z.enum(['VIDEO', 'VOICE']), title: z.string().max(60).default(''), coverUrl: mediaUrl().optional(), seatCount: z.union([z.literal(4), z.literal(8), z.literal(12)]).default(8) }).parse(req.body);
     const user = await prisma.user.findUniqueOrThrow({ where: { id: me } });
     if (!user.onboarded) throw err.badRequest('ONBOARDING_REQUIRED');
     const existing = await prisma.liveRoom.findMany({ where: { hostId: me, status: 'LIVE' }, select: { id: true } });

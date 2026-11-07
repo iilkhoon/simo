@@ -32,3 +32,8 @@ export function markOffline(userId: string): boolean {
 export function isOnline(userId: string): boolean {
   return onlineCounts.has(userId);
 }
+
+/** İstifadəçinin bütün soket bağlantılarını kəsir (blok / hesab silinməsi) */
+export function disconnectUser(userId: string) {
+  io?.in(`u:${userId}`).disconnectSockets(true);
+}

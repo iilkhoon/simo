@@ -9,7 +9,7 @@ import { Icon } from '@/components/Icon';
 import { Mascot } from '@/components/Mascot';
 import { api } from '@/lib/api';
 import { errorText } from '@/lib/format';
-import { pickImage } from '@/lib/media';
+import { pickImageFull } from '@/lib/media';
 import { useStore } from '@/store';
 
 type Doc = 'ID_CARD' | 'PASSPORT' | 'DRIVER_LICENSE';
@@ -31,12 +31,14 @@ export default function Verify() {
   const [status, setStatus] = useState<{ status: string; note: string } | null>(null);
   const [f, setF] = useState({ firstName: '', lastName: '', birth: '', doc: 'ID_CARD' as Doc, front: '', back: '', selfie: '' });
   const [busy, setBusy] = useState(false);
+  // Önizləmə yerli fayldan (yüklənmiş sənəd şəxsidir, linki açıq deyil)
+  const [preview, setPreview] = useState<Record<string, string>>({});
   useEffect(() => { void api<{ verification: { status: string; note: string } | null }>('/kyc').then((r) => setStatus(r.verification)).catch(() => {}); }, []);
 
   const pick = (k: 'front' | 'back' | 'selfie') => async () => {
     try {
-      const u = await pickImage({ camera: true, front: k === 'selfie' });
-      if (u) setF((x) => ({ ...x, [k]: u }));
+      const u = await pickImageFull({ camera: true, front: k === 'selfie', kyc: true });
+      if (u) { setF((x) => ({ ...x, [k]: u.url })); setPreview((x) => ({ ...x, [k]: u.localUri })); }
     } catch (e) { toast(errorText(e), 'error'); }
   };
 
@@ -86,9 +88,9 @@ export default function Verify() {
         <T v="label" color={colors.textMuted}>{t('kyc.docType')}</T>
         <Tabs<Doc> value={f.doc} onChange={(doc) => setF({ ...f, doc })} options={[{ key: 'ID_CARD', label: t('kyc.docs.ID_CARD') }, { key: 'PASSPORT', label: t('kyc.docs.PASSPORT') }, { key: 'DRIVER_LICENSE', label: t('kyc.docs.DRIVER_LICENSE') }]} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Slot label={t('kyc.front')} uri={f.front} onPress={pick('front')} />
-          <Slot label={t('kyc.back')} uri={f.back} onPress={pick('back')} />
-          <Slot label={t('kyc.selfie')} uri={f.selfie} onPress={pick('selfie')} icon="person" />
+          <Slot label={t('kyc.front')} uri={preview.front || undefined} onPress={pick('front')} />
+          <Slot label={t('kyc.back')} uri={preview.back || undefined} onPress={pick('back')} />
+          <Slot label={t('kyc.selfie')} uri={preview.selfie || undefined} onPress={pick('selfie')} icon="person" />
         </View>
         <T v="tiny" color={colors.textDim}>{t('kyc.privacy')}</T>
         <Btn title={t('kyc.submit')} icon="shield" loading={busy} disabled={!ok} onPress={submit} />

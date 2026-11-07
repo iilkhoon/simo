@@ -1,7 +1,20 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
-import { refillTester } from '../services/tester.js';
+import { isReviewPhone, refillTester } from '../services/tester.js';
+
+/**
+ * Sandbox / test alışları (TestFlight, App Review, Google lisenziya testçiləri) pulsuzdur.
+ * İstehsalda onlar yalnız test və App Review hesablarına coin yazır, əks halda hər kəs TestFlight ilə pulsuz coin ala bilərdi.
+ */
+async function sandboxAllowed(userId: string): Promise<boolean> {
+  if (!config.isProd || config.appleAllowSandbox) return true;
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { isTester: true, phone: true } });
+  return !!u && (u.isTester || isReviewPhone(u.phone));
+}
+
+/** İstehsalda qəbz mütləq bu istifadəçiyə bağlı olmalıdır (appAccountToken / obfuscatedAccountId) */
+const requireOwnerBinding = () => config.isProd && !config.staging;
 import { config } from '../config.js';
 import { err } from '../lib/errors.js';
 import { requireAuth, uid } from '../lib/auth.js';
@@ -16,12 +29,13 @@ export default async function paymentRoutes(app: FastifyInstance) {
 
   app.post('/payments/apple/verify', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
-    const b = z.object({ transactionId: z.string().min(1), productId: z.string() }).parse(req.body);
+    const b = z.object({ transactionId: z.string().min(1).max(64), productId: z.string().max(100) }).parse(req.body);
     const tx = await fetchAppleTransaction(b.transactionId).catch((e: Error) => {
       throw err.badRequest('PAYMENT_VERIFY_FAILED', { detail: e.message });
     });
     if (tx.revocationDate) throw err.badRequest('PAYMENT_REVOKED');
-    if (tx.appAccountToken && tx.appAccountToken !== appAccountTokenFor(me)) throw err.forbidden('PAYMENT_OWNER_MISMATCH');
+    if (tx.appAccountToken ? tx.appAccountToken !== appAccountTokenFor(me) : requireOwnerBinding()) throw err.forbidden('PAYMENT_OWNER_MISMATCH');
+    if (tx.environment === 'Sandbox' && !(await sandboxAllowed(me))) throw err.forbidden('SANDBOX_NOT_ALLOWED');
     const pkg = await prisma.coinPackage.findUnique({ where: { appleProductId: tx.productId } });
     if (!pkg) throw err.badRequest('PACKAGE_NOT_FOUND');
     const existing = await prisma.payment.findUnique({ where: { provider_externalId: { provider: 'APPLE', externalId: tx.transactionId } } });
@@ -33,14 +47,16 @@ export default async function paymentRoutes(app: FastifyInstance) {
 
   app.post('/payments/google/verify', { preHandler: requireAuth }, async (req) => {
     const me = uid(req);
-    const b = z.object({ purchaseToken: z.string().min(1), productId: z.string() }).parse(req.body);
+    const b = z.object({ purchaseToken: z.string().min(1).max(512), productId: z.string().max(100).regex(/^[\w.]+$/) }).parse(req.body);
     const pkg = await prisma.coinPackage.findUnique({ where: { googleProductId: b.productId } });
     if (!pkg) throw err.badRequest('PACKAGE_NOT_FOUND');
     const p = await fetchGooglePurchase(b.productId, b.purchaseToken).catch((e: Error) => {
       throw err.badRequest('PAYMENT_VERIFY_FAILED', { detail: e.message });
     });
     if (p.purchaseState !== 0) throw err.badRequest('PAYMENT_NOT_COMPLETED');
-    if (p.obfuscatedExternalAccountId && p.obfuscatedExternalAccountId !== me) throw err.forbidden('PAYMENT_OWNER_MISMATCH');
+    if (p.obfuscatedExternalAccountId ? p.obfuscatedExternalAccountId !== me : requireOwnerBinding()) throw err.forbidden('PAYMENT_OWNER_MISMATCH');
+    // purchaseType 0 = lisenziya testçisinin pulsuz alışı
+    if (p.purchaseType === 0 && !(await sandboxAllowed(me))) throw err.forbidden('SANDBOX_NOT_ALLOWED');
     const existing = await prisma.payment.findUnique({ where: { provider_externalId: { provider: 'GOOGLE', externalId: b.purchaseToken } } });
     if (existing && existing.userId !== me) throw err.forbidden('PAYMENT_OWNER_MISMATCH');
     const payment = existing ?? (await createPending(me, 'GOOGLE', pkg.id, b.purchaseToken));
@@ -81,14 +97,29 @@ export default async function paymentRoutes(app: FastifyInstance) {
 
   /** Epoint server-to-server bildirişi */
   app.post('/payments/epoint/callback', async (req, reply) => {
-    const b = z.object({ data: z.string(), signature: z.string() }).parse(req.body);
-    if (!epointVerify(b.data, b.signature)) return reply.code(400).send({ ok: false });
-    const d = epointDecode<{ order_id: string; status: string; transaction?: string; amount?: number }>(b.data);
+    const b = z.object({ data: z.string().max(20_000), signature: z.string().max(200) }).parse(req.body);
+    // Açar yoxdursa imza boş açarla hesablanardı və hər kəs saxta "success" göndərə bilərdi
+    if (!config.epoint.privateKey) return reply.code(503).send({ ok: false });
+    if (!epointVerify(b.data, b.signature)) {
+      req.log.warn({ event: 'epoint_bad_signature' }, 'Epoint callback: imza səhvdir');
+      return reply.code(400).send({ ok: false });
+    }
+    let d: { order_id: string; status: string; transaction?: string; amount?: number | string; currency?: string };
+    try {
+      d = epointDecode(b.data);
+    } catch {
+      return reply.code(400).send({ ok: false });
+    }
+    if (typeof d?.order_id !== 'string') return reply.code(400).send({ ok: false });
     const payment = await prisma.payment.findUnique({ where: { id: d.order_id } });
-    if (!payment) return reply.code(404).send({ ok: false });
+    if (!payment || payment.provider !== 'EPOINT') return reply.code(404).send({ ok: false });
     if (d.status === 'success') {
-      if (d.amount != null && Math.round(Number(d.amount) * 100) !== payment.amountQepik) {
-        await prisma.payment.update({ where: { id: payment.id }, data: { status: 'FAILED', raw: d as object } });
+      // Məbləğ və valyuta mütləq sifarişə uyğun olmalıdır (məbləğsiz bildiriş qəbul edilmir)
+      const amountOk = d.amount != null && Math.round(Number(d.amount) * 100) === payment.amountQepik;
+      const currencyOk = d.currency == null || String(d.currency).toUpperCase() === 'AZN';
+      if (!amountOk || !currencyOk) {
+        req.log.error({ event: 'epoint_amount_mismatch', paymentId: payment.id }, 'Epoint: məbləğ/valyuta uyğun gəlmir');
+        await prisma.payment.updateMany({ where: { id: payment.id, status: 'PENDING' }, data: { status: 'FAILED', raw: d as object } });
         return { ok: false };
       }
       if (d.transaction && !payment.externalId) {

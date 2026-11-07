@@ -3,6 +3,11 @@ import * as Location from 'expo-location';
 import { api, upload } from './api';
 
 export async function pickImage(opts: { camera?: boolean; front?: boolean } = {}): Promise<string | null> {
+  return (await pickImageFull(opts))?.url ?? null;
+}
+
+/** Şəkil seçir və yükləyir; `kyc: true` — şəxsi fayl (önizləmə üçün localUri istifadə edin, url açıq deyil) */
+export async function pickImageFull(opts: { camera?: boolean; front?: boolean; kyc?: boolean } = {}): Promise<{ url: string; localUri: string } | null> {
   const perm = opts.camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) return null;
   const res = opts.camera
@@ -10,8 +15,8 @@ export async function pickImage(opts: { camera?: boolean; front?: boolean } = {}
     : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [3, 4] });
   if (res.canceled || !res.assets[0]) return null;
   const a = res.assets[0];
-  const r = await upload(a.uri, a.mimeType ?? 'image/jpeg');
-  return r.url;
+  const r = await upload(a.uri, a.mimeType ?? 'image/jpeg', undefined, opts.kyc ? 'kyc' : 'media');
+  return { url: r.url, localUri: a.uri };
 }
 
 /** Maksimum video uzunluğu (saniyə) — server də yoxlayır */

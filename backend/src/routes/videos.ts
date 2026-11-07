@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mediaUrl, safeResolve } from '../lib/security.js';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../db.js';
 import { err } from '../lib/errors.js';
@@ -30,10 +31,12 @@ async function makeBlurPreview(src: string | null | undefined): Promise<string |
   if (!src) return null;
   const prefix = `${config.publicUrl}/files/`;
   if (!src.startsWith(prefix)) return null;
-  const rel = src.slice(prefix.length);
-  const abs = path.resolve(config.uploadDir, rel);
-  if (!abs.startsWith(path.resolve(config.uploadDir)) || !fs.existsSync(abs)) return null;
+  const rel = decodeURIComponent(src.slice(prefix.length).split('?')[0]);
+  // Yol keçidinə (../) qarşı: fayl mütləq UPLOAD_DIR daxilində olmalıdır
+  const abs = safeResolve(config.uploadDir, rel);
+  if (!abs || !fs.existsSync(abs)) return null;
   const outRel = rel.replace(/\.[a-z0-9]+$/i, '') + '_blur.jpg';
+  if (!safeResolve(config.uploadDir, outRel)) return null;
   await sharp(abs).rotate().resize(360, 480, { fit: 'cover' }).blur(28).modulate({ brightness: 0.9 }).jpeg({ quality: 60 }).toFile(path.resolve(config.uploadDir, outRel));
   return `${prefix}${outRel}`;
 }
@@ -145,8 +148,8 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.post('/videos', { preHandler: requireAuth, config: { rateLimit: { max: 20, timeWindow: '1 hour' } } }, async (req) => {
     const me = uid(req);
     const b = z.object({
-      url: z.string().url(),
-      thumbnailUrl: z.string().url().optional(),
+      url: mediaUrl(),
+      thumbnailUrl: mediaUrl().optional(),
       caption: z.string().max(300).default(''),
       mediaType: z.enum(['VIDEO', 'PHOTO']).default('VIDEO'),
       durationSec: z.number().int().min(0).default(0),

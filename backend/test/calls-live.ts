@@ -14,7 +14,7 @@ import { HOST_ABSENT_MS, sweepStaleLives } from '../src/services/live.js';
 import { endPk } from '../src/services/pk.js';
 import { getRoom } from '../src/realtime/liveState.js';
 
-const PORT = 4556;
+const PORT = Number(process.env.TEST_PORT_CALLS ?? 4556);
 const BASE = `http://127.0.0.1:${PORT}`;
 let passed = 0;
 

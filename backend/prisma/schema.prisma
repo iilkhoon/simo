@@ -202,8 +202,12 @@ model RefreshToken {
   tokenHash String   @unique
   expiresAt DateTime
   revoked   Boolean  @default(false)
+  /// Nə vaxt ləğv edilib (təkrar istifadə aşkarlanması: oğurlanmış refresh token → bütün sessiyalar bağlanır)
+  revokedAt DateTime?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 enum SwipeAction {
