@@ -32,7 +32,8 @@ import safetyRoutes from './routes/safety.js';
 export async function buildApp() {
   const app = Fastify({ logger: { level: config.isProd ? 'info' : 'warn' }, bodyLimit: 2 * 1024 * 1024, trustProxy: true });
 
-  await app.register(cors, { origin: true });
+  // @fastify/cors v11 standart olaraq yalnız GET,HEAD,POST icazə verir — veb admin və veb tətbiq PUT/PATCH/DELETE istifadə edir
+  await app.register(cors, { origin: true, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] });
   await app.register(helmet, { contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } });
   await app.register(rateLimit, { max: 600, timeWindow: '1 minute' });
   await app.register(formbody);

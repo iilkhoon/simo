@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { API_URL } from '../config';
 import { storage } from './storage';
 
@@ -94,6 +95,8 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 /** Fayl yükləmə (şəkil/video) — irəliləyiş göstəricisi ilə */
 export async function upload(uri: string, mime: string, onProgress?: (p: number) => void): Promise<{ url: string }> {
   await loaded;
+  // Vebdə FormData {uri} obyektini qəbul etmir ("[object Object]" göndərilir) — faylı Blob kimi oxuyuruq
+  const webBlob = Platform.OS === 'web' ? await fetch(uri).then((r) => r.blob()).catch(() => null) : null;
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_URL}/uploads`);
@@ -111,7 +114,8 @@ export async function upload(uri: string, mime: string, onProgress?: (p: number)
     xhr.onerror = () => reject(new ApiError('NETWORK', 0));
     const form = new FormData();
     const ext = mime.split('/')[1]?.replace('quicktime', 'mov') ?? 'bin';
-    form.append('file', { uri, name: `upload.${ext}`, type: mime } as unknown as Blob);
+    if (webBlob) form.append('file', webBlob, `upload.${ext}`);
+    else form.append('file', { uri, name: `upload.${ext}`, type: mime } as unknown as Blob);
     xhr.send(form);
   });
 }
