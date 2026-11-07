@@ -262,7 +262,7 @@ export default function UserProfile() {
       ) : null}
 
       <GiftOverlay ref={overlay} />
-      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={u.id} receiverName={u.name} context="PROFILE" onSent={(e) => { overlay.current?.push(e); toast(t('gifts.sent'), 'success'); void load(); }} />
+      <GiftSheet visible={giftOpen} onClose={() => setGiftOpen(false)} receiverId={u.id} receiverName={u.name} context="PROFILE" onSent={(e) => { overlay.current?.push(e); void load(); }} />
       <ActionSheet
         visible={menu}
         onClose={() => setMenu(false)}
